@@ -3,6 +3,7 @@ const Patient = require('../models/Patient');
 const Doctor = require('../models/Doctor');
 const Case = require('../models/Case');
 const socketService = require('../services/socketService');
+const { processMessageForSymptoms } = require('../services/symptomExtractor');
 
 // Send message
 exports.sendMessage = async (req, res) => {
@@ -295,6 +296,16 @@ exports.sendCaseMessage = async (req, res) => {
 
     // Update case's lastMessageAt timestamp
     await caseData.updateLastMessage();
+
+    // Extract symptoms from patient messages automatically
+    if (senderRole === 'patient') {
+      try {
+        await processMessageForSymptoms(message);
+      } catch (symptomError) {
+        console.error('Failed to extract symptoms from message:', symptomError);
+        // Continue even if symptom extraction fails - message is saved
+      }
+    }
 
     // Populate sender and recipient details
     const populatedMessage = await Message.findById(message._id)

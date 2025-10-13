@@ -589,31 +589,30 @@ export class DoctorCasesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Generate video call link if not provided
-    if (!this.videoCallLink.trim()) {
-      this.videoCallLink = `https://meet.example.com/${this.selectedCase._id}`;
-    }
-
     this.schedulingVideoCall = true;
 
-    // Combine date and time
-    const scheduledDateTime = new Date(`${this.videoCallDate}T${this.videoCallTime}`);
-
-    // Send message with video call details
-    const videoCallMessage = `📹 Video Consultation Scheduled\n\nDate: ${scheduledDateTime.toLocaleDateString()}\nTime: ${scheduledDateTime.toLocaleTimeString()}\n\nJoin Link: ${this.videoCallLink}\n\nPlease join at the scheduled time.`;
-
-    this.caseService.sendMessage(this.selectedCase._id, videoCallMessage).subscribe({
+    // Call backend API to schedule video consultation
+    // This will generate the video link and send emails to both doctor and patient
+    this.caseService.scheduleVideoConsultation(
+      this.selectedCase._id, 
+      this.videoCallDate, 
+      this.videoCallTime
+    ).subscribe({
       next: (response) => {
         this.schedulingVideoCall = false;
         if (response.success) {
-          alert('Video call scheduled successfully! Patient has been notified.');
+          this.videoCallLink = response.videoConsultation.videoLink;
+          alert('Video consultation scheduled successfully! Emails sent to both you and the patient with the meeting link.');
           this.closeVideoCallDialog();
+          
+          // Reload cases to show updated video consultation details
+          this.loadCases();
         }
       },
       error: (error) => {
         this.schedulingVideoCall = false;
-        console.error('Error scheduling video call:', error);
-        alert('Failed to schedule video call. Please try again.');
+        console.error('Error scheduling video consultation:', error);
+        alert('Failed to schedule video consultation. Please try again.');
       }
     });
   }

@@ -1,0 +1,13 @@
+// ============================================
+// MAIN STYLES INDEX
+// Import all shared styles in the correct order
+// ============================================
+
+// 1. Variables (must be first)
+@import 'variables';
+
+// 2. Mixins (depends on variables)
+@import 'mixins';
+
+// 3. Components (depends on variables and mixins)
+@import 'components';

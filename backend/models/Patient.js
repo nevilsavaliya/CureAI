@@ -75,6 +75,77 @@ const patientSchema = new mongoose.Schema({
     type: String,
     trim: true
   }],
+  
+  // Enhanced Medical Records for Hospital API Access
+  emergencyContact: {
+    name: String,
+    relationship: String,
+    phone: String
+  },
+  
+  chronicConditions: [{
+    condition: String,
+    diagnosedDate: Date,
+    notes: String
+  }],
+  
+  currentMedications: [{
+    name: String,
+    dosage: String,
+    frequency: String,
+    startDate: Date,
+    prescribedBy: String
+  }],
+  
+  pastSurgeries: [{
+    surgery: String,
+    date: Date,
+    hospital: String,
+    notes: String
+  }],
+  
+  vaccinations: [{
+    vaccine: String,
+    date: Date,
+    nextDue: Date
+  }],
+  
+  // Extracted symptoms from chat history
+  extractedSymptoms: [{
+    symptom: String,
+    extractedFrom: String, // 'chat', 'consultation', 'manual'
+    extractedAt: Date,
+    caseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Case'
+    }
+  }],
+  
+  // Vital signs history
+  vitalSigns: [{
+    recordedAt: Date,
+    bloodPressure: {
+      systolic: Number,
+      diastolic: Number
+    },
+    heartRate: Number,
+    temperature: Number,
+    weight: Number,
+    height: Number,
+    bmi: Number,
+    oxygenSaturation: Number
+  }],
+  
+  // Lab results
+  labResults: [{
+    testName: String,
+    result: String,
+    unit: String,
+    normalRange: String,
+    date: Date,
+    orderedBy: String,
+    notes: String
+  }],
   lastLogin: {
     type: Date
   },

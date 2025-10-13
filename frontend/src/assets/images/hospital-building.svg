@@ -1,0 +1,124 @@
+<svg width="800" height="1000" viewBox="0 0 800 1000" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:0.08" />
+      <stop offset="100%" style="stop-color:#10b981;stop-opacity:0.08" />
+    </linearGradient>
+    <linearGradient id="buildingGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f3f4f6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="1000" fill="url(#bgGradient3)"/>
+  
+  <!-- Sky elements -->
+  <g opacity="0.15">
+    <!-- Clouds -->
+    <ellipse cx="150" cy="150" rx="40" ry="20" fill="#cbd5e0"/>
+    <ellipse cx="180" cy="145" rx="35" ry="18" fill="#cbd5e0"/>
+    <ellipse cx="600" cy="180" rx="50" ry="25" fill="#cbd5e0"/>
+    <ellipse cx="640" cy="175" rx="40" ry="20" fill="#cbd5e0"/>
+  </g>
+  
+  <!-- Hospital building -->
+  <g transform="translate(200, 300)">
+    <!-- Main building -->
+    <rect x="50" y="100" width="300" height="400" fill="url(#buildingGradient)" stroke="#cbd5e0" stroke-width="2"/>
+    
+    <!-- Roof -->
+    <path d="M40 100 L200 40 L360 100 Z" fill="#667eea"/>
+    
+    <!-- Medical cross on roof -->
+    <g transform="translate(200, 70)">
+      <rect x="-8" y="-25" width="16" height="50" fill="#ffffff"/>
+      <rect x="-25" y="-8" width="50" height="16" fill="#ffffff"/>
+    </g>
+    
+    <!-- Windows - Floor 1 -->
+    <rect x="80" y="140" width="50" height="60" fill="#e0f2fe" stroke="#94a3b8" stroke-width="1"/>
+    <rect x="175" y="140" width="50" height="60" fill="#e0f2fe" stroke="#94a3b8" stroke-width="1"/>
+    <rect x="270" y="140" width="50" height="60" fill="#e0f2fe" stroke="#94a3b8" stroke-width="1"/>
+    
+    <!-- Windows - Floor 2 -->
+    <rect x="80" y="220" width="50" height="60" fill="#e0f2fe" stroke="#94a3b8" stroke-width="1"/>
+    <rect x="175" y="220" width="50" height="60" fill="#e0f2fe" stroke="#94a3b8" stroke-width="1"/>
+    <rect x="270" y="220" width="50" height="60" fill="#e0f2fe" stroke="#94a3b8" stroke-width="1"/>
+    
+    <!-- Windows - Floor 3 -->
+    <rect x="80" y="300" width="50" height="60" fill="#e0f2fe" stroke="#94a3b8" stroke-width="1"/>
+    <rect x="175" y="300" width="50" height="60" fill="#e0f2fe" stroke="#94a3b8" stroke-width="1"/>
+    <rect x="270" y="300" width="50" height="60" fill="#e0f2fe" stroke="#94a3b8" stroke-width="1"/>
+    
+    <!-- Windows - Floor 4 -->
+    <rect x="80" y="380" width="50" height="60" fill="#e0f2fe" stroke="#94a3b8" stroke-width="1"/>
+    <rect x="175" y="380" width="50" height="60" fill="#e0f2fe" stroke="#94a3b8" stroke-width="1"/>
+    <rect x="270" y="380" width="50" height="60" fill="#e0f2fe" stroke="#94a3b8" stroke-width="1"/>
+    
+    <!-- Entrance -->
+    <rect x="150" y="420" width="100" height="80" fill="#667eea"/>
+    <path d="M150 420 L200 400 L250 420 Z" fill="#5568d3"/>
+    
+    <!-- Door -->
+    <rect x="170" y="440" width="60" height="60" fill="#ffffff" rx="3"/>
+    <circle cx="220" cy="470" r="3" fill="#667eea"/>
+    
+    <!-- Emergency sign -->
+    <rect x="160" y="405" width="80" height="12" fill="#ef4444"/>
+    <text x="200" y="414" font-family="Arial" font-size="10" fill="#ffffff" text-anchor="middle" font-weight="bold">EMERGENCY</text>
+  </g>
+  
+  <!-- Ambulance -->
+  <g transform="translate(100, 750)">
+    <!-- Body -->
+    <rect x="0" y="20" width="100" height="40" fill="#ffffff" stroke="#cbd5e0" stroke-width="2"/>
+    <rect x="70" y="10" width="30" height="30" fill="#ffffff" stroke="#cbd5e0" stroke-width="2"/>
+    
+    <!-- Red stripe -->
+    <rect x="0" y="35" width="100" height="10" fill="#ef4444"/>
+    
+    <!-- Medical cross -->
+    <g transform="translate(85, 20)">
+      <rect x="-2" y="-6" width="4" height="12" fill="#ef4444"/>
+      <rect x="-6" y="-2" width="12" height="4" fill="#ef4444"/>
+    </g>
+    
+    <!-- Wheels -->
+    <circle cx="20" cy="60" r="8" fill="#374151"/>
+    <circle cx="20" cy="60" r="4" fill="#94a3b8"/>
+    <circle cx="80" cy="60" r="8" fill="#374151"/>
+    <circle cx="80" cy="60" r="4" fill="#94a3b8"/>
+    
+    <!-- Light -->
+    <rect x="75" y="15" width="8" height="5" fill="#3b82f6" opacity="0.7"/>
+  </g>
+  
+  <!-- Trees -->
+  <g opacity="0.3">
+    <!-- Tree 1 -->
+    <rect x="80" y="720" width="15" height="60" fill="#92400e"/>
+    <circle cx="87" cy="710" r="30" fill="#10b981"/>
+    
+    <!-- Tree 2 -->
+    <rect x="680" y="730" width="15" height="50" fill="#92400e"/>
+    <circle cx="687" cy="720" r="25" fill="#10b981"/>
+  </g>
+  
+  <!-- Medical symbols floating -->
+  <g opacity="0.15">
+    <path d="M650 400 Q650 380 665 380 Q675 380 680 390 Q685 380 695 380 Q710 380 710 400 Q710 420 680 440 Q650 420 650 400 Z" fill="#ef4444"/>
+    
+    <g transform="translate(120, 450)">
+      <rect x="18" y="10" width="4" height="20" fill="#10b981"/>
+      <rect x="10" y="18" width="20" height="4" fill="#10b981"/>
+    </g>
+  </g>
+  
+  <!-- Decorative elements -->
+  <circle cx="150" cy="250" r="3" fill="#667eea" opacity="0.4"/>
+  <circle cx="650" cy="350" r="4" fill="#10b981" opacity="0.4"/>
+  <circle cx="200" cy="850" r="2" fill="#667eea" opacity="0.4"/>
+  <circle cx="600" cy="550" r="3" fill="#10b981" opacity="0.4"/>
+</svg>

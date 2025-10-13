@@ -20,6 +20,13 @@ import { DoctorCasesComponent } from './components/doctor-cases/doctor-cases.com
 import { NotificationsComponent } from './components/notifications/notifications.component';
 import { ClickOutsideDirective } from './directives/click-outside.directive';
 import { PendingCasesComponent } from './components/pending-cases/pending-cases.component';
+import { VerifyOtpComponent } from './components/verify-otp/verify-otp.component';
+import { AdminHospitalsComponent } from './components/admin-hospitals/admin-hospitals.component';
+import { HospitalRegisterComponent } from './components/hospital-register/hospital-register.component';
+import { HospitalLoginComponent } from './components/hospital-login/hospital-login.component';
+import { HospitalDashboardComponent } from './components/hospital-dashboard/hospital-dashboard.component';
+import { HospitalApiDocsComponent } from './components/hospital-api-docs/hospital-api-docs.component';
+import { LogoComponent } from './components/logo/logo.component';
 
 @NgModule({
   declarations: [
@@ -35,7 +42,14 @@ import { PendingCasesComponent } from './components/pending-cases/pending-cases.
     DoctorCasesComponent,
     NotificationsComponent,
     ClickOutsideDirective,
-    PendingCasesComponent
+    PendingCasesComponent,
+    VerifyOtpComponent,
+    AdminHospitalsComponent,
+    HospitalRegisterComponent,
+    HospitalLoginComponent,
+    HospitalDashboardComponent,
+    HospitalApiDocsComponent,
+    LogoComponent
   ],
   imports: [
     BrowserModule,

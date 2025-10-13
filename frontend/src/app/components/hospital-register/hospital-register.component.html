@@ -1,0 +1,522 @@
+<div class="register-wrapper">
+  <!-- Left Side - Form Section -->
+  <div class="register-form-section">
+    <!-- Logo -->
+    <div class="logo-section">
+      <app-logo [size]="'large'" [variant]="'default'" [clickable]="true"></app-logo>
+      <p class="tagline">Hospital Registration Portal</p>
+    </div>
+
+    <!-- Registration Card -->
+  <div class="register-card">
+    <!-- Success Message -->
+    <div class="success-container" *ngIf="registrationSuccess">
+      <div class="success-icon">
+        <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="40" cy="40" r="40" fill="#10b981"/>
+          <path d="M25 40L35 50L55 30" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      
+      <h2 class="success-title">Registration Submitted Successfully! 🎉</h2>
+      <p class="success-subtitle">Thank you for registering with Healthcare Platform</p>
+      
+      <div class="success-details">
+        <div class="detail-item">
+          <span class="detail-icon">📧</span>
+          <div class="detail-content">
+            <strong>Confirmation Email Sent</strong>
+            <p>We've sent a confirmation email to <strong>{{ registeredEmail }}</strong></p>
+          </div>
+        </div>
+        
+        <div class="detail-item">
+          <span class="detail-icon">⏳</span>
+          <div class="detail-content">
+            <strong>Verification in Progress</strong>
+            <p>Our admin team will review your application within 24-48 hours</p>
+          </div>
+        </div>
+        
+        <div class="detail-item">
+          <span class="detail-icon">🔑</span>
+          <div class="detail-content">
+            <strong>API Credentials</strong>
+            <p>Once verified, you'll receive your API credentials via email</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="next-steps">
+        <h3>What Happens Next?</h3>
+        <ol class="steps-list">
+          <li>
+            <strong>Email Confirmation:</strong> Check your inbox for a confirmation email (check spam folder if not found)
+          </li>
+          <li>
+            <strong>Admin Review:</strong> Our team will verify your hospital details and uploaded documents
+          </li>
+          <li>
+            <strong>Approval Notification:</strong> You'll receive an email with your API credentials once approved
+          </li>
+          <li>
+            <strong>Start Using API:</strong> Use the credentials to integrate our patient data API into your system
+          </li>
+        </ol>
+      </div>
+      
+      <div class="success-actions">
+        <button class="btn btn-primary" (click)="goToLogin()">
+          Go to Login
+        </button>
+        <a href="mailto:support@healthcare.com" class="support-link">
+          Need help? Contact Support
+        </a>
+      </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-section" *ngIf="!registrationSuccess">
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width.%]="getProgressPercentage()"></div>
+      </div>
+      <div class="step-indicators">
+        <div class="step-indicator" 
+             *ngFor="let step of [1,2,3,4,5]" 
+             [class.active]="currentStep === step"
+             [class.completed]="currentStep > step">
+          <div class="step-circle">{{ step }}</div>
+          <div class="step-label">
+            <span *ngIf="step === 1">Basic Info</span>
+            <span *ngIf="step === 2">Hospital Details</span>
+            <span *ngIf="step === 3">Contact & Address</span>
+            <span *ngIf="step === 4">Specializations</span>
+            <span *ngIf="step === 5">Documents</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 1: Basic Information -->
+    <div class="form-step" *ngIf="currentStep === 1 && !registrationSuccess">
+      <h2 class="step-title">Basic Information</h2>
+      <p class="step-description">Enter your personal details to get started</p>
+      
+      <form [formGroup]="basicInfoForm">
+        <div class="form-group">
+          <label for="name">Contact Person Name *</label>
+          <input 
+            type="text" 
+            id="name" 
+            formControlName="name"
+            placeholder="Enter your full name"
+            [class.error]="basicInfoForm.get('name')?.invalid && basicInfoForm.get('name')?.touched">
+          <div class="error-message" *ngIf="basicInfoForm.get('name')?.invalid && basicInfoForm.get('name')?.touched">
+            <span *ngIf="basicInfoForm.get('name')?.errors?.['required']">Name is required</span>
+            <span *ngIf="basicInfoForm.get('name')?.errors?.['minlength']">Name must be at least 2 characters</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address *</label>
+          <input 
+            type="email" 
+            id="email" 
+            formControlName="email"
+            placeholder="hospital@example.com"
+            [class.error]="basicInfoForm.get('email')?.invalid && basicInfoForm.get('email')?.touched">
+          <div class="error-message" *ngIf="basicInfoForm.get('email')?.invalid && basicInfoForm.get('email')?.touched">
+            <span *ngIf="basicInfoForm.get('email')?.errors?.['required']">Email is required</span>
+            <span *ngIf="basicInfoForm.get('email')?.errors?.['email']">Please enter a valid email</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password *</label>
+          <div class="password-input">
+            <input 
+              [type]="showPassword ? 'text' : 'password'" 
+              id="password" 
+              formControlName="password"
+              placeholder="Minimum 8 characters"
+              [class.error]="basicInfoForm.get('password')?.invalid && basicInfoForm.get('password')?.touched">
+            <button type="button" class="toggle-password" (click)="togglePasswordVisibility()">
+              <span *ngIf="!showPassword">👁️</span>
+              <span *ngIf="showPassword">👁️‍🗨️</span>
+            </button>
+          </div>
+          <div class="password-strength" *ngIf="basicInfoForm.get('password')?.value">
+            <div class="strength-bar">
+              <div class="strength-fill" 
+                   [style.width]="getPasswordStrength() === 'weak' ? '33%' : getPasswordStrength() === 'medium' ? '66%' : '100%'"
+                   [style.background-color]="getPasswordStrengthColor()">
+              </div>
+            </div>
+            <span class="strength-label" [style.color]="getPasswordStrengthColor()">
+              {{ getPasswordStrength() | titlecase }} Password
+            </span>
+          </div>
+          <div class="error-message" *ngIf="basicInfoForm.get('password')?.invalid && basicInfoForm.get('password')?.touched">
+            <span *ngIf="basicInfoForm.get('password')?.errors?.['required']">Password is required</span>
+            <span *ngIf="basicInfoForm.get('password')?.errors?.['minlength']">Password must be at least 8 characters</span>
+          </div>
+          <div class="help-text">
+            Use at least 8 characters with a mix of letters, numbers, and symbols for a strong password
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="confirmPassword">Confirm Password *</label>
+          <div class="password-input">
+            <input 
+              [type]="showConfirmPassword ? 'text' : 'password'" 
+              id="confirmPassword" 
+              formControlName="confirmPassword"
+              placeholder="Re-enter your password"
+              [class.error]="(basicInfoForm.get('confirmPassword')?.invalid || basicInfoForm.errors?.['passwordMismatch']) && basicInfoForm.get('confirmPassword')?.touched">
+            <button type="button" class="toggle-password" (click)="toggleConfirmPasswordVisibility()">
+              <span *ngIf="!showConfirmPassword">👁️</span>
+              <span *ngIf="showConfirmPassword">👁️‍🗨️</span>
+            </button>
+          </div>
+          <div class="error-message" *ngIf="basicInfoForm.get('confirmPassword')?.touched">
+            <span *ngIf="basicInfoForm.get('confirmPassword')?.errors?.['required']">Please confirm your password</span>
+            <span *ngIf="basicInfoForm.errors?.['passwordMismatch'] && !basicInfoForm.get('confirmPassword')?.errors?.['required']">Passwords do not match</span>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Step 2: Hospital Details -->
+    <div class="form-step" *ngIf="currentStep === 2 && !registrationSuccess">
+      <h2 class="step-title">Hospital Details</h2>
+      <p class="step-description">Provide information about your hospital</p>
+      
+      <form [formGroup]="hospitalDetailsForm">
+        <div class="form-group">
+          <label for="hospitalName">Hospital Name *</label>
+          <input 
+            type="text" 
+            id="hospitalName" 
+            formControlName="hospitalName"
+            placeholder="Enter hospital name"
+            [class.error]="hospitalDetailsForm.get('hospitalName')?.invalid && hospitalDetailsForm.get('hospitalName')?.touched">
+          <div class="error-message" *ngIf="hospitalDetailsForm.get('hospitalName')?.invalid && hospitalDetailsForm.get('hospitalName')?.touched">
+            <span *ngIf="hospitalDetailsForm.get('hospitalName')?.errors?.['required']">Hospital name is required</span>
+            <span *ngIf="hospitalDetailsForm.get('hospitalName')?.errors?.['minlength']">Hospital name must be at least 3 characters</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="registrationNumber">Registration Number *</label>
+          <input 
+            type="text" 
+            id="registrationNumber" 
+            formControlName="registrationNumber"
+            placeholder="Enter registration number"
+            [class.error]="hospitalDetailsForm.get('registrationNumber')?.invalid && hospitalDetailsForm.get('registrationNumber')?.touched">
+          <div class="error-message" *ngIf="hospitalDetailsForm.get('registrationNumber')?.invalid && hospitalDetailsForm.get('registrationNumber')?.touched">
+            <span *ngIf="hospitalDetailsForm.get('registrationNumber')?.errors?.['required']">Registration number is required</span>
+            <span *ngIf="hospitalDetailsForm.get('registrationNumber')?.errors?.['minlength']">Registration number must be at least 5 characters</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="numberOfBeds">Number of Beds *</label>
+          <input 
+            type="number" 
+            id="numberOfBeds" 
+            formControlName="numberOfBeds"
+            placeholder="Enter number of beds"
+            min="1"
+            [class.error]="hospitalDetailsForm.get('numberOfBeds')?.invalid && hospitalDetailsForm.get('numberOfBeds')?.touched">
+          <div class="error-message" *ngIf="hospitalDetailsForm.get('numberOfBeds')?.invalid && hospitalDetailsForm.get('numberOfBeds')?.touched">
+            <span *ngIf="hospitalDetailsForm.get('numberOfBeds')?.errors?.['required']">Number of beds is required</span>
+            <span *ngIf="hospitalDetailsForm.get('numberOfBeds')?.errors?.['min']">Must be at least 1</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="website">Website (Optional)</label>
+          <input 
+            type="text" 
+            id="website" 
+            formControlName="website"
+            placeholder="https://www.example.com"
+            [class.error]="hospitalDetailsForm.get('website')?.invalid && hospitalDetailsForm.get('website')?.touched">
+          <div class="error-message" *ngIf="hospitalDetailsForm.get('website')?.invalid && hospitalDetailsForm.get('website')?.touched">
+            <span *ngIf="hospitalDetailsForm.get('website')?.errors?.['pattern']">Please enter a valid URL</span>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Step 3: Contact & Address -->
+    <div class="form-step" *ngIf="currentStep === 3 && !registrationSuccess">
+      <h2 class="step-title">Contact & Address</h2>
+      <p class="step-description">How can we reach you?</p>
+      
+      <form [formGroup]="contactAddressForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="contactNumber">Contact Number *</label>
+            <input 
+              type="tel" 
+              id="contactNumber" 
+              formControlName="contactNumber"
+              placeholder="+1234567890"
+              [class.error]="contactAddressForm.get('contactNumber')?.invalid && contactAddressForm.get('contactNumber')?.touched">
+            <div class="error-message" *ngIf="contactAddressForm.get('contactNumber')?.invalid && contactAddressForm.get('contactNumber')?.touched">
+              <span *ngIf="contactAddressForm.get('contactNumber')?.errors?.['required']">Contact number is required</span>
+              <span *ngIf="contactAddressForm.get('contactNumber')?.errors?.['pattern']">Please enter a valid phone number</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="emergencyContact">Emergency Contact *</label>
+            <input 
+              type="tel" 
+              id="emergencyContact" 
+              formControlName="emergencyContact"
+              placeholder="+1234567890"
+              [class.error]="contactAddressForm.get('emergencyContact')?.invalid && contactAddressForm.get('emergencyContact')?.touched">
+            <div class="error-message" *ngIf="contactAddressForm.get('emergencyContact')?.invalid && contactAddressForm.get('emergencyContact')?.touched">
+              <span *ngIf="contactAddressForm.get('emergencyContact')?.errors?.['required']">Emergency contact is required</span>
+              <span *ngIf="contactAddressForm.get('emergencyContact')?.errors?.['pattern']">Please enter a valid phone number</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="street">Street Address *</label>
+          <input 
+            type="text" 
+            id="street" 
+            formControlName="street"
+            placeholder="Enter street address"
+            [class.error]="contactAddressForm.get('street')?.invalid && contactAddressForm.get('street')?.touched">
+          <div class="error-message" *ngIf="contactAddressForm.get('street')?.invalid && contactAddressForm.get('street')?.touched">
+            <span>Street address is required</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="city">City *</label>
+            <input 
+              type="text" 
+              id="city" 
+              formControlName="city"
+              placeholder="Enter city"
+              [class.error]="contactAddressForm.get('city')?.invalid && contactAddressForm.get('city')?.touched">
+            <div class="error-message" *ngIf="contactAddressForm.get('city')?.invalid && contactAddressForm.get('city')?.touched">
+              <span>City is required</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="state">State *</label>
+            <input 
+              type="text" 
+              id="state" 
+              formControlName="state"
+              placeholder="Enter state"
+              [class.error]="contactAddressForm.get('state')?.invalid && contactAddressForm.get('state')?.touched">
+            <div class="error-message" *ngIf="contactAddressForm.get('state')?.invalid && contactAddressForm.get('state')?.touched">
+              <span>State is required</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="zipCode">ZIP Code *</label>
+            <input 
+              type="text" 
+              id="zipCode" 
+              formControlName="zipCode"
+              placeholder="Enter ZIP code"
+              [class.error]="contactAddressForm.get('zipCode')?.invalid && contactAddressForm.get('zipCode')?.touched">
+            <div class="error-message" *ngIf="contactAddressForm.get('zipCode')?.invalid && contactAddressForm.get('zipCode')?.touched">
+              <span *ngIf="contactAddressForm.get('zipCode')?.errors?.['required']">ZIP code is required</span>
+              <span *ngIf="contactAddressForm.get('zipCode')?.errors?.['pattern']">Please enter a valid ZIP code</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="country">Country *</label>
+            <input 
+              type="text" 
+              id="country" 
+              formControlName="country"
+              placeholder="Enter country"
+              [class.error]="contactAddressForm.get('country')?.invalid && contactAddressForm.get('country')?.touched">
+            <div class="error-message" *ngIf="contactAddressForm.get('country')?.invalid && contactAddressForm.get('country')?.touched">
+              <span>Country is required</span>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Step 4: Specializations & Facilities -->
+    <div class="form-step" *ngIf="currentStep === 4 && !registrationSuccess">
+      <h2 class="step-title">Specializations & Facilities</h2>
+      <p class="step-description">Select the services your hospital provides</p>
+      
+      <form [formGroup]="specializationsForm">
+        <div class="form-group">
+          <label>Specializations * (Select at least one)</label>
+          <div class="checkbox-grid">
+            <div class="checkbox-item" *ngFor="let spec of specializations">
+              <input 
+                type="checkbox" 
+                [id]="'spec-' + spec" 
+                [checked]="selectedSpecializations.includes(spec)"
+                (change)="toggleSpecialization(spec)">
+              <label [for]="'spec-' + spec">{{ spec }}</label>
+            </div>
+          </div>
+          <div class="selected-count" *ngIf="selectedSpecializations.length > 0">
+            ✓ {{ selectedSpecializations.length }} specialization(s) selected
+          </div>
+          <div class="error-message" *ngIf="selectedSpecializations.length === 0">
+            <span>Please select at least one specialization</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Facilities (Optional)</label>
+          <div class="checkbox-grid">
+            <div class="checkbox-item" *ngFor="let facility of facilities">
+              <input 
+                type="checkbox" 
+                [id]="'facility-' + facility" 
+                [checked]="selectedFacilities.includes(facility)"
+                (change)="toggleFacility(facility)">
+              <label [for]="'facility-' + facility">{{ facility }}</label>
+            </div>
+          </div>
+          <div class="selected-count" *ngIf="selectedFacilities.length > 0">
+            {{ selectedFacilities.length }} selected
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Step 5: Document Upload -->
+    <div class="form-step" *ngIf="currentStep === 5 && !registrationSuccess">
+      <h2 class="step-title">Document Upload</h2>
+      <p class="step-description">Upload required documents for verification</p>
+      
+      <form [formGroup]="documentsForm">
+        <div class="form-group">
+          <label>Required Documents *</label>
+          <p class="help-text">Please upload: Registration Certificate, Medical License, and any other relevant documents</p>
+          
+          <div class="file-upload-area">
+            <input 
+              type="file" 
+              id="documents" 
+              multiple 
+              accept=".pdf,.jpg,.jpeg,.png"
+              (change)="onFileSelect($event)"
+              #fileInput>
+            <label for="documents" class="file-upload-label">
+              <div class="upload-icon">📄</div>
+              <div class="upload-text">
+                <span class="upload-title">Click to upload or drag and drop</span>
+                <span class="upload-subtitle">PDF, JPG, PNG (Max 10MB each)</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="uploaded-files" *ngIf="uploadedDocuments.length > 0">
+            <h4>✓ Uploaded Documents ({{ uploadedDocuments.length }})</h4>
+            <div class="file-list">
+              <div class="file-item" *ngFor="let file of uploadedDocuments; let i = index">
+                <div class="file-info">
+                  <span class="file-icon">📎</span>
+                  <span class="file-name">{{ file.name }}</span>
+                  <span class="file-size">({{ (file.size / 1024).toFixed(2) }} KB)</span>
+                </div>
+                <button type="button" class="remove-file" (click)="removeDocument(i)">✕</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="error-message" *ngIf="uploadedDocuments.length === 0">
+            <span>Please upload at least one document (Registration Certificate, Medical License, etc.)</span>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="form-actions" *ngIf="!registrationSuccess">
+      <button 
+        type="button" 
+        class="btn btn-secondary" 
+        (click)="previousStep()"
+        *ngIf="currentStep > 1"
+        [disabled]="isSubmitting">
+        ← Previous
+      </button>
+      
+      <button 
+        type="button" 
+        class="btn btn-primary" 
+        (click)="nextStep()"
+        *ngIf="currentStep < totalSteps"
+        [disabled]="isSubmitting">
+        Next →
+      </button>
+      
+      <button 
+        type="button" 
+        class="btn btn-success" 
+        (click)="submitRegistration()"
+        *ngIf="currentStep === totalSteps"
+        [disabled]="isSubmitting">
+        <span *ngIf="!isSubmitting">Submit Registration</span>
+        <span *ngIf="isSubmitting">Submitting...</span>
+      </button>
+    </div>
+
+    <!-- Login Link -->
+    <div class="login-link" *ngIf="!registrationSuccess">
+      Already have an account? <a (click)="goToLogin()">Login here</a>
+    </div>
+  </div>
+  </div>
+
+  <!-- Right Side - Image Section -->
+  <div class="register-image-section">
+    <div class="image-overlay"></div>
+    <img src="assets/images/hospital-building.svg" alt="Hospital Building" class="hero-image">
+    <div class="image-content">
+      <h2>Join Our Healthcare Network</h2>
+      <p>Register your hospital to provide seamless access to patient medical records in emergency situations</p>
+      <div class="features">
+        <div class="feature-item">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          <span>Secure API Access</span>
+        </div>
+        <div class="feature-item">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <span>Real-time Patient Data</span>
+        </div>
+        <div class="feature-item">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span>Comprehensive Records</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

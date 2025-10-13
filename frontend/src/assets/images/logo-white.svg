@@ -1,0 +1,22 @@
+<svg width="200" height="60" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Medical Cross Icon -->
+  <g id="medical-cross">
+    <circle cx="30" cy="30" r="24" fill="white" opacity="0.2"/>
+    <path d="M30 18 L30 42 M18 30 L42 30" stroke="white" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="30" cy="30" r="3" fill="white"/>
+  </g>
+  
+  <!-- Heartbeat Line -->
+  <path d="M15 30 L20 30 L23 24 L27 36 L30 30 L33 30 L36 24 L40 36 L43 30 L45 30" 
+        stroke="#10b981" stroke-width="2" fill="none" opacity="0.8"/>
+  
+  <!-- Text: CureAI -->
+  <text x="60" y="38" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="white">
+    Cure<tspan fill="#a5b4fc">AI</tspan>
+  </text>
+  
+  <!-- Tagline -->
+  <text x="60" y="50" font-family="Inter, Arial, sans-serif" font-size="10" fill="rgba(255,255,255,0.8)">
+    Healthcare Platform
+  </text>
+</svg>

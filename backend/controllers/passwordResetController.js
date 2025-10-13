@@ -44,10 +44,16 @@ exports.requestOTP = async (req, res) => {
     // Delete any existing OTPs for this email
     await OTP.deleteMany({ email: email.toLowerCase() });
 
+    // Calculate expiration time (10 minutes from now)
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 10);
+
     // Save new OTP
     const otpDoc = new OTP({
       email: email.toLowerCase(),
-      otp
+      otp,
+      purpose: 'password_reset',
+      expiresAt
     });
     await otpDoc.save();
 
@@ -89,13 +95,23 @@ exports.verifyOTP = async (req, res) => {
     // Find OTP
     const otpDoc = await OTP.findOne({ 
       email: email.toLowerCase(), 
-      otp: otp.toString() 
+      otp: otp.toString(),
+      isUsed: false
     });
 
     if (!otpDoc) {
       return res.status(400).json({
         success: false,
         message: 'Invalid or expired OTP'
+      });
+    }
+
+    // Check if OTP has expired
+    if (new Date() > otpDoc.expiresAt) {
+      await OTP.deleteOne({ _id: otpDoc._id });
+      return res.status(400).json({
+        success: false,
+        message: 'OTP has expired. Please request a new one.'
       });
     }
 
@@ -134,13 +150,23 @@ exports.resetPassword = async (req, res) => {
     // Verify OTP
     const otpDoc = await OTP.findOne({ 
       email: email.toLowerCase(), 
-      otp: otp.toString() 
+      otp: otp.toString(),
+      isUsed: false
     });
 
     if (!otpDoc) {
       return res.status(400).json({
         success: false,
         message: 'Invalid or expired OTP'
+      });
+    }
+
+    // Check if OTP has expired
+    if (new Date() > otpDoc.expiresAt) {
+      await OTP.deleteOne({ _id: otpDoc._id });
+      return res.status(400).json({
+        success: false,
+        message: 'OTP has expired. Please request a new one.'
       });
     }
 
@@ -168,7 +194,9 @@ exports.resetPassword = async (req, res) => {
     user.password = newPassword;
     await user.save();
 
-    // Delete used OTP
+    // Mark OTP as used and delete it
+    otpDoc.isUsed = true;
+    await otpDoc.save();
     await OTP.deleteOne({ _id: otpDoc._id });
 
     res.status(200).json({

@@ -1,0 +1,36 @@
+<div 
+  class="logo-container" 
+  [ngClass]="[getSizeClass(), getVariantClass(), clickable ? 'logo-clickable' : '']"
+  [routerLink]="clickable ? '/' : null">
+  
+  <!-- Icon Only Variant -->
+  <div *ngIf="variant === 'icon-only'" class="logo-icon">
+    <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="30" cy="30" r="24" fill="currentColor" opacity="0.1"/>
+      <path d="M30 18 L30 42 M18 30 L42 30" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="30" cy="30" r="3" fill="currentColor"/>
+      <path d="M15 30 L20 30 L23 24 L27 36 L30 30 L33 30 L36 24 L40 36 L43 30 L45 30" 
+            stroke="#10b981" stroke-width="2" fill="none" opacity="0.6"/>
+    </svg>
+  </div>
+
+  <!-- Full Logo (Default and White variants) -->
+  <div *ngIf="variant !== 'icon-only'" class="logo-full">
+    <div class="logo-icon">
+      <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="30" cy="30" r="24" fill="currentColor" opacity="0.1"/>
+        <path d="M30 18 L30 42 M18 30 L42 30" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="30" cy="30" r="3" fill="currentColor"/>
+        <path d="M15 30 L20 30 L23 24 L27 36 L30 30 L33 30 L36 24 L40 36 L43 30 L45 30" 
+              stroke="#10b981" stroke-width="2" fill="none" opacity="0.6"/>
+      </svg>
+    </div>
+    
+    <div class="logo-text">
+      <div class="logo-title">
+        <span class="logo-cure">Cure</span><span class="logo-ai">AI</span>
+      </div>
+      <div class="logo-tagline">Healthcare Platform</div>
+    </div>
+  </div>
+</div>

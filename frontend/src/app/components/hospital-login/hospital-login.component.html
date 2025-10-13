@@ -1,0 +1,108 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="logo-section">
+      <app-logo [size]="'medium'" [variant]="'default'" [clickable]="true"></app-logo>
+      <p class="subtitle">Hospital Portal</p>
+    </div>
+    
+    <h2>Hospital Login</h2>
+    
+    <!-- Verification Status Messages -->
+    <div class="verification-message pending" *ngIf="verificationStatus === 'pending'">
+      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <span>{{ verificationMessage }}</span>
+    </div>
+
+    <div class="verification-message rejected" *ngIf="verificationStatus === 'rejected'">
+      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <span>{{ verificationMessage }}</span>
+    </div>
+    
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <!-- Email Field -->
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input 
+          type="email" 
+          id="email" 
+          formControlName="email"
+          class="form-control"
+          placeholder="hospital@example.com"
+          [class.is-invalid]="f['email'].invalid && f['email'].touched"
+        />
+        <div class="error-message" *ngIf="f['email'].invalid && f['email'].touched">
+          <span *ngIf="f['email'].errors?.['required']">Email is required</span>
+          <span *ngIf="f['email'].errors?.['email']">Please enter a valid email address</span>
+        </div>
+      </div>
+
+      <!-- Password Field -->
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input 
+          type="password" 
+          id="password" 
+          formControlName="password"
+          class="form-control"
+          placeholder="Enter your password"
+          [class.is-invalid]="f['password'].invalid && f['password'].touched"
+        />
+        <div class="error-message" *ngIf="f['password'].invalid && f['password'].touched">
+          <span *ngIf="f['password'].errors?.['required']">Password is required</span>
+          <span *ngIf="f['password'].errors?.['minlength']">Password must be at least 8 characters</span>
+        </div>
+      </div>
+
+      <!-- Remember Me Checkbox -->
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input 
+            type="checkbox" 
+            formControlName="rememberMe"
+            class="checkbox-input"
+          />
+          <span class="checkbox-text">Remember me</span>
+        </label>
+      </div>
+
+      <!-- Error Message -->
+      <div class="error-message main-error" *ngIf="errorMessage">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        {{ errorMessage }}
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" class="btn-primary" [disabled]="loading || loginForm.invalid">
+        <span *ngIf="!loading">Login</span>
+        <span *ngIf="loading" class="loading-spinner">
+          <svg class="spinner" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Logging in...
+        </span>
+      </button>
+    </form>
+
+    <!-- Forgot Password Link -->
+    <div class="forgot-password-link">
+      <a routerLink="/forgot-password">Forgot Password?</a>
+    </div>
+
+    <!-- Registration Link -->
+    <div class="signup-link">
+      Don't have an account? <a routerLink="/hospital/register">Register your hospital</a>
+    </div>
+
+    <!-- Back to Main Login -->
+    <div class="back-link">
+      <a routerLink="/login">← Back to main login</a>
+    </div>
+  </div>
+</div>

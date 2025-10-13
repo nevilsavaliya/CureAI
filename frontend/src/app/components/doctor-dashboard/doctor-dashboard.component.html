@@ -1,6 +1,9 @@
 <div class="dashboard-container">
   <header class="dashboard-header">
-    <h1>Healthcare Platform - Doctor Dashboard</h1>
+    <div class="header-left">
+      <app-logo [size]="'small'" [variant]="'default'" [clickable]="true"></app-logo>
+      <h1>Doctor Dashboard</h1>
+    </div>
     <div class="user-info">
       <button class="btn-cases" routerLink="/doctor/cases">My Cases</button>
       <app-pending-cases (caseSelected)="openCaseReview($event)"></app-pending-cases>

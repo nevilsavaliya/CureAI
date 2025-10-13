@@ -1,0 +1,475 @@
+<div class="api-docs-container">
+  <!-- Header -->
+  <div class="docs-header">
+    <div class="header-content">
+      <div class="header-logo">
+        <app-logo [size]="'small'" [variant]="'default'" [clickable]="true"></app-logo>
+      </div>
+      <h1>Hospital API Documentation</h1>
+      <p class="subtitle">Comprehensive guide to accessing patient medical data via API</p>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="docs-navigation">
+    <nav class="nav-menu">
+      <a 
+        [class.active]="activeSection === 'overview'" 
+        (click)="scrollToSection('overview')">
+        Overview
+      </a>
+      <a 
+        [class.active]="activeSection === 'authentication'" 
+        (click)="scrollToSection('authentication')">
+        Authentication
+      </a>
+      <a 
+        [class.active]="activeSection === 'endpoint'" 
+        (click)="scrollToSection('endpoint')">
+        API Endpoint
+      </a>
+      <a 
+        [class.active]="activeSection === 'request'" 
+        (click)="scrollToSection('request')">
+        Request Format
+      </a>
+      <a 
+        [class.active]="activeSection === 'response'" 
+        (click)="scrollToSection('response')">
+        Response Format
+      </a>
+      <a 
+        [class.active]="activeSection === 'examples'" 
+        (click)="scrollToSection('examples')">
+        Code Examples
+      </a>
+      <a 
+        [class.active]="activeSection === 'errors'" 
+        (click)="scrollToSection('errors')">
+        Error Codes
+      </a>
+      <a 
+        [class.active]="activeSection === 'rate-limiting'" 
+        (click)="scrollToSection('rate-limiting')">
+        Rate Limiting
+      </a>
+    </nav>
+  </div>
+
+  <!-- Content -->
+  <div class="docs-content">
+    
+    <!-- Overview Section -->
+    <section id="overview" class="docs-section">
+      <h2>Overview</h2>
+      <p>
+        The Hospital API provides secure access to patient medical records for emergency situations. 
+        This API allows verified hospitals to retrieve comprehensive patient health data including 
+        medical history, current medications, allergies, vital signs, and more.
+      </p>
+      
+      <div class="info-box">
+        <div class="info-icon">ℹ️</div>
+        <div class="info-content">
+          <strong>Important:</strong> This API is designed for emergency medical situations only. 
+          All access is logged and monitored for compliance and security purposes.
+        </div>
+      </div>
+
+      <h3>Key Features</h3>
+      <ul class="feature-list">
+        <li>✅ Comprehensive patient medical history</li>
+        <li>✅ Real-time vital signs and lab results</li>
+        <li>✅ Emergency contact information</li>
+        <li>✅ Current medications and allergies</li>
+        <li>✅ Automated symptom extraction from consultations</li>
+        <li>✅ Secure API key authentication</li>
+        <li>✅ Rate limiting for fair usage</li>
+        <li>✅ Complete audit trail</li>
+      </ul>
+    </section>
+
+    <!-- Authentication Section -->
+    <section id="authentication" class="docs-section">
+      <h2>Authentication</h2>
+      <p>
+        All API requests must be authenticated using your hospital's API credentials. 
+        You will receive these credentials via email after your hospital is verified by our admin team.
+      </p>
+
+      <h3>API Credentials</h3>
+      <div class="credential-info">
+        <div class="credential-item">
+          <strong>API Key:</strong>
+          <code class="inline-code">HK_[32-character-hexadecimal]</code>
+          <p class="credential-desc">Your unique hospital identifier</p>
+        </div>
+        <div class="credential-item">
+          <strong>API Secret:</strong>
+          <code class="inline-code">[64-character-hexadecimal]</code>
+          <p class="credential-desc">Your secret key (keep this secure!)</p>
+        </div>
+      </div>
+
+      <div class="warning-box">
+        <div class="warning-icon">⚠️</div>
+        <div class="warning-content">
+          <strong>Security Warning:</strong> Never share your API Secret or commit it to version control. 
+          Store it securely using environment variables or a secrets management system.
+        </div>
+      </div>
+
+      <h3>Authentication Requirements</h3>
+      <ul>
+        <li>Hospital must be verified by admin</li>
+        <li>Hospital account must be active</li>
+        <li>Both API Key and API Secret must be provided in every request</li>
+        <li>Credentials are validated on each request</li>
+      </ul>
+    </section>
+
+    <!-- Endpoint Section -->
+    <section id="endpoint" class="docs-section">
+      <h2>API Endpoint</h2>
+      
+      <div class="endpoint-card">
+        <div class="endpoint-header">
+          <span class="http-method">{{ apiEndpoint.method }}</span>
+          <code class="endpoint-path">{{ apiEndpoint.path }}</code>
+        </div>
+        <p class="endpoint-description">{{ apiEndpoint.description }}</p>
+        <div class="endpoint-meta">
+          <span class="meta-label">Authentication:</span>
+          <span class="meta-value">{{ apiEndpoint.authentication }}</span>
+        </div>
+      </div>
+
+      <h3>Base URL</h3>
+      <div class="code-block">
+        <code>https://your-api-domain.com</code>
+        <button class="copy-btn" (click)="copyJson('https://your-api-domain.com')">
+          📋 Copy
+        </button>
+      </div>
+    </section>
+
+    <!-- Request Format Section -->
+    <section id="request" class="docs-section">
+      <h2>Request Format</h2>
+      <p>Send a POST request with the following JSON body:</p>
+
+      <h3>Request Headers</h3>
+      <div class="code-block">
+        <pre><code>Content-Type: application/json</code></pre>
+      </div>
+
+      <h3>Request Body</h3>
+      <div class="code-block">
+        <pre><code>{{ apiEndpoint.requestBody | json }}</code></pre>
+        <button class="copy-btn" (click)="copyJson(apiEndpoint.requestBody)">
+          📋 Copy
+        </button>
+      </div>
+
+      <h3>Request Parameters</h3>
+      <table class="params-table">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Type</th>
+            <th>Required</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>apiKey</code></td>
+            <td>string</td>
+            <td><span class="badge badge-required">Required</span></td>
+            <td>Your hospital's API key (starts with HK_)</td>
+          </tr>
+          <tr>
+            <td><code>apiSecret</code></td>
+            <td>string</td>
+            <td><span class="badge badge-required">Required</span></td>
+            <td>Your hospital's API secret (64 characters)</td>
+          </tr>
+          <tr>
+            <td><code>patientEmail</code></td>
+            <td>string</td>
+            <td><span class="badge badge-required">Required</span></td>
+            <td>Email address of the patient</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Response Format Section -->
+    <section id="response" class="docs-section">
+      <h2>Response Format</h2>
+      <p>Successful requests return a JSON object with comprehensive patient data:</p>
+
+      <h3>Success Response (200 OK)</h3>
+      <div class="code-block">
+        <pre><code>{{ apiEndpoint.responseBody | json }}</code></pre>
+        <button class="copy-btn" (click)="copyJson(apiEndpoint.responseBody)">
+          📋 Copy
+        </button>
+      </div>
+
+      <h3>Response Fields</h3>
+      <div class="response-fields">
+        <div class="field-group">
+          <h4>Patient Information</h4>
+          <ul>
+            <li><code>id</code> - Patient unique identifier</li>
+            <li><code>name</code> - Patient full name</li>
+            <li><code>age</code> - Patient age (calculated from DOB)</li>
+            <li><code>gender</code> - Patient gender</li>
+            <li><code>bloodGroup</code> - Blood type (critical for emergencies)</li>
+            <li><code>allergies</code> - List of known allergies</li>
+          </ul>
+        </div>
+
+        <div class="field-group">
+          <h4>Emergency Contact</h4>
+          <ul>
+            <li><code>name</code> - Contact person name</li>
+            <li><code>relationship</code> - Relationship to patient</li>
+            <li><code>phone</code> - Contact phone number</li>
+          </ul>
+        </div>
+
+        <div class="field-group">
+          <h4>Medical History</h4>
+          <ul>
+            <li><code>chronicConditions</code> - List of chronic medical conditions</li>
+            <li><code>currentMedications</code> - Active medications with dosage</li>
+            <li><code>pastSurgeries</code> - Surgical history</li>
+            <li><code>extractedSymptoms</code> - Symptoms from recent consultations</li>
+          </ul>
+        </div>
+
+        <div class="field-group">
+          <h4>Clinical Data</h4>
+          <ul>
+            <li><code>vitalSigns</code> - Recent vital signs measurements</li>
+            <li><code>labResults</code> - Laboratory test results</li>
+            <li><code>recentCases</code> - Recent medical consultations</li>
+          </ul>
+        </div>
+
+        <div class="field-group">
+          <h4>Access Information</h4>
+          <ul>
+            <li><code>accessedBy.hospital</code> - Your hospital name</li>
+            <li><code>accessedBy.accessTime</code> - Timestamp of access</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Code Examples Section -->
+    <section id="examples" class="docs-section">
+      <h2>Code Examples</h2>
+      <p>Here are examples of how to integrate the API in different programming languages:</p>
+
+      <!-- Language Tabs -->
+      <div class="language-tabs">
+        <button 
+          [class.active]="activeLanguage === 'curl'"
+          (click)="setActiveLanguage('curl')">
+          cURL
+        </button>
+        <button 
+          [class.active]="activeLanguage === 'javascript'"
+          (click)="setActiveLanguage('javascript')">
+          JavaScript
+        </button>
+        <button 
+          [class.active]="activeLanguage === 'nodejs'"
+          (click)="setActiveLanguage('nodejs')">
+          Node.js
+        </button>
+        <button 
+          [class.active]="activeLanguage === 'python'"
+          (click)="setActiveLanguage('python')">
+          Python
+        </button>
+      </div>
+
+      <!-- Code Display -->
+      <div class="code-example">
+        <div class="code-header">
+          <span class="code-language">{{ activeLanguage.toUpperCase() }}</span>
+          <button class="copy-code-btn" (click)="copyCode(activeLanguage)">
+            📋 Copy Code
+          </button>
+        </div>
+        <div class="code-block">
+          <pre><code>{{ getCodeExample(activeLanguage) }}</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-icon">💡</div>
+        <div class="info-content">
+          <strong>Tip:</strong> Replace the placeholder values with your actual API credentials 
+          and the patient's email address. Store credentials securely using environment variables.
+        </div>
+      </div>
+    </section>
+
+    <!-- Error Codes Section -->
+    <section id="errors" class="docs-section">
+      <h2>Error Codes</h2>
+      <p>The API uses standard HTTP status codes to indicate success or failure:</p>
+
+      <table class="error-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Message</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let error of errorCodes" [class]="'error-' + error.code">
+            <td><span class="error-code">{{ error.code }}</span></td>
+            <td><strong>{{ error.message }}</strong></td>
+            <td>{{ error.description }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Error Response Format</h3>
+      <div class="code-block">
+        <pre><code>{{ '{' }}
+  "success": false,
+  "message": "Error description here"
+{{ '}' }}</code></pre>
+      </div>
+
+      <h3>Common Error Scenarios</h3>
+      <div class="error-scenarios">
+        <div class="scenario">
+          <h4>Invalid Credentials</h4>
+          <p>If your API Key or Secret is incorrect, you'll receive a 401 Unauthorized response.</p>
+          <code class="inline-code">{{ '{' }} "success": false, "message": "Invalid API credentials" {{ '}' }}</code>
+        </div>
+
+        <div class="scenario">
+          <h4>Patient Not Found</h4>
+          <p>If the patient email doesn't exist in our system, you'll receive a 404 Not Found response.</p>
+          <code class="inline-code">{{ '{' }} "success": false, "message": "Patient not found" {{ '}' }}</code>
+        </div>
+
+        <div class="scenario">
+          <h4>Rate Limit Exceeded</h4>
+          <p>If you exceed 100 requests per hour, you'll receive a 429 Too Many Requests response.</p>
+          <code class="inline-code">{{ '{' }} "success": false, "message": "Rate limit exceeded" {{ '}' }}</code>
+        </div>
+      </div>
+    </section>
+
+    <!-- Rate Limiting Section -->
+    <section id="rate-limiting" class="docs-section">
+      <h2>Rate Limiting</h2>
+      <p>
+        To ensure fair usage and system stability, the API implements rate limiting. 
+        Each hospital is limited to a specific number of requests per time window.
+      </p>
+
+      <div class="rate-limit-info">
+        <div class="rate-limit-card">
+          <div class="rate-limit-icon">⏱️</div>
+          <div class="rate-limit-details">
+            <h3>{{ rateLimitInfo.limit }} Requests</h3>
+            <p>per {{ rateLimitInfo.window }}</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Rate Limit Headers</h3>
+      <p>Every API response includes headers that provide information about your current rate limit status:</p>
+
+      <table class="params-table">
+        <thead>
+          <tr>
+            <th>Header</th>
+            <th>Description</th>
+            <th>Example</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let header of rateLimitInfo.headers">
+            <td><code>{{ header.name }}</code></td>
+            <td>{{ header.description }}</td>
+            <td><code>{{ header.example }}</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Handling Rate Limits</h3>
+      <div class="best-practices">
+        <h4>Best Practices</h4>
+        <ul>
+          <li>Monitor the <code>X-RateLimit-Remaining</code> header in your responses</li>
+          <li>Implement exponential backoff when approaching the limit</li>
+          <li>Cache patient data when appropriate to reduce API calls</li>
+          <li>Use the <code>X-RateLimit-Reset</code> header to know when limits reset</li>
+          <li>Handle 429 responses gracefully in your application</li>
+        </ul>
+      </div>
+
+      <h3>Example: Checking Rate Limit</h3>
+      <div class="code-block">
+        <pre><code>// JavaScript example
+const response = await fetch(apiUrl, options);
+
+// Check rate limit headers
+const remaining = response.headers.get('X-RateLimit-Remaining');
+const limit = response.headers.get('X-RateLimit-Limit');
+const reset = response.headers.get('X-RateLimit-Reset');
+
+console.log(`Requests remaining: ${{ '{' }}remaining{{ '}' }}/${{ '{' }}limit{{ '}' }}`);
+console.log(`Limit resets at: ${{ '{' }}new Date(reset * 1000){{ '}' }}`);</code></pre>
+      </div>
+
+      <div class="warning-box">
+        <div class="warning-icon">⚠️</div>
+        <div class="warning-content">
+          <strong>Important:</strong> If you consistently hit rate limits, please contact our support team 
+          to discuss increasing your quota based on your hospital's needs.
+        </div>
+      </div>
+    </section>
+
+    <!-- Support Section -->
+    <section class="docs-section support-section">
+      <h2>Need Help?</h2>
+      <p>If you have questions or need assistance with the API integration:</p>
+      
+      <div class="support-cards">
+        <div class="support-card">
+          <div class="support-icon">📧</div>
+          <h3>Email Support</h3>
+          <p>support@healthcare-platform.com</p>
+        </div>
+        
+        <div class="support-card">
+          <div class="support-icon">📚</div>
+          <h3>Documentation</h3>
+          <p>Visit our knowledge base</p>
+        </div>
+        
+        <div class="support-card">
+          <div class="support-icon">💬</div>
+          <h3>Live Chat</h3>
+          <p>Available 24/7</p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>

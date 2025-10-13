@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { AdminService } from '../../services/admin.service';
+import { HospitalService } from '../../services/hospital.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -24,6 +25,19 @@ export class AdminDashboardComponent implements OnInit {
   loadingMetrics: boolean = true;
   metricsError: string = '';
 
+  // Hospital statistics
+  hospitalStats: any = {
+    totalHospitals: 0,
+    pendingHospitals: 0,
+    verifiedHospitals: 0,
+    rejectedHospitals: 0,
+    activeHospitals: 0,
+    totalApiAccess: 0,
+    recentlyActiveHospitals: 0
+  };
+  loadingHospitalStats: boolean = true;
+  hospitalStatsError: string = '';
+
   // User management
   users: any[] = [];
   loadingUsers: boolean = false;
@@ -31,12 +45,16 @@ export class AdminDashboardComponent implements OnInit {
   selectedRole: string = '';
   searchTerm: string = '';
   
+  // Hospital management
+  pendingHospitalsCount: number = 0;
+  
   // View state
   activeView: string = 'metrics'; // 'metrics' or 'users'
 
   constructor(
     private authService: AuthService,
     private adminService: AdminService,
+    private hospitalService: HospitalService,
     private router: Router
   ) {}
 
@@ -47,6 +65,8 @@ export class AdminDashboardComponent implements OnInit {
     }
     
     this.loadMetrics();
+    this.loadPendingHospitalsCount();
+    this.loadHospitalStatistics();
   }
 
   loadMetrics(): void {
@@ -63,6 +83,39 @@ export class AdminDashboardComponent implements OnInit {
       error: (error) => {
         this.metricsError = error.error?.message || 'Failed to load metrics';
         this.loadingMetrics = false;
+      }
+    });
+  }
+
+  loadPendingHospitalsCount(): void {
+    this.hospitalService.getPendingHospitalsCount().subscribe({
+      next: (response) => {
+        if (response.success && response.count !== undefined) {
+          this.pendingHospitalsCount = response.count;
+        }
+      },
+      error: (error) => {
+        console.error('Failed to load pending hospitals count:', error);
+        // Silently fail - don't show error to user for this non-critical feature
+      }
+    });
+  }
+
+  loadHospitalStatistics(): void {
+    this.loadingHospitalStats = true;
+    this.hospitalStatsError = '';
+    
+    this.hospitalService.getHospitalStatistics().subscribe({
+      next: (response) => {
+        if (response.success && response.statistics) {
+          this.hospitalStats = response.statistics;
+        }
+        this.loadingHospitalStats = false;
+      },
+      error: (error) => {
+        this.hospitalStatsError = error.error?.message || 'Failed to load hospital statistics';
+        this.loadingHospitalStats = false;
+        console.error('Failed to load hospital statistics:', error);
       }
     });
   }
@@ -118,6 +171,10 @@ export class AdminDashboardComponent implements OnInit {
   formatDate(date: string): string {
     if (!date) return 'N/A';
     return new Date(date).toLocaleDateString();
+  }
+
+  navigateToHospitals(): void {
+    this.router.navigate(['/admin/hospitals']);
   }
 
   logout(): void {

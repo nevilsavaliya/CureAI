@@ -1,0 +1,152 @@
+/* Logo Container */
+.logo-container {
+  display: inline-flex;
+  align-items: center;
+  transition: opacity 0.2s ease;
+}
+
+.logo-clickable {
+  cursor: pointer;
+}
+
+.logo-clickable:hover {
+  opacity: 0.8;
+}
+
+/* Full Logo Layout */
+.logo-full {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Logo Icon */
+.logo-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-icon svg {
+  display: block;
+}
+
+/* Logo Text */
+.logo-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.logo-title {
+  font-weight: 700;
+  line-height: 1;
+  font-family: 'Inter', 'Segoe UI', -apple-system, sans-serif;
+}
+
+.logo-tagline {
+  font-size: 0.625em;
+  opacity: 0.7;
+  line-height: 1;
+  font-family: 'Inter', 'Segoe UI', -apple-system, sans-serif;
+}
+
+/* Size Variants */
+.logo-small .logo-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.logo-small .logo-title {
+  font-size: 16px;
+}
+
+.logo-small .logo-full {
+  gap: 8px;
+}
+
+.logo-medium .logo-icon svg {
+  width: 48px;
+  height: 48px;
+}
+
+.logo-medium .logo-title {
+  font-size: 24px;
+}
+
+.logo-medium .logo-full {
+  gap: 12px;
+}
+
+.logo-large .logo-icon svg {
+  width: 64px;
+  height: 64px;
+}
+
+.logo-large .logo-title {
+  font-size: 32px;
+}
+
+.logo-large .logo-full {
+  gap: 16px;
+}
+
+/* Color Variants */
+.logo-default .logo-icon {
+  color: #667eea;
+}
+
+.logo-default .logo-cure {
+  color: #374151;
+}
+
+.logo-default .logo-ai {
+  color: #667eea;
+}
+
+.logo-default .logo-tagline {
+  color: #6b7280;
+}
+
+.logo-white .logo-icon {
+  color: #ffffff;
+}
+
+.logo-white .logo-cure,
+.logo-white .logo-ai {
+  color: #ffffff;
+}
+
+.logo-white .logo-tagline {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.logo-icon-only .logo-icon {
+  color: #667eea;
+}
+
+.logo-icon-only.logo-white .logo-icon {
+  color: #ffffff;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .logo-large .logo-icon svg {
+    width: 48px;
+    height: 48px;
+  }
+
+  .logo-large .logo-title {
+    font-size: 24px;
+  }
+
+  .logo-medium .logo-icon svg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .logo-medium .logo-title {
+    font-size: 20px;
+  }
+}

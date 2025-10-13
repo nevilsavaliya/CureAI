@@ -68,9 +68,16 @@ async function resetDatabase() {
         let totalDeleted = 0;
         for (const collection of collections) {
             try {
-                const result = await collection.model.deleteMany({});
-                console.log(`  ✓ ${collection.name}: ${result.deletedCount} documents deleted`);
-                totalDeleted += result.deletedCount;
+                // IMPORTANT: Preserve admin account (admin@gmail.com)
+                if (collection.name === 'Admins') {
+                    const result = await collection.model.deleteMany({ email: { $ne: 'admin@gmail.com' } });
+                    console.log(`  ✓ ${collection.name}: ${result.deletedCount} documents deleted (admin@gmail.com preserved)`);
+                    totalDeleted += result.deletedCount;
+                } else {
+                    const result = await collection.model.deleteMany({});
+                    console.log(`  ✓ ${collection.name}: ${result.deletedCount} documents deleted`);
+                    totalDeleted += result.deletedCount;
+                }
             } catch (error) {
                 console.log(`  ⚠ ${collection.name}: ${error.message}`);
             }

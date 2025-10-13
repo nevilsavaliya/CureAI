@@ -1,6 +1,9 @@
 <div class="dashboard-container">
   <header class="dashboard-header">
-    <h1>Healthcare Platform - Admin Dashboard</h1>
+    <div class="header-left">
+      <app-logo [size]="'small'" [variant]="'default'" [clickable]="true"></app-logo>
+      <h1>Admin Dashboard</h1>
+    </div>
     <div class="user-info">
       <span>Welcome, {{ userName }}!</span>
       <button (click)="logout()" class="btn-logout">Logout</button>
@@ -20,6 +23,12 @@
       [class.active]="activeView === 'users'"
       (click)="switchView('users')">
       User Management
+    </button>
+    <button 
+      class="tab-button" 
+      (click)="navigateToHospitals()">
+      Hospital Management
+      <span class="badge-count" *ngIf="pendingHospitalsCount > 0">{{ pendingHospitalsCount }}</span>
     </button>
   </div>
 
@@ -78,6 +87,62 @@
           <div class="metric-icon">🔬</div>
           <div class="metric-value">{{ metrics.totalPredictions }}</div>
           <div class="metric-label">Disease Predictions</div>
+        </div>
+      </div>
+
+      <!-- Hospital Statistics Section -->
+      <h2 style="margin-top: 40px;">Hospital Statistics</h2>
+      
+      <div *ngIf="loadingHospitalStats" class="loading">
+        Loading hospital statistics...
+      </div>
+
+      <div *ngIf="hospitalStatsError" class="error-message">
+        {{ hospitalStatsError }}
+        <button (click)="loadHospitalStatistics()" class="btn-retry">Retry</button>
+      </div>
+
+      <div *ngIf="!loadingHospitalStats && !hospitalStatsError" class="metrics-grid">
+        <div class="metric-card hospital-card">
+          <div class="metric-icon">🏥</div>
+          <div class="metric-value">{{ hospitalStats.totalHospitals }}</div>
+          <div class="metric-label">Total Hospitals</div>
+        </div>
+
+        <div class="metric-card hospital-card pending">
+          <div class="metric-icon">⏳</div>
+          <div class="metric-value">{{ hospitalStats.pendingHospitals }}</div>
+          <div class="metric-label">Pending Verification</div>
+        </div>
+
+        <div class="metric-card hospital-card verified">
+          <div class="metric-icon">✅</div>
+          <div class="metric-value">{{ hospitalStats.verifiedHospitals }}</div>
+          <div class="metric-label">Verified Hospitals</div>
+        </div>
+
+        <div class="metric-card hospital-card rejected">
+          <div class="metric-icon">❌</div>
+          <div class="metric-value">{{ hospitalStats.rejectedHospitals }}</div>
+          <div class="metric-label">Rejected Applications</div>
+        </div>
+
+        <div class="metric-card hospital-card active">
+          <div class="metric-icon">🟢</div>
+          <div class="metric-value">{{ hospitalStats.activeHospitals }}</div>
+          <div class="metric-label">Active Hospitals</div>
+        </div>
+
+        <div class="metric-card hospital-card api">
+          <div class="metric-icon">🔌</div>
+          <div class="metric-value">{{ hospitalStats.totalApiAccess }}</div>
+          <div class="metric-label">Total API Requests</div>
+        </div>
+
+        <div class="metric-card hospital-card recent">
+          <div class="metric-icon">📊</div>
+          <div class="metric-value">{{ hospitalStats.recentlyActiveHospitals }}</div>
+          <div class="metric-label">Active (Last 7 Days)</div>
         </div>
       </div>
     </div>

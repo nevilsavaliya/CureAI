@@ -1,0 +1,593 @@
+// ============================================
+// COMPONENTS - Common Reusable Components
+// ============================================
+
+@import 'variables';
+@import 'mixins';
+
+// ============================================
+// BUTTONS
+// ============================================
+
+.btn {
+  @include button-base;
+  
+  &-primary {
+    @include button-primary;
+  }
+  
+  &-secondary {
+    @include button-secondary;
+  }
+  
+  &-success {
+    @include button-success;
+  }
+  
+  &-danger {
+    @include button-danger;
+  }
+  
+  &-sm {
+    @include button-sm;
+  }
+  
+  &-lg {
+    @include button-lg;
+  }
+  
+  &-block {
+    width: 100%;
+  }
+}
+
+// ============================================
+// CARDS
+// ============================================
+
+.card {
+  @include card;
+  
+  &-hover {
+    @include card-hover;
+  }
+  
+  &-bordered {
+    @include card-bordered;
+  }
+  
+  &-header {
+    padding-bottom: $spacing-4;
+    margin-bottom: $spacing-4;
+    border-bottom: 1px solid $border-light;
+    
+    h2, h3, h4 {
+      margin: 0;
+      font-weight: $font-semibold;
+      color: $text-primary;
+    }
+  }
+  
+  &-body {
+    padding: $spacing-4 0;
+  }
+  
+  &-footer {
+    padding-top: $spacing-4;
+    margin-top: $spacing-4;
+    border-top: 1px solid $border-light;
+    @include flex-between;
+  }
+}
+
+// ============================================
+// FORM ELEMENTS
+// ============================================
+
+.form-group {
+  margin-bottom: $spacing-5;
+  
+  label {
+    display: block;
+    margin-bottom: $spacing-2;
+    font-size: $text-sm;
+    font-weight: $font-medium;
+    color: $text-primary;
+  }
+  
+  .required {
+    color: $danger;
+    margin-left: $spacing-1;
+  }
+}
+
+.form-control {
+  @include input-base;
+  
+  &.error {
+    @include input-error;
+  }
+}
+
+.form-error {
+  display: block;
+  margin-top: $spacing-2;
+  font-size: $text-sm;
+  color: $danger;
+}
+
+.form-help {
+  display: block;
+  margin-top: $spacing-2;
+  font-size: $text-sm;
+  color: $text-secondary;
+}
+
+textarea.form-control {
+  min-height: 100px;
+  resize: vertical;
+}
+
+select.form-control {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right $spacing-3 center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: $spacing-10;
+}
+
+.checkbox-group,
+.radio-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: $spacing-3;
+  
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: auto;
+    margin-right: $spacing-2;
+    cursor: pointer;
+  }
+  
+  label {
+    margin: 0;
+    cursor: pointer;
+    font-weight: $font-normal;
+  }
+}
+
+// ============================================
+// BADGES
+// ============================================
+
+.badge {
+  @include badge-base;
+  
+  &-success {
+    @include badge-success;
+  }
+  
+  &-warning {
+    @include badge-warning;
+  }
+  
+  &-danger {
+    @include badge-danger;
+  }
+  
+  &-info {
+    @include badge-info;
+  }
+  
+  &-primary {
+    @include badge-primary;
+  }
+}
+
+// ============================================
+// ALERTS
+// ============================================
+
+.alert {
+  padding: $spacing-4;
+  border-radius: $radius-lg;
+  margin-bottom: $spacing-4;
+  display: flex;
+  align-items: flex-start;
+  
+  &-success {
+    background: rgba($success, 0.1);
+    border-left: 4px solid $success;
+    color: darken($success, 20%);
+  }
+  
+  &-warning {
+    background: rgba($warning, 0.1);
+    border-left: 4px solid $warning;
+    color: darken($warning, 20%);
+  }
+  
+  &-danger {
+    background: rgba($danger, 0.1);
+    border-left: 4px solid $danger;
+    color: darken($danger, 20%);
+  }
+  
+  &-info {
+    background: rgba($info, 0.1);
+    border-left: 4px solid $info;
+    color: darken($info, 20%);
+  }
+  
+  &-icon {
+    margin-right: $spacing-3;
+    font-size: $text-xl;
+  }
+  
+  &-content {
+    flex: 1;
+    
+    h4 {
+      margin: 0 0 $spacing-2 0;
+      font-weight: $font-semibold;
+    }
+    
+    p {
+      margin: 0;
+    }
+  }
+}
+
+// ============================================
+// MODALS
+// ============================================
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: $z-modal-backdrop;
+  @include flex-center;
+  @include fade-in;
+}
+
+.modal {
+  background: $bg-primary;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-2xl;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+  z-index: $z-modal;
+  @include slide-up;
+  
+  @include md {
+    max-width: 600px;
+  }
+  
+  &-header {
+    padding: $spacing-6;
+    border-bottom: 1px solid $border-light;
+    @include flex-between;
+    
+    h3 {
+      margin: 0;
+      font-size: $text-2xl;
+      font-weight: $font-semibold;
+      color: $text-primary;
+    }
+    
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: $text-2xl;
+      color: $text-secondary;
+      cursor: pointer;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      @include flex-center;
+      border-radius: $radius-base;
+      transition: all $transition-fast;
+      
+      &:hover {
+        background: $gray-100;
+        color: $text-primary;
+      }
+    }
+  }
+  
+  &-body {
+    padding: $spacing-6;
+    overflow-y: auto;
+    max-height: calc(90vh - 180px);
+    @include custom-scrollbar;
+  }
+  
+  &-footer {
+    padding: $spacing-6;
+    border-top: 1px solid $border-light;
+    @include flex-end;
+    gap: $spacing-3;
+  }
+}
+
+// ============================================
+// TABLES
+// ============================================
+
+.table-container {
+  overflow-x: auto;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-base;
+  @include custom-scrollbar;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: $bg-primary;
+  
+  thead {
+    background: $gray-50;
+    
+    th {
+      padding: $spacing-4;
+      text-align: left;
+      font-size: $text-sm;
+      font-weight: $font-semibold;
+      color: $text-secondary;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 2px solid $border-light;
+    }
+  }
+  
+  tbody {
+    tr {
+      border-bottom: 1px solid $border-light;
+      transition: background $transition-fast;
+      
+      &:hover {
+        background: $gray-50;
+      }
+      
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+    
+    td {
+      padding: $spacing-4;
+      font-size: $text-sm;
+      color: $text-primary;
+    }
+  }
+}
+
+// ============================================
+// LOADING SPINNER
+// ============================================
+
+.spinner {
+  @include spinner;
+  
+  &-sm {
+    @include spinner(24px);
+  }
+  
+  &-lg {
+    @include spinner(60px);
+  }
+  
+  &-center {
+    margin: $spacing-8 auto;
+  }
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.9);
+  z-index: $z-modal;
+  @include flex-center;
+}
+
+// ============================================
+// PAGINATION
+// ============================================
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-2;
+  margin: $spacing-6 0;
+  
+  button {
+    padding: $spacing-2 $spacing-4;
+    border: 1px solid $border-light;
+    background: $bg-primary;
+    color: $text-primary;
+    border-radius: $radius-base;
+    cursor: pointer;
+    transition: all $transition-fast;
+    
+    &:hover:not(:disabled) {
+      background: $gray-50;
+      border-color: $primary;
+    }
+    
+    &.active {
+      background: $primary;
+      color: $text-white;
+      border-color: $primary;
+    }
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// ============================================
+// TABS
+// ============================================
+
+.tabs {
+  border-bottom: 2px solid $border-light;
+  display: flex;
+  gap: $spacing-2;
+  margin-bottom: $spacing-6;
+  
+  button {
+    padding: $spacing-3 $spacing-6;
+    background: none;
+    border: none;
+    color: $text-secondary;
+    font-size: $text-base;
+    font-weight: $font-medium;
+    cursor: pointer;
+    position: relative;
+    transition: all $transition-fast;
+    
+    &:hover {
+      color: $primary;
+    }
+    
+    &.active {
+      color: $primary;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: $primary;
+      }
+    }
+  }
+}
+
+// ============================================
+// TOOLTIPS
+// ============================================
+
+.tooltip {
+  position: relative;
+  display: inline-block;
+  
+  &-text {
+    visibility: hidden;
+    position: absolute;
+    z-index: $z-tooltip;
+    background: $gray-900;
+    color: $text-white;
+    padding: $spacing-2 $spacing-3;
+    border-radius: $radius-base;
+    font-size: $text-xs;
+    white-space: nowrap;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity $transition-fast;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: $gray-900 transparent transparent transparent;
+    }
+  }
+  
+  &:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+  }
+}
+
+// ============================================
+// UTILITY CLASSES
+// ============================================
+
+// Text Alignment
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+// Text Colors
+.text-primary { color: $text-primary; }
+.text-secondary { color: $text-secondary; }
+.text-success { color: $success; }
+.text-warning { color: $warning; }
+.text-danger { color: $danger; }
+.text-info { color: $info; }
+
+// Font Weights
+.font-normal { font-weight: $font-normal; }
+.font-medium { font-weight: $font-medium; }
+.font-semibold { font-weight: $font-semibold; }
+.font-bold { font-weight: $font-bold; }
+
+// Display
+.d-none { display: none; }
+.d-block { display: block; }
+.d-flex { display: flex; }
+.d-inline-flex { display: inline-flex; }
+
+// Flex Utilities
+.flex-center { @include flex-center; }
+.flex-between { @include flex-between; }
+.flex-start { @include flex-start; }
+.flex-end { @include flex-end; }
+.flex-column { @include flex-column; }
+
+// Spacing Utilities
+.mt-0 { margin-top: 0; }
+.mt-1 { margin-top: $spacing-1; }
+.mt-2 { margin-top: $spacing-2; }
+.mt-3 { margin-top: $spacing-3; }
+.mt-4 { margin-top: $spacing-4; }
+.mt-5 { margin-top: $spacing-5; }
+.mt-6 { margin-top: $spacing-6; }
+
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: $spacing-1; }
+.mb-2 { margin-bottom: $spacing-2; }
+.mb-3 { margin-bottom: $spacing-3; }
+.mb-4 { margin-bottom: $spacing-4; }
+.mb-5 { margin-bottom: $spacing-5; }
+.mb-6 { margin-bottom: $spacing-6; }
+
+// Truncate
+.truncate { @include truncate; }
+.line-clamp-2 { @include line-clamp(2); }
+.line-clamp-3 { @include line-clamp(3); }
+
+// Shadows
+.shadow-sm { box-shadow: $shadow-sm; }
+.shadow { box-shadow: $shadow-base; }
+.shadow-md { box-shadow: $shadow-md; }
+.shadow-lg { box-shadow: $shadow-lg; }
+.shadow-none { box-shadow: none; }
+
+// Border Radius
+.rounded { border-radius: $radius-base; }
+.rounded-lg { border-radius: $radius-lg; }
+.rounded-xl { border-radius: $radius-xl; }
+.rounded-full { border-radius: $radius-full; }

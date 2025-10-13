@@ -15,6 +15,8 @@ export interface AuthResponse {
   token?: string;
   user?: User;
   message?: string;
+  requiresOTP?: boolean;
+  email?: string;
 }
 
 @Injectable({

@@ -1,0 +1,342 @@
+<div class="hospitals-container">
+  <div class="hospitals-header">
+    <h1>Hospital Management</h1>
+    <div class="status-summary">
+      <div class="summary-item pending">
+        <span class="count">{{ getPendingCount() }}</span>
+        <span class="label">Pending</span>
+      </div>
+      <div class="summary-item verified">
+        <span class="count">{{ getVerifiedCount() }}</span>
+        <span class="label">Verified</span>
+      </div>
+      <div class="summary-item rejected">
+        <span class="count">{{ getRejectedCount() }}</span>
+        <span class="label">Rejected</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filter-group">
+      <label for="statusFilter">Filter by Status:</label>
+      <select id="statusFilter" [(ngModel)]="selectedStatus" (change)="filterHospitals()">
+        <option value="">All Status</option>
+        <option value="pending">Pending</option>
+        <option value="verified">Verified</option>
+        <option value="rejected">Rejected</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="searchInput">Search:</label>
+      <input 
+        id="searchInput"
+        type="text" 
+        [(ngModel)]="searchTerm" 
+        placeholder="Search by name or email"
+        (keyup.enter)="filterHospitals()">
+    </div>
+
+    <button (click)="filterHospitals()" class="btn-filter">Apply Filters</button>
+    <button (click)="clearFilters()" class="btn-clear">Clear</button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading hospitals...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-message">
+    {{ error }}
+    <button (click)="loadHospitals()" class="btn-retry">Retry</button>
+  </div>
+
+  <!-- Hospitals List -->
+  <div *ngIf="!loading && !error" class="hospitals-list">
+    <div *ngIf="filteredHospitals.length === 0" class="no-hospitals">
+      <p>No hospitals found matching the criteria.</p>
+    </div>
+
+    <div *ngFor="let hospital of filteredHospitals" class="hospital-card">
+      <div class="hospital-header">
+        <div class="hospital-info">
+          <h3>{{ hospital.hospitalName }}</h3>
+          <p class="contact-person">Contact: {{ hospital.name }}</p>
+          <p class="email">{{ hospital.email }}</p>
+          <p class="registration">Reg. No: {{ hospital.registrationNumber }}</p>
+        </div>
+        <div class="hospital-status">
+          <span class="status-badge" [ngClass]="getStatusBadgeClass(hospital.verificationStatus)">
+            {{ hospital.verificationStatus | titlecase }}
+          </span>
+        </div>
+      </div>
+
+      <div class="hospital-details">
+        <div class="detail-item">
+          <span class="icon">📍</span>
+          <span>{{ hospital.address?.city }}, {{ hospital.address?.state }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="icon">📞</span>
+          <span>{{ hospital.contactNumber }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="icon">🏥</span>
+          <span>{{ hospital.numberOfBeds }} beds</span>
+        </div>
+        <div class="detail-item">
+          <span class="icon">📅</span>
+          <span>Registered: {{ formatDate(hospital.createdAt) }}</span>
+        </div>
+      </div>
+
+      <div class="hospital-actions">
+        <button (click)="viewDetails(hospital)" class="btn-view">
+          View Details
+        </button>
+        
+        <button 
+          *ngIf="hospital.verificationStatus === 'pending'"
+          (click)="verifyHospital(hospital._id)" 
+          class="btn-verify"
+          [disabled]="verifyingId === hospital._id">
+          {{ verifyingId === hospital._id ? 'Verifying...' : 'Verify' }}
+        </button>
+        
+        <button 
+          *ngIf="hospital.verificationStatus === 'pending'"
+          (click)="openRejectModal(hospital)" 
+          class="btn-reject"
+          [disabled]="rejectingId === hospital._id">
+          {{ rejectingId === hospital._id ? 'Rejecting...' : 'Reject' }}
+        </button>
+        
+        <button 
+          *ngIf="hospital.verificationStatus === 'verified' && hospital.isActive"
+          (click)="revokeAccess(hospital._id)" 
+          class="btn-revoke"
+          [disabled]="revokingId === hospital._id">
+          {{ revokingId === hospital._id ? 'Revoking...' : 'Revoke Access' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hospital Details Modal -->
+<div *ngIf="showDetailsModal" class="modal-overlay" (click)="closeDetailsModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Hospital Details</h2>
+      <button class="btn-close" (click)="closeDetailsModal()">&times;</button>
+    </div>
+    
+    <div class="modal-body" *ngIf="selectedHospital">
+      <div class="details-section">
+        <h3>Basic Information</h3>
+        <div class="detail-row">
+          <span class="label">Hospital Name:</span>
+          <span class="value">{{ selectedHospital.hospitalName }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Contact Person:</span>
+          <span class="value">{{ selectedHospital.name }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Email:</span>
+          <span class="value">{{ selectedHospital.email }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Registration Number:</span>
+          <span class="value">{{ selectedHospital.registrationNumber }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Status:</span>
+          <span class="status-badge" [ngClass]="getStatusBadgeClass(selectedHospital.verificationStatus)">
+            {{ selectedHospital.verificationStatus | titlecase }}
+          </span>
+        </div>
+      </div>
+
+      <div class="details-section">
+        <h3>Contact Information</h3>
+        <div class="detail-row">
+          <span class="label">Phone:</span>
+          <span class="value">{{ selectedHospital.contactNumber }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Emergency Contact:</span>
+          <span class="value">{{ selectedHospital.emergencyContact || 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Website:</span>
+          <span class="value">{{ selectedHospital.website || 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Address:</span>
+          <span class="value">
+            {{ selectedHospital.address?.street }}, 
+            {{ selectedHospital.address?.city }}, 
+            {{ selectedHospital.address?.state }} 
+            {{ selectedHospital.address?.zipCode }}, 
+            {{ selectedHospital.address?.country }}
+          </span>
+        </div>
+      </div>
+
+      <div class="details-section">
+        <h3>Hospital Details</h3>
+        <div class="detail-row">
+          <span class="label">Number of Beds:</span>
+          <span class="value">{{ selectedHospital.numberOfBeds }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Specializations:</span>
+          <span class="value">
+            <span *ngFor="let spec of selectedHospital.specializations" class="tag">{{ spec }}</span>
+          </span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Facilities:</span>
+          <span class="value">
+            <span *ngFor="let facility of selectedHospital.facilities" class="tag">{{ facility }}</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="details-section" *ngIf="selectedHospital.documents && selectedHospital.documents.length > 0">
+        <h3>Documents</h3>
+        <div class="documents-grid">
+          <div *ngFor="let doc of selectedHospital.documents" class="document-card">
+            <div class="document-icon">📄</div>
+            <div class="document-info">
+              <div class="document-type">{{ formatDocumentType(doc.type) }}</div>
+              <div class="document-date">Uploaded: {{ formatDate(doc.uploadedAt) }}</div>
+            </div>
+            <div class="document-actions">
+              <a [href]="doc.url" target="_blank" class="btn-document-view" title="View Document">
+                <span class="icon">👁️</span> View
+              </a>
+              <a [href]="doc.url" download class="btn-document-download" title="Download Document">
+                <span class="icon">⬇️</span> Download
+              </a>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="!selectedHospital.documents || selectedHospital.documents.length === 0" class="no-documents">
+          <p>No documents uploaded</p>
+        </div>
+      </div>
+
+      <div class="details-section" *ngIf="selectedHospital.verificationStatus === 'verified'">
+        <h3>API Information</h3>
+        <div class="detail-row">
+          <span class="label">API Key:</span>
+          <span class="value monospace">{{ selectedHospital.apiKey }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Generated At:</span>
+          <span class="value">{{ formatDateTime(selectedHospital.apiKeyGeneratedAt) }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Last API Access:</span>
+          <span class="value">{{ formatDateTime(selectedHospital.lastApiAccess) }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">API Access Count:</span>
+          <span class="value">{{ selectedHospital.apiAccessCount || 0 }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Active:</span>
+          <span class="value">{{ selectedHospital.isActive ? 'Yes' : 'No' }}</span>
+        </div>
+      </div>
+
+      <div class="details-section" *ngIf="selectedHospital.verificationStatus === 'rejected'">
+        <h3>Rejection Information</h3>
+        <div class="detail-row">
+          <span class="label">Rejection Reason:</span>
+          <span class="value">{{ selectedHospital.rejectionReason }}</span>
+        </div>
+      </div>
+
+      <div class="details-section">
+        <h3>Timestamps</h3>
+        <div class="detail-row">
+          <span class="label">Registered:</span>
+          <span class="value">{{ formatDateTime(selectedHospital.createdAt) }}</span>
+        </div>
+        <div class="detail-row" *ngIf="selectedHospital.verifiedAt">
+          <span class="label">Verified:</span>
+          <span class="value">{{ formatDateTime(selectedHospital.verifiedAt) }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Last Updated:</span>
+          <span class="value">{{ formatDateTime(selectedHospital.updatedAt) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button 
+        *ngIf="selectedHospital?.verificationStatus === 'pending'"
+        (click)="verifyHospital(selectedHospital._id)" 
+        class="btn-verify"
+        [disabled]="verifyingId === selectedHospital._id">
+        {{ verifyingId === selectedHospital._id ? 'Verifying...' : 'Verify Hospital' }}
+      </button>
+      
+      <button 
+        *ngIf="selectedHospital?.verificationStatus === 'pending'"
+        (click)="openRejectModal(selectedHospital)" 
+        class="btn-reject"
+        [disabled]="rejectingId === selectedHospital._id">
+        {{ rejectingId === selectedHospital._id ? 'Rejecting...' : 'Reject Hospital' }}
+      </button>
+      
+      <button 
+        *ngIf="selectedHospital?.verificationStatus === 'verified' && selectedHospital?.isActive"
+        (click)="revokeAccess(selectedHospital._id)" 
+        class="btn-revoke"
+        [disabled]="revokingId === selectedHospital._id">
+        {{ revokingId === selectedHospital._id ? 'Revoking...' : 'Revoke Access' }}
+      </button>
+      
+      <button (click)="closeDetailsModal()" class="btn-secondary">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reject Modal -->
+<div *ngIf="showRejectModal" class="modal-overlay" (click)="closeRejectModal()">
+  <div class="modal-content modal-small" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Reject Hospital</h2>
+      <button class="btn-close" (click)="closeRejectModal()">&times;</button>
+    </div>
+    
+    <div class="modal-body">
+      <p>Please provide a reason for rejecting <strong>{{ selectedHospital?.hospitalName }}</strong>:</p>
+      <textarea 
+        [(ngModel)]="rejectionReason" 
+        placeholder="Enter rejection reason..."
+        rows="4"
+        class="rejection-textarea"></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button 
+        (click)="confirmReject()" 
+        class="btn-reject"
+        [disabled]="!rejectionReason.trim() || rejectingId">
+        {{ rejectingId ? 'Rejecting...' : 'Confirm Rejection' }}
+      </button>
+      <button (click)="closeRejectModal()" class="btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>

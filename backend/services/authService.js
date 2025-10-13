@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const Patient = require('../models/Patient');
 const Doctor = require('../models/Doctor');
 const Admin = require('../models/Admin');
+const Hospital = require('../models/Hospital');
 
 class AuthService {
   // Generate JWT token
@@ -27,7 +28,8 @@ class AuthService {
     const patient = await Patient.findOne({ email });
     const doctor = await Doctor.findOne({ email });
     const admin = await Admin.findOne({ email });
-    return patient || doctor || admin;
+    const hospital = await Hospital.findOne({ email });
+    return patient || doctor || admin || hospital;
   }
 
   // Register new patient
@@ -101,7 +103,7 @@ class AuthService {
     }
   }
 
-  // Login user - checks all three collections
+  // Login user - checks all collections
   async login(email, password) {
     try {
       let user = null;
@@ -148,6 +150,15 @@ class AuthService {
           }
         }
 
+        // If not found, try hospitals collection
+        if (!user) {
+          user = await Hospital.findOne({ email });
+          if (user) {
+            role = 'hospital';
+            Model = Hospital;
+          }
+        }
+
         // Better error message: Email not registered
         if (!user) {
           throw new Error('Email is not registered. Please sign up first.');
@@ -162,6 +173,11 @@ class AuthService {
         const isPasswordValid = await user.comparePassword(password);
         if (!isPasswordValid) {
           throw new Error('Password is incorrect. Please try again.');
+        }
+
+        // Check hospital verification status
+        if (role === 'hospital' && user.verificationStatus !== 'verified') {
+          throw new Error(`Hospital account is ${user.verificationStatus}. Please wait for admin verification.`);
         }
       }
 
@@ -186,6 +202,12 @@ class AuthService {
         response.user.subscriptionStatus = user.subscriptionStatus;
       }
 
+      // Add verification status for hospitals
+      if (role === 'hospital') {
+        response.user.verificationStatus = user.verificationStatus;
+        response.user.hospitalName = user.hospitalName;
+      }
+
       return response;
     } catch (error) {
       throw error;
@@ -203,6 +225,8 @@ class AuthService {
         user = await Doctor.findById(userId).select('-password');
       } else if (role === 'admin') {
         user = await Admin.findById(userId).select('-password');
+      } else if (role === 'hospital') {
+        user = await Hospital.findById(userId).select('-password -apiSecret');
       }
 
       if (!user) {

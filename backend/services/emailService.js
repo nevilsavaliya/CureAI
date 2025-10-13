@@ -105,9 +105,9 @@ class EmailService {
               </p>
               
               <!-- OTP Box -->
-              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; margin: 30px 0; border-radius: 10px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
-                <p style="color: white; margin: 0 0 10px 0; font-size: 14px; font-weight: 600; letter-spacing: 1px;">YOUR VERIFICATION CODE</p>
-                <h1 style="color: white; font-size: 48px; margin: 0; letter-spacing: 8px; font-weight: bold;">${otp}</h1>
+              <div style="background: #f0f4ff; padding: 30px; text-align: center; margin: 30px 0; border-radius: 10px; border: 3px solid #667eea; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);">
+                <p style="color: #667eea; margin: 0 0 10px 0; font-size: 14px; font-weight: 600; letter-spacing: 1px;">YOUR VERIFICATION CODE</p>
+                <h1 style="color: #667eea; font-size: 48px; margin: 0; letter-spacing: 8px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.1);">${otp}</h1>
               </div>
               
               <!-- Instructions -->
@@ -371,12 +371,14 @@ class EmailService {
     };
 
     try {
-      await this.transporter.sendMail(mailOptions);
-      console.log(`✅ Consultation email sent to ${email} (${recipientRole})`);
+      const info = await this.transporter.sendMail(mailOptions);
+      console.log(`✅ Consultation email sent successfully to ${email} (${recipientRole})`);
+      console.log(`   Message ID: ${info.messageId}`);
       return true;
     } catch (error) {
-      console.error('❌ Error sending consultation email:', error.message);
-      return false;
+      console.error(`❌ Failed to send consultation email to ${email} (${recipientRole})`);
+      console.error(`   Error: ${error.message}`);
+      return false; // Don't throw, just return false
     }
   }
 
@@ -437,6 +439,140 @@ class EmailService {
     ].join('\r\n');
     
     return icsContent;
+  }
+
+  // Send Hospital Verification Email with API Credentials
+  async sendHospitalVerificationEmail(email, hospitalData) {
+    const { hospitalName, apiKey, apiSecret } = hospitalData;
+    
+    // If email not configured, just log to console
+    if (!this.isConfigured) {
+      console.log('\n=================================');
+      console.log('📧 HOSPITAL VERIFICATION EMAIL (Console Mode)');
+      console.log('=================================');
+      console.log(`To: ${email}`);
+      console.log(`Hospital: ${hospitalName}`);
+      console.log(`API Key: ${apiKey}`);
+      console.log(`API Secret: ${apiSecret}`);
+      console.log('=================================\n');
+      return true;
+    }
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'Healthcare Platform <noreply@healthcare.com>',
+      to: email,
+      subject: '✅ Hospital Verified - API Credentials - Healthcare Platform',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Hospital Verification Successful</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background: #f5f5f5;">
+          <div style="max-width: 600px; margin: 40px auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 30px; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 28px;">🏥 Hospital Verified!</h1>
+              <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">Your API Access is Now Active</p>
+            </div>
+            
+            <!-- Content -->
+            <div style="padding: 40px 30px;">
+              <p style="font-size: 16px; color: #333; margin: 0 0 20px 0;">
+                Dear ${hospitalName} Team,
+              </p>
+              
+              <p style="font-size: 15px; color: #555; line-height: 1.6; margin: 0 0 25px 0;">
+                Congratulations! Your hospital has been successfully verified by our admin team. 
+                You now have access to our Patient Data API for emergency medical information retrieval.
+              </p>
+              
+              <!-- API Credentials Box -->
+              <div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 10px; padding: 25px; margin: 0 0 25px 0;">
+                <h2 style="color: #047857; margin: 0 0 20px 0; font-size: 20px;">🔑 Your API Credentials</h2>
+                
+                <div style="margin-bottom: 15px;">
+                  <strong style="color: #047857; display: block; margin-bottom: 5px;">API Key:</strong>
+                  <code style="background: white; padding: 10px; display: block; border-radius: 5px; color: #333; font-size: 13px; word-break: break-all;">${apiKey}</code>
+                </div>
+                
+                <div>
+                  <strong style="color: #047857; display: block; margin-bottom: 5px;">API Secret:</strong>
+                  <code style="background: white; padding: 10px; display: block; border-radius: 5px; color: #333; font-size: 13px; word-break: break-all;">${apiSecret}</code>
+                </div>
+              </div>
+              
+              <!-- Important Notice -->
+              <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 0 0 25px 0; border-radius: 5px;">
+                <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.6;">
+                  <strong>⚠️ Important:</strong> Keep these credentials secure. Never share them publicly or commit them to version control.
+                </p>
+              </div>
+              
+              <!-- API Usage -->
+              <h3 style="color: #333; margin: 0 0 15px 0; font-size: 18px;">📡 API Usage</h3>
+              
+              <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 0 0 25px 0;">
+                <p style="margin: 0 0 10px 0; color: #555; font-size: 14px;"><strong>Endpoint:</strong></p>
+                <code style="background: white; padding: 10px; display: block; border-radius: 5px; color: #333; font-size: 13px; margin-bottom: 15px;">POST /api/hospitals/api/patient-data</code>
+                
+                <p style="margin: 0 0 10px 0; color: #555; font-size: 14px;"><strong>Request Body:</strong></p>
+                <pre style="background: white; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 12px; margin: 0;">{
+  "apiKey": "your-api-key",
+  "apiSecret": "your-api-secret",
+  "patientEmail": "patient@example.com"
+}</pre>
+              </div>
+              
+              <!-- What You Can Access -->
+              <h3 style="color: #333; margin: 0 0 15px 0; font-size: 18px;">📋 Patient Data Available</h3>
+              <ul style="color: #555; line-height: 1.8; padding-left: 20px;">
+                <li>Blood Group & Allergies</li>
+                <li>Emergency Contact Information</li>
+                <li>Medical History & Chronic Conditions</li>
+                <li>Current Medications</li>
+                <li>Past Surgeries & Procedures</li>
+                <li>Recent Symptoms (extracted from chats)</li>
+                <li>Vital Signs History</li>
+                <li>Lab Results</li>
+                <li>Recent Consultation History</li>
+              </ul>
+              
+              <!-- Support -->
+              <div style="text-align: center; padding: 20px 0; border-top: 2px solid #e5e7eb; margin-top: 30px;">
+                <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px;">
+                  Need help? Contact our support team
+                </p>
+                <p style="margin: 0; color: #374151; font-size: 14px; font-weight: 600;">
+                  support@healthcare.com
+                </p>
+              </div>
+            </div>
+            
+            <!-- Footer -->
+            <div style="background: #1f2937; padding: 20px; text-align: center;">
+              <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+                © ${new Date().getFullYear()} Healthcare Platform. All rights reserved.
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions);
+      console.log(`✅ Hospital verification email sent to ${email}`);
+      console.log(`   Message ID: ${info.messageId}`);
+      return true;
+    } catch (error) {
+      console.error(`❌ Failed to send hospital verification email to ${email}`);
+      console.error(`   Error: ${error.message}`);
+      return false;
+    }
   }
 }
 

@@ -174,4 +174,17 @@ export class CaseService {
       })
     );
   }
+
+  // Schedule video consultation (doctor)
+  scheduleVideoConsultation(caseId: string, scheduledDate: string, scheduledTime: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${caseId}/schedule-consultation`, { 
+      scheduledDate, 
+      scheduledTime 
+    }).pipe(
+      catchError((error: HttpErrorResponse) => {
+        const errorDetails = this.errorHandler.handleError(error, 'Failed to schedule video consultation');
+        return throwError(() => errorDetails);
+      })
+    );
+  }
 }

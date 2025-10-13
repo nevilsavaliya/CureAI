@@ -1,53 +1,143 @@
-<div class="login-container">
-  <div class="login-card">
-    <h2>Healthcare Platform Login</h2>
-    
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input 
-          type="email" 
-          id="email" 
-          formControlName="email"
-          class="form-control"
-          [class.is-invalid]="f['email'].invalid && f['email'].touched"
-        />
-        <div class="error-message" *ngIf="f['email'].invalid && f['email'].touched">
-          <span *ngIf="f['email'].errors?.['required']">Email is required</span>
-          <span *ngIf="f['email'].errors?.['email']">Please enter a valid email</span>
+<div class="login-wrapper">
+  <!-- Left Side - Form -->
+  <div class="login-form-section">
+    <div class="login-form-container">
+      <!-- Logo -->
+      <div class="logo-container">
+        <app-logo [size]="'large'" [variant]="'default'" [clickable]="true"></app-logo>
+      </div>
+
+      <!-- Welcome Text -->
+      <div class="welcome-text">
+        <h1>Welcome Back</h1>
+        <p>Sign in to access your healthcare dashboard</p>
+      </div>
+
+      <!-- Login Form -->
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+        <!-- Email Field -->
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+            </svg>
+            <input 
+              type="email" 
+              id="email" 
+              formControlName="email"
+              class="form-control"
+              placeholder="Enter your email"
+              [class.error]="f['email'].invalid && f['email'].touched"
+            />
+          </div>
+          <div class="form-error" *ngIf="f['email'].invalid && f['email'].touched">
+            <span *ngIf="f['email'].errors?.['required']">Email is required</span>
+            <span *ngIf="f['email'].errors?.['email']">Please enter a valid email</span>
+          </div>
         </div>
-      </div>
 
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input 
-          type="password" 
-          id="password" 
-          formControlName="password"
-          class="form-control"
-          [class.is-invalid]="f['password'].invalid && f['password'].touched"
-        />
-        <div class="error-message" *ngIf="f['password'].invalid && f['password'].touched">
-          <span *ngIf="f['password'].errors?.['required']">Password is required</span>
-          <span *ngIf="f['password'].errors?.['minlength']">Password must be at least 6 characters</span>
+        <!-- Password Field -->
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <input 
+              type="password" 
+              id="password" 
+              formControlName="password"
+              class="form-control"
+              placeholder="Enter your password"
+              [class.error]="f['password'].invalid && f['password'].touched"
+            />
+          </div>
+          <div class="form-error" *ngIf="f['password'].invalid && f['password'].touched">
+            <span *ngIf="f['password'].errors?.['required']">Password is required</span>
+            <span *ngIf="f['password'].errors?.['minlength']">Password must be at least 6 characters</span>
+          </div>
         </div>
+
+        <!-- Remember Me & Forgot Password -->
+        <div class="form-options">
+          <label class="checkbox-label">
+            <input type="checkbox" class="checkbox">
+            <span>Remember me</span>
+          </label>
+          <a routerLink="/forgot-password" class="forgot-link">Forgot Password?</a>
+        </div>
+
+        <!-- Error Message -->
+        <div class="alert alert-danger" *ngIf="errorMessage">
+          <svg class="alert-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{{ errorMessage }}</span>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn-login" [disabled]="loading">
+          <span *ngIf="!loading">Sign In</span>
+          <span *ngIf="loading" class="loading-content">
+            <svg class="spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Signing in...
+          </span>
+        </button>
+      </form>
+
+      <!-- Sign Up Link -->
+      <div class="signup-prompt">
+        <p>Don't have an account? <a routerLink="/signup" class="signup-link">Sign up here</a></p>
       </div>
 
-      <div class="error-message" *ngIf="errorMessage">
-        {{ errorMessage }}
+      <!-- Divider -->
+      <div class="divider">
+        <span>or continue with</span>
       </div>
 
-      <button type="submit" class="btn-primary" [disabled]="loading">
-        {{ loading ? 'Logging in...' : 'Login' }}
-      </button>
-    </form>
-
-    <div class="forgot-password-link">
-      <a routerLink="/forgot-password">Forgot Password?</a>
+      <!-- Alternative Login Options -->
+      <div class="alt-login-options">
+        <a routerLink="/hospital/login" class="alt-login-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+          <span>Hospital Login</span>
+        </a>
+      </div>
     </div>
+  </div>
 
-    <div class="signup-link">
-      Don't have an account? <a routerLink="/signup">Sign up here</a>
+  <!-- Right Side - Image -->
+  <div class="login-image-section">
+    <div class="image-overlay"></div>
+    <img src="assets/images/doctor-consultation.svg" alt="Healthcare Professional" class="hero-image">
+    <div class="image-content">
+      <h2>Your Health, Our Priority</h2>
+      <p>Connect with healthcare professionals and manage your medical records securely</p>
+      <div class="features">
+        <div class="feature-item">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Secure & Private</span>
+        </div>
+        <div class="feature-item">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>24/7 Access</span>
+        </div>
+        <div class="feature-item">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          <span>Expert Care</span>
+        </div>
+      </div>
     </div>
   </div>
 </div>

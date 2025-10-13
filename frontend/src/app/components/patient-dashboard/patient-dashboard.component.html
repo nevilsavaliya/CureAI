@@ -1,6 +1,9 @@
 <div class="dashboard-container">
   <header class="dashboard-header">
-    <h1>Healthcare Platform - Patient Dashboard</h1>
+    <div class="header-left">
+      <app-logo [size]="'small'" [variant]="'default'" [clickable]="true"></app-logo>
+      <h1>Patient Dashboard</h1>
+    </div>
     <div class="user-info">
       <button routerLink="/patient/cases" class="btn-cases">My Cases</button>
       <app-notifications></app-notifications>

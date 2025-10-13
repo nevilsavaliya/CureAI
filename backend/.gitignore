@@ -5,3 +5,6 @@ node_modules/
 
 # Payment logs (keep directory structure but ignore log files)
 logs/*.log
+
+# Uploaded files
+uploads/

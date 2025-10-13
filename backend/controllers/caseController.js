@@ -455,13 +455,21 @@ exports.scheduleVideoConsultation = async (req, res) => {
         videoLink: videoLink
       };
 
+      console.log('📧 Sending consultation emails...');
+      console.log('Patient email:', patient.email);
+      console.log('Doctor email:', doctor.email);
+      console.log('Video link:', videoLink);
+
       // Send email to patient
       await emailService.sendConsultationEmail(patient.email, consultationDetails, 'patient');
+      console.log('✅ Patient email sent successfully');
       
       // Send email to doctor
       await emailService.sendConsultationEmail(doctor.email, consultationDetails, 'doctor');
+      console.log('✅ Doctor email sent successfully');
     } catch (emailError) {
-      console.error('Error sending consultation emails:', emailError);
+      console.error('❌ Error sending consultation emails:', emailError);
+      console.error('Email error details:', emailError.message);
       // Don't fail the request if email fails
     }
 

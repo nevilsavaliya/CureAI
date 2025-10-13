@@ -1,109 +1,69 @@
 # Database Scripts
 
-This directory contains scripts for database management and seeding.
+## ⚠️ IMPORTANT: Admin Account Protection
 
-## Migration Script
+**ALL database cleanup/reset scripts preserve the admin account:**
+- Email: `admin@gmail.com`
+- Password: `Admin@123`
 
-### migrateUsers.js
+**This admin account should NEVER be deleted!**
 
-Migrates existing user data from the old `users` collection to separate `patients`, `doctors`, and `admins` collections.
+## Available Scripts
 
-**Purpose:**
-- Move patient users to `patients` collection
-- Move doctor users to `doctors` collection  
-- Move admin users to `admins` collection
-- Create hardcoded admin user (admin@gmail.com / admin@123) if it doesn't exist
-
-**Usage:**
-
+### 1. Create Admin Account
 ```bash
-cd backend
-node scripts/migrateUsers.js
+node backend/scripts/create-admin.js
 ```
+Creates or restores the admin account. Run this if admin was accidentally deleted.
 
-**What it does:**
-1. Connects to MongoDB using MONGODB_URI from .env
-2. Checks if User collection has any documents
-3. Migrates each user to the appropriate collection based on role
-4. Preserves all existing data (passwords remain hashed)
-5. Skips users that already exist in target collections
-6. Creates hardcoded admin if not present
-7. Displays migration summary
-
-**Important Notes:**
-- The script does NOT delete the old User collection
-- To remove the old collection, manually run: `db.users.drop()` in MongoDB shell
-- Safe to run multiple times (skips existing records)
-- Passwords are preserved in their hashed form
-
-## Seed Data Script
-
-### seedData.js
-
-Populates the database with sample data for development and testing.
-
-**Purpose:**
-- Clear existing data from patients, doctors, and admins collections
-- Create sample patients with blood group data
-- Create registered doctors with active subscriptions
-- Create hardcoded admin user
-
-**Usage:**
-
+### 2. Clean Database (Recommended)
 ```bash
-cd backend
-node scripts/seedData.js
+node backend/scripts/cleanDatabase.js
 ```
+- Deletes all patients, doctors, cases, messages, etc.
+- **Preserves admin account**
+- Safe for regular cleanup
 
-**What it creates:**
-
-**Admin:**
-- Email: admin@gmail.com
-- Password: admin@123
-
-**Patients:**
-1. John Doe (john@patient.com / patient123) - Blood Group: O+
-2. Jane Smith (jane@patient.com / patient123) - Blood Group: A+
-
-**Doctors (all with active subscriptions):**
-1. Dr. Sarah Johnson (sarah@doctor.com / doctor123) - General Medicine, 10 years
-2. Dr. Michael Chen (michael@doctor.com / doctor123) - Cardiology, 15 years
-3. Dr. Emily Brown (emily@doctor.com / doctor123) - Dermatology, 8 years
-4. Dr. Robert Williams (robert@doctor.com / doctor123) - Neurology, 12 years
-5. Dr. Lisa Anderson (lisa@doctor.com / doctor123) - Orthopedics, 11 years
-
-**Important Notes:**
-- ⚠️ This script DELETES all existing data in patients, doctors, and admins collections
-- All doctors have active subscriptions (30-day validity)
-- All passwords are automatically hashed before storage
-- Use this for development/testing only, NOT in production
-
-## Recommended Workflow
-
-### For New Setup:
+### 3. Reset Database
 ```bash
-# Just run seed data to populate fresh database
-node scripts/seedData.js
+node backend/scripts/reset-database.js
 ```
+- Deletes all data from all collections
+- **Preserves admin@gmail.com account**
+- 3-second delay before execution (can cancel with Ctrl+C)
 
-### For Migration from Old Schema:
+### 4. Quick Reset
 ```bash
-# 1. First migrate existing users
-node scripts/migrateUsers.js
+node backend/scripts/quick-reset.js
+```
+- Drops entire database and recreates it
+- **Automatically restores admin account**
+- No confirmation delay
+- Fastest method
 
-# 2. Optionally add more sample data (will not affect migrated users)
-node scripts/seedData.js
+### 5. Seed Data
+```bash
+node backend/scripts/seedData.js
+```
+- Populates database with sample data
+- Creates test patients and doctors
+- **Preserves existing admin**
+
+## Admin Account Details
+
+The admin account is protected in all scripts:
+- **Email:** admin@gmail.com
+- **Password:** Admin@123
+- **Role:** admin
+
+If you need to restore the admin account, run:
+```bash
+node backend/scripts/create-admin.js
 ```
 
-## Environment Variables
+## Notes
 
-Both scripts require the following environment variable in your `.env` file:
-
-```
-MONGODB_URI=mongodb://localhost:27017/healthcare-platform
-```
-
-Or for MongoDB Atlas:
-```
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/healthcare-platform
-```
+- Always use these scripts instead of manually dropping collections
+- The admin account is essential for system administration
+- All scripts connect to the database specified in `.env` file
+- Scripts will create the admin account if it doesn't exist

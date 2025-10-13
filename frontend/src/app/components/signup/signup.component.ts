@@ -14,6 +14,8 @@ export class SignupComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
   selectedRole = 'patient';
+  currentStep = 1;
+  totalSteps = 3;
 
   roles = [
     { value: 'patient', label: 'Patient' },
@@ -21,7 +23,7 @@ export class SignupComponent implements OnInit {
   ];
 
   bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-  
+
   specialities = [
     'General Medicine',
     'Cardiology',
@@ -37,7 +39,7 @@ export class SignupComponent implements OnInit {
     private formBuilder: FormBuilder,
     private authService: AuthService,
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.signupForm = this.formBuilder.group({
@@ -85,7 +87,7 @@ export class SignupComponent implements OnInit {
 
     const selectedDate = new Date(control.value);
     const today = new Date();
-    
+
     // Set time to midnight for accurate comparison
     today.setHours(0, 0, 0, 0);
     selectedDate.setHours(0, 0, 0, 0);
@@ -155,6 +157,52 @@ export class SignupComponent implements OnInit {
     return this.signupForm.controls;
   }
 
+  get progressPercentage(): number {
+    return (this.currentStep / this.totalSteps) * 100;
+  }
+
+  nextStep(): void {
+    // Validate current step fields before proceeding
+    if (this.currentStep === 1) {
+      const step1Fields = ['role', 'name', 'dateOfBirth'];
+      const step1Valid = step1Fields.every(field => {
+        const control = this.signupForm.get(field);
+        control?.markAsTouched();
+        return control?.valid;
+      });
+      if (!step1Valid) return;
+    } else if (this.currentStep === 2) {
+      const step2Fields = ['email', 'password', 'confirmPassword'];
+      const step2Valid = step2Fields.every(field => {
+        const control = this.signupForm.get(field);
+        control?.markAsTouched();
+        return control?.valid;
+      });
+      // Also check password match
+      if (!step2Valid || this.signupForm.errors?.['passwordMismatch']) {
+        this.signupForm.get('confirmPassword')?.markAsTouched();
+        return;
+      }
+    }
+
+    if (this.currentStep < this.totalSteps) {
+      this.currentStep++;
+    }
+  }
+
+  previousStep(): void {
+    if (this.currentStep > 1) {
+      this.currentStep--;
+    }
+  }
+
+  goToStep(step: number): void {
+    // Only allow going to previous steps or current step
+    if (step <= this.currentStep && step >= 1) {
+      this.currentStep = step;
+    }
+  }
+
   onSubmit(): void {
     this.errorMessage = '';
     this.successMessage = '';
@@ -173,8 +221,24 @@ export class SignupComponent implements OnInit {
       this.authService.signupPatient(formData).subscribe({
         next: (response) => {
           this.loading = false;
-          if (response.success && response.token && response.user) {
-            // Store token and redirect to patient dashboard
+
+          // Check if OTP is required
+          if (response.requiresOTP && response.email) {
+            // Store signup data and redirect to OTP verification
+            sessionStorage.setItem('signupData', JSON.stringify(formData));
+            sessionStorage.setItem('signupEmail', response.email);
+            this.successMessage = response.message || 'OTP sent to your email!';
+            setTimeout(() => {
+              this.router.navigate(['/verify-otp'], {
+                queryParams: {
+                  email: response.email,
+                  type: 'signup',
+                  role: 'patient'
+                }
+              });
+            }, 1500);
+          } else if (response.success && response.token && response.user) {
+            // Account created directly (with OTP already verified)
             localStorage.setItem('token', response.token);
             localStorage.setItem('user', JSON.stringify(response.user));
             this.successMessage = 'Registration successful! Redirecting...';
@@ -192,8 +256,24 @@ export class SignupComponent implements OnInit {
       this.authService.signupDoctor(formData).subscribe({
         next: (response) => {
           this.loading = false;
-          if (response.success && response.token && response.user) {
-            // Store token and redirect to subscription page
+
+          // Check if OTP is required
+          if (response.requiresOTP && response.email) {
+            // Store signup data and redirect to OTP verification
+            sessionStorage.setItem('signupData', JSON.stringify(formData));
+            sessionStorage.setItem('signupEmail', response.email);
+            this.successMessage = response.message || 'OTP sent to your email!';
+            setTimeout(() => {
+              this.router.navigate(['/verify-otp'], {
+                queryParams: {
+                  email: response.email,
+                  type: 'signup',
+                  role: 'doctor'
+                }
+              });
+            }, 1500);
+          } else if (response.success && response.token && response.user) {
+            // Account created directly (with OTP already verified)
             localStorage.setItem('token', response.token);
             localStorage.setItem('user', JSON.stringify(response.user));
             this.successMessage = 'Registration successful! Redirecting to subscription...';

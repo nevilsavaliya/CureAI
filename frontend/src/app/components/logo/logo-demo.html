@@ -1,0 +1,82 @@
+<!-- 
+  Logo Component Demo
+  This file demonstrates all the variants of the logo component.
+  You can temporarily add this to a component to test the logo.
+-->
+
+<div style="padding: 40px; background: #f5f5f5;">
+  <h1 style="margin-bottom: 40px; color: #374151;">Logo Component Demo</h1>
+
+  <!-- Size Variants -->
+  <section style="margin-bottom: 40px; padding: 20px; background: white; border-radius: 8px;">
+    <h2 style="color: #374151; margin-bottom: 20px;">Size Variants</h2>
+    
+    <div style="display: flex; gap: 40px; align-items: center; flex-wrap: wrap;">
+      <div>
+        <p style="margin-bottom: 10px; color: #6b7280;">Small</p>
+        <app-logo size="small"></app-logo>
+      </div>
+      
+      <div>
+        <p style="margin-bottom: 10px; color: #6b7280;">Medium (Default)</p>
+        <app-logo size="medium"></app-logo>
+      </div>
+      
+      <div>
+        <p style="margin-bottom: 10px; color: #6b7280;">Large</p>
+        <app-logo size="large"></app-logo>
+      </div>
+    </div>
+  </section>
+
+  <!-- Color Variants -->
+  <section style="margin-bottom: 40px; padding: 20px; background: white; border-radius: 8px;">
+    <h2 style="color: #374151; margin-bottom: 20px;">Color Variants</h2>
+    
+    <div style="display: flex; gap: 40px; align-items: center; flex-wrap: wrap;">
+      <div>
+        <p style="margin-bottom: 10px; color: #6b7280;">Default</p>
+        <app-logo variant="default"></app-logo>
+      </div>
+      
+      <div style="background: #374151; padding: 20px; border-radius: 8px;">
+        <p style="margin-bottom: 10px; color: white;">White (on dark)</p>
+        <app-logo variant="white"></app-logo>
+      </div>
+      
+      <div>
+        <p style="margin-bottom: 10px; color: #6b7280;">Icon Only</p>
+        <app-logo variant="icon-only"></app-logo>
+      </div>
+    </div>
+  </section>
+
+  <!-- Clickable -->
+  <section style="margin-bottom: 40px; padding: 20px; background: white; border-radius: 8px;">
+    <h2 style="color: #374151; margin-bottom: 20px;">Clickable Logo</h2>
+    
+    <div>
+      <p style="margin-bottom: 10px; color: #6b7280;">Hover to see effect</p>
+      <app-logo [clickable]="true"></app-logo>
+    </div>
+  </section>
+
+  <!-- Combined Examples -->
+  <section style="padding: 20px; background: white; border-radius: 8px;">
+    <h2 style="color: #374151; margin-bottom: 20px;">Combined Examples</h2>
+    
+    <div style="display: flex; gap: 40px; align-items: center; flex-wrap: wrap;">
+      <div>
+        <p style="margin-bottom: 10px; color: #6b7280;">Small + White + Clickable</p>
+        <div style="background: #667eea; padding: 20px; border-radius: 8px;">
+          <app-logo size="small" variant="white" [clickable]="true"></app-logo>
+        </div>
+      </div>
+      
+      <div>
+        <p style="margin-bottom: 10px; color: #6b7280;">Large + Icon Only</p>
+        <app-logo size="large" variant="icon-only"></app-logo>
+      </div>
+    </div>
+  </section>
+</div>

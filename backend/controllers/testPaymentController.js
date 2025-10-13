@@ -54,7 +54,7 @@ exports.simulatePayment = async (req, res) => {
       subscription.startDate = startDate;
       subscription.expiryDate = expiryDate;
       subscription.isActive = true;
-      subscription.paymentMethod = 'test';
+      subscription.paymentMethod = 'other';
       subscription.transactionId = `TEST_${Date.now()}`;
       subscription.paidAmount = amount;
       await subscription.save();
@@ -67,7 +67,7 @@ exports.simulatePayment = async (req, res) => {
         startDate,
         expiryDate,
         isActive: true,
-        paymentMethod: 'test',
+        paymentMethod: 'other',
         transactionId: `TEST_${Date.now()}`,
         paidAmount: amount
       });

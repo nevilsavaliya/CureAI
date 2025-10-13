@@ -25,6 +25,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve uploaded files statically
+app.use('/uploads', express.static('uploads'));
+
 // Routes
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes');
@@ -39,6 +42,8 @@ const passwordResetRoutes = require('./routes/passwordResetRoutes');
 const testPaymentRoutes = require('./routes/testPaymentRoutes');
 const caseRoutes = require('./routes/caseRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const hospitalRoutes = require('./routes/hospitalRoutes');
+const hospitalAdminRoutes = require('./routes/hospitalAdminRoutes');
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Healthcare Platform API is running' });
@@ -57,6 +62,8 @@ app.use('/api/password', passwordResetRoutes);
 app.use('/api/test-payment', testPaymentRoutes);
 app.use('/api', caseRoutes);
 app.use('/api', notificationRoutes);
+app.use('/api/hospitals', hospitalRoutes);
+app.use('/api/admin', hospitalAdminRoutes);
 
 // Error handling middleware will be added here
 
