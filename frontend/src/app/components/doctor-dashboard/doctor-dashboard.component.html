@@ -1,0 +1,205 @@
+<div class="dashboard-container">
+  <header class="dashboard-header">
+    <h1>Healthcare Platform - Doctor Dashboard</h1>
+    <div class="user-info">
+      <span>Welcome, Dr. {{ userName }}!</span>
+      <button (click)="logout()" class="btn-logout">Logout</button>
+    </div>
+  </header>
+
+  <div class="dashboard-content">
+    <!-- Conversations List View -->
+    <div class="conversations-view" *ngIf="!showMessagingView">
+      <div class="section-header">
+        <h2>Patient Messages</h2>
+        <button (click)="loadConversations()" class="btn-refresh">Refresh</button>
+      </div>
+
+      <div *ngIf="loading" class="loading-spinner">
+        <p>Loading conversations...</p>
+      </div>
+
+      <div *ngIf="!loading && conversations.length === 0" class="no-conversations">
+        <p>No patient messages yet. Patients will appear here after they complete the chatbot diagnosis and send you a message.</p>
+      </div>
+
+      <div class="conversations-list" *ngIf="!loading && conversations.length > 0">
+        <div *ngFor="let conversation of conversations" 
+             class="conversation-item"
+             (click)="openConversation(conversation)">
+          <div class="conversation-header">
+            <h3>{{ conversation.patient.name }}</h3>
+            <span class="unread-badge" *ngIf="conversation.unreadCount > 0">
+              {{ conversation.unreadCount }}
+            </span>
+          </div>
+          <div class="conversation-details">
+            <p class="patient-email">{{ conversation.patient.email }}</p>
+            <p class="blood-group" *ngIf="conversation.patient.bloodGroup">
+              <strong>Blood Group:</strong> {{ conversation.patient.bloodGroup }}
+            </p>
+          </div>
+          
+          <!-- Patient Symptoms -->
+          <div class="patient-symptoms" *ngIf="conversation.symptoms">
+            <h4>Symptoms:</h4>
+            <p>{{ conversation.symptoms }}</p>
+          </div>
+
+          <!-- Predicted Diseases -->
+          <div class="patient-predictions" *ngIf="conversation.predictions && conversation.predictions.length > 0">
+            <h4>Predicted Conditions:</h4>
+            <div class="prediction-tags">
+              <span *ngFor="let prediction of conversation.predictions" class="prediction-tag">
+                {{ prediction.name }} ({{ prediction.confidence }}%)
+              </span>
+            </div>
+          </div>
+
+          <div class="last-message">
+            <p>{{ conversation.lastMessage }}</p>
+            <span class="message-time">{{ conversation.lastMessageTime | date:'short' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Messaging View -->
+    <div class="messaging-view" *ngIf="showMessagingView && selectedConversation">
+      <div class="messaging-header">
+        <button (click)="backToConversations()" class="btn-back">← Back</button>
+        <div class="patient-info">
+          <h2>{{ selectedConversation.patient.name }}</h2>
+          <p>{{ selectedConversation.patient.email }}</p>
+          <p *ngIf="selectedConversation.patient.bloodGroup">
+            <strong>Blood Group:</strong> {{ selectedConversation.patient.bloodGroup }}
+          </p>
+        </div>
+        <button (click)="openBookingModal()" class="btn-book-consultation">
+          📅 Book Consultation
+        </button>
+      </div>
+
+      <!-- Patient Medical Info -->
+      <div class="patient-medical-info" *ngIf="selectedConversation.symptoms || (selectedConversation.predictions && selectedConversation.predictions.length > 0)">
+        <div class="medical-info-content">
+          <div class="symptoms-section" *ngIf="selectedConversation.symptoms">
+            <h3>Patient Symptoms</h3>
+            <p>{{ selectedConversation.symptoms }}</p>
+          </div>
+          <div class="predictions-section" *ngIf="selectedConversation.predictions && selectedConversation.predictions.length > 0">
+            <h3>Predicted Conditions</h3>
+            <div class="prediction-list">
+              <div *ngFor="let prediction of selectedConversation.predictions" class="prediction-item">
+                <span class="prediction-name">{{ prediction.name }}</span>
+                <span class="prediction-confidence">{{ prediction.confidence }}% confidence</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="messages-container">
+        <div *ngFor="let message of messages" 
+             [class.sent-message]="message.senderId._id === authService.currentUserValue?.id"
+             [class.received-message]="message.senderId._id !== authService.currentUserValue?.id"
+             class="message-item">
+          <div class="message-content">
+            <p class="sender-name">{{ message.senderId.name }}</p>
+            <p class="message-text">{{ message.content }}</p>
+            <span class="message-timestamp">{{ message.sentAt | date:'short' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="reply-section">
+        <textarea 
+          [(ngModel)]="replyText"
+          placeholder="Type your reply..."
+          rows="3"
+          (keyup.enter)="sendReply()"
+        ></textarea>
+        <button (click)="sendReply()" [disabled]="!replyText.trim()" class="btn-send">
+          Send Reply
+        </button>
+      </div>
+    </div>
+
+    <!-- Upcoming Consultations Section -->
+    <div class="consultations-section" *ngIf="!showMessagingView && upcomingConsultations.length > 0">
+      <div class="section-header">
+        <h2>Upcoming Consultations</h2>
+      </div>
+      <div class="consultations-list">
+        <div *ngFor="let consultation of upcomingConsultations" class="consultation-item">
+          <div class="consultation-info">
+            <h3>{{ consultation.patientName }}</h3>
+            <p><strong>Date:</strong> {{ consultation.scheduledDate | date:'fullDate' }}</p>
+            <p><strong>Time:</strong> {{ consultation.scheduledTime }}</p>
+            <p><strong>Status:</strong> <span class="status-badge">{{ consultation.status }}</span></p>
+          </div>
+          <div class="consultation-actions">
+            <button (click)="joinVideoCall(consultation.videoLink)" class="btn-join-call">
+              🎥 Join Video Call
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Booking Modal -->
+  <div class="modal-overlay" *ngIf="showBookingModal" (click)="closeBookingModal()">
+    <div class="modal-content booking-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Book Consultation with {{ selectedConversation?.patient?.name }}</h3>
+        <button class="close-btn" (click)="closeBookingModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="form-group">
+            <label for="consultationDate">Date</label>
+            <input 
+              type="date" 
+              id="consultationDate"
+              [(ngModel)]="bookingData.date"
+              name="date"
+              [min]="minDate"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="consultationTime">Time</label>
+            <input 
+              type="time" 
+              id="consultationTime"
+              [(ngModel)]="bookingData.time"
+              name="time"
+              required
+            />
+          </div>
+          <div class="booking-summary">
+            <h4>Consultation Summary</h4>
+            <p><strong>Patient:</strong> {{ selectedConversation?.patient?.name }}</p>
+            <p><strong>Email:</strong> {{ selectedConversation?.patient?.email }}</p>
+            <p *ngIf="bookingData.date && bookingData.time">
+              <strong>Scheduled:</strong> {{ bookingData.date | date:'fullDate' }} at {{ bookingData.time }}
+            </p>
+            <p class="info-note">
+              📧 Both you and the patient will receive an email with the video consultation link.
+            </p>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeBookingModal()">Cancel</button>
+        <button 
+          class="btn-primary" 
+          (click)="confirmBooking()" 
+          [disabled]="!bookingData.date || !bookingData.time || bookingLoading">
+          {{ bookingLoading ? 'Booking...' : 'Confirm Booking' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,186 @@
+<div class="signup-container">
+  <div class="signup-card">
+    <h2>Create Account</h2>
+    
+    <form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
+      <!-- Role Selection -->
+      <div class="form-group">
+        <label for="role">I am a</label>
+        <select 
+          id="role" 
+          formControlName="role"
+          class="form-control"
+        >
+          <option *ngFor="let role of roles" [value]="role.value">
+            {{ role.label }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Common Fields -->
+      <div class="form-group">
+        <label for="name">Full Name</label>
+        <input 
+          type="text" 
+          id="name" 
+          formControlName="name"
+          class="form-control"
+          [class.is-invalid]="f['name'].invalid && f['name'].touched"
+        />
+        <div class="error-message" *ngIf="f['name'].invalid && f['name'].touched">
+          <span *ngIf="f['name'].errors?.['required']">Name is required</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="dateOfBirth">Date of Birth</label>
+        <input 
+          type="date" 
+          id="dateOfBirth" 
+          formControlName="dateOfBirth"
+          class="form-control"
+          [class.is-invalid]="f['dateOfBirth'].invalid && f['dateOfBirth'].touched"
+        />
+        <div class="error-message" *ngIf="f['dateOfBirth'].invalid && f['dateOfBirth'].touched">
+          <span *ngIf="f['dateOfBirth'].errors?.['required']">Date of birth is required</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input 
+          type="email" 
+          id="email" 
+          formControlName="email"
+          class="form-control"
+          [class.is-invalid]="f['email'].invalid && f['email'].touched"
+        />
+        <div class="error-message" *ngIf="f['email'].invalid && f['email'].touched">
+          <span *ngIf="f['email'].errors?.['required']">Email is required</span>
+          <span *ngIf="f['email'].errors?.['email']">Please enter a valid email</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input 
+          type="password" 
+          id="password" 
+          formControlName="password"
+          class="form-control"
+          [class.is-invalid]="f['password'].invalid && f['password'].touched"
+        />
+        <div class="error-message" *ngIf="f['password'].invalid && f['password'].touched">
+          <span *ngIf="f['password'].errors?.['required']">Password is required</span>
+          <span *ngIf="f['password'].errors?.['minlength']">Password must be at least 6 characters</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Confirm Password</label>
+        <input 
+          type="password" 
+          id="confirmPassword" 
+          formControlName="confirmPassword"
+          class="form-control"
+          [class.is-invalid]="(f['confirmPassword'].invalid && f['confirmPassword'].touched) || signupForm.errors?.['passwordMismatch']"
+        />
+        <div class="error-message" *ngIf="f['confirmPassword'].invalid && f['confirmPassword'].touched">
+          <span *ngIf="f['confirmPassword'].errors?.['required']">Please confirm your password</span>
+        </div>
+        <div class="error-message" *ngIf="signupForm.errors?.['passwordMismatch'] && f['confirmPassword'].touched">
+          <span>Passwords do not match</span>
+        </div>
+      </div>
+
+      <!-- Patient-Specific Fields -->
+      <div *ngIf="selectedRole === 'patient'">
+        <div class="form-group">
+          <label for="bloodGroup">Blood Group</label>
+          <select 
+            id="bloodGroup" 
+            formControlName="bloodGroup"
+            class="form-control"
+            [class.is-invalid]="f['bloodGroup'].invalid && f['bloodGroup'].touched"
+          >
+            <option value="">Select Blood Group</option>
+            <option *ngFor="let group of bloodGroups" [value]="group">
+              {{ group }}
+            </option>
+          </select>
+          <div class="error-message" *ngIf="f['bloodGroup'].invalid && f['bloodGroup'].touched">
+            <span *ngIf="f['bloodGroup'].errors?.['required']">Blood group is required</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Doctor-Specific Fields -->
+      <div *ngIf="selectedRole === 'doctor'">
+        <div class="form-group">
+          <label for="degree">Degree</label>
+          <input 
+            type="text" 
+            id="degree" 
+            formControlName="degree"
+            class="form-control"
+            placeholder="e.g., MBBS, MD"
+            [class.is-invalid]="f['degree'].invalid && f['degree'].touched"
+          />
+          <div class="error-message" *ngIf="f['degree'].invalid && f['degree'].touched">
+            <span *ngIf="f['degree'].errors?.['required']">Degree is required</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="speciality">Speciality</label>
+          <select 
+            id="speciality" 
+            formControlName="speciality"
+            class="form-control"
+            [class.is-invalid]="f['speciality'].invalid && f['speciality'].touched"
+          >
+            <option value="">Select Speciality</option>
+            <option *ngFor="let spec of specialities" [value]="spec">
+              {{ spec }}
+            </option>
+          </select>
+          <div class="error-message" *ngIf="f['speciality'].invalid && f['speciality'].touched">
+            <span *ngIf="f['speciality'].errors?.['required']">Speciality is required</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="experienceYears">Years of Experience</label>
+          <input 
+            type="number" 
+            id="experienceYears" 
+            formControlName="experienceYears"
+            class="form-control"
+            min="0"
+            [class.is-invalid]="f['experienceYears'].invalid && f['experienceYears'].touched"
+          />
+          <div class="error-message" *ngIf="f['experienceYears'].invalid && f['experienceYears'].touched">
+            <span *ngIf="f['experienceYears'].errors?.['required']">Experience years is required</span>
+            <span *ngIf="f['experienceYears'].errors?.['min']">Experience must be 0 or more</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="success-message" *ngIf="successMessage">
+        {{ successMessage }}
+      </div>
+
+      <div class="error-message" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <button type="submit" class="btn-primary" [disabled]="loading">
+        {{ loading ? 'Creating Account...' : 'Sign Up' }}
+      </button>
+    </form>
+
+    <div class="login-link">
+      Already have an account? <a routerLink="/login">Login here</a>
+    </div>
+  </div>
+</div>

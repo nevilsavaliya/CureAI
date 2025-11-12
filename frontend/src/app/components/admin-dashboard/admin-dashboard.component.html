@@ -1,0 +1,184 @@
+<div class="dashboard-container">
+  <header class="dashboard-header">
+    <h1>Healthcare Platform - Admin Dashboard</h1>
+    <div class="user-info">
+      <span>Welcome, {{ userName }}!</span>
+      <button (click)="logout()" class="btn-logout">Logout</button>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <div class="nav-tabs">
+    <button 
+      class="tab-button" 
+      [class.active]="activeView === 'metrics'"
+      (click)="switchView('metrics')">
+      Platform Metrics
+    </button>
+    <button 
+      class="tab-button" 
+      [class.active]="activeView === 'users'"
+      (click)="switchView('users')">
+      User Management
+    </button>
+  </div>
+
+  <div class="dashboard-content">
+    <!-- Metrics View -->
+    <div *ngIf="activeView === 'metrics'" class="metrics-view">
+      <h2>Platform Metrics</h2>
+      
+      <div *ngIf="loadingMetrics" class="loading">
+        Loading metrics...
+      </div>
+
+      <div *ngIf="metricsError" class="error-message">
+        {{ metricsError }}
+        <button (click)="loadMetrics()" class="btn-retry">Retry</button>
+      </div>
+
+      <div *ngIf="!loadingMetrics && !metricsError" class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon">👥</div>
+          <div class="metric-value">{{ metrics.totalRegisteredUsers }}</div>
+          <div class="metric-label">Total Registered Users</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">🏥</div>
+          <div class="metric-value">{{ metrics.totalPatients }}</div>
+          <div class="metric-label">Total Patients</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">👨‍⚕️</div>
+          <div class="metric-value">{{ metrics.totalDoctors }}</div>
+          <div class="metric-label">Total Doctors</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">🔐</div>
+          <div class="metric-value">{{ metrics.totalAdmins }}</div>
+          <div class="metric-label">Total Admins</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">✅</div>
+          <div class="metric-value">{{ metrics.activeUsers }}</div>
+          <div class="metric-label">Active Users (7 days)</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">📝</div>
+          <div class="metric-value">{{ metrics.totalSymptoms }}</div>
+          <div class="metric-label">Symptom Submissions</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">🔬</div>
+          <div class="metric-value">{{ metrics.totalPredictions }}</div>
+          <div class="metric-label">Disease Predictions</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Management View -->
+    <div *ngIf="activeView === 'users'" class="users-view">
+      <h2>User Management</h2>
+
+      <!-- Filters -->
+      <div class="filters-section">
+        <div class="filter-group">
+          <label for="roleFilter">Filter by Role:</label>
+          <select id="roleFilter" [(ngModel)]="selectedRole" (change)="filterUsers()">
+            <option value="">All Roles</option>
+            <option value="patient">Patients</option>
+            <option value="doctor">Doctors</option>
+            <option value="admin">Admins</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="searchInput">Search:</label>
+          <input 
+            id="searchInput"
+            type="text" 
+            [(ngModel)]="searchTerm" 
+            placeholder="Search by name or email"
+            (keyup.enter)="filterUsers()">
+        </div>
+
+        <button (click)="filterUsers()" class="btn-filter">Apply Filters</button>
+        <button (click)="clearFilters()" class="btn-clear">Clear</button>
+      </div>
+
+      <div *ngIf="loadingUsers" class="loading">
+        Loading users...
+      </div>
+
+      <div *ngIf="usersError" class="error-message">
+        {{ usersError }}
+        <button (click)="loadUsers()" class="btn-retry">Retry</button>
+      </div>
+
+      <!-- Users Table -->
+      <div *ngIf="!loadingUsers && !usersError" class="users-table-container">
+        <table class="users-table" *ngIf="users.length > 0">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Collection Type</th>
+              <th>Registration Date</th>
+              <th>Last Login</th>
+              <th>Status</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of users">
+              <td>{{ user.name }}</td>
+              <td>{{ user.email }}</td>
+              <td>
+                <span class="role-badge" [ngClass]="getUserRoleBadgeClass(user.role)">
+                  {{ user.role | titlecase }}
+                </span>
+              </td>
+              <td>{{ user.collectionType }}</td>
+              <td>{{ formatDate(user.createdAt) }}</td>
+              <td>{{ formatDate(user.lastLogin) }}</td>
+              <td>
+                <span class="status-badge" [class.active]="user.isActive">
+                  {{ user.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td>
+                <!-- Patient-specific fields -->
+                <div *ngIf="user.role === 'patient'" class="user-details">
+                  <div><strong>Blood Group:</strong> {{ user.bloodGroup || 'N/A' }}</div>
+                  <div><strong>DOB:</strong> {{ formatDate(user.dateOfBirth) }}</div>
+                </div>
+                <!-- Doctor-specific fields -->
+                <div *ngIf="user.role === 'doctor'" class="user-details">
+                  <div><strong>Speciality:</strong> {{ user.speciality || 'N/A' }}</div>
+                  <div><strong>Degree:</strong> {{ user.degree || 'N/A' }}</div>
+                  <div><strong>Experience:</strong> {{ user.experienceYears || 0 }} years</div>
+                  <div><strong>Subscription:</strong> {{ user.subscriptionStatus || 'N/A' }}</div>
+                </div>
+                <!-- Admin-specific fields -->
+                <div *ngIf="user.role === 'admin'" class="user-details">
+                  <div>Admin User</div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div *ngIf="users.length === 0" class="no-users">
+          No users found matching the criteria.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

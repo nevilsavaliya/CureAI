@@ -1,0 +1,197 @@
+# Implementation Plan
+
+This implementation plan breaks down the healthcare platform MVP into discrete, actionable coding tasks based on the updated requirements. The system uses separate collections for patients, doctors, and admins, with mandatory doctor subscriptions and patient-initiated messaging.
+
+## Task List
+
+- [ ] 1. Restructure database models for separate collections
+  - [x] 1.1 Remove User model and create separate Patient, Doctor, Admin models
+    - Delete backend/models/User.js
+    - Create backend/models/Patient.js with name, email, password, dateOfBirth, bloodGroup fields
+    - Create backend/models/Doctor.js with name, email, password, dateOfBirth, degree, speciality, experienceYears, subscriptionStatus fields
+    - Create backend/models/Admin.js with name, email, password fields
+    - Add authentication fields (password hash, lastLogin, isActive) to all three models
+    - _Requirements: 1.9_
+  - [x] 1.2 Update authentication service to work with separate collections
+    - Modify authService.js to check patients, doctors, and admins collections during login
+    - Update signup logic to create records in appropriate collection based on role
+    - Add hardcoded admin check for admin@gmail.com / admin@123
+    - _Requirements: 1.7, 1.8_
+  - [x] 1.3 Update authentication controllers and routes
+    - Modify authController.js to handle separate collection logic
+    - Create separate signup endpoints: POST /api/auth/signup/patient and POST /api/auth/signup/doctor
+    - Update login endpoint to query all three collections
+    - _Requirements: 1.1, 1.7_
+
+- [ ] 2. Update signup flow with role-specific fields
+  - [x] 2.1 Modify Angular signup component for dynamic fields
+    - Update SignupComponent to show common fields: name, dateOfBirth, email, password, confirmPassword
+    - Add role selector (patient or doctor)
+    - Show bloodGroup field when patient is selected
+    - Show degree, speciality, experienceYears fields when doctor is selected
+    - Add password confirmation validation
+    - _Requirements: 1.1, 1.2, 1.3, 1.4_
+  - [x] 2.2 Update AuthService for new signup endpoints
+    - Create separate methods: signupPatient() and signupDoctor()
+    - Call appropriate backend endpoint based on role
+    - Handle response and token storage
+    - _Requirements: 1.1, 1.6_
+  - [x] 2.3 Implement post-signup routing logic
+    - Redirect patients to patient dashboard after successful signup
+    - Redirect doctors to mandatory subscription page after successful signup
+    - _Requirements: 1.6, 7.1_
+
+- [-] 3. Implement mandatory doctor subscription with UPI payment
+  - [x] 3.1 Integrate payment gateway (Razorpay/PhonePe/Paytm)
+    - Install payment gateway SDK in backend
+    - Configure payment gateway with API keys
+    - Set up UPI payment to 9909232769@superyes
+    - _Requirements: 7.3_
+  - [x] 3.2 Create subscription payment controller and routes
+    - Create POST /api/payment/subscription endpoint
+    - Implement payment order creation with 30 Rs amount
+    - Handle payment verification callback
+    - Update doctor subscriptionStatus to 'active' on successful payment
+    - Set subscriptionStartDate and subscriptionExpiryDate (30 days)
+    - Store payment transaction details in doctor document
+    - _Requirements: 7.2, 7.3, 7.4, 7.6_
+  - [x] 3.3 Build Angular subscription payment component
+    - Create SubscriptionComponent showing 30 Rs/month plan details
+    - Integrate payment gateway UI (Razorpay checkout, PhonePe button, etc.)
+    - Handle payment success and failure callbacks
+    - Redirect to doctor dashboard on successful payment
+    - _Requirements: 7.2_
+  - [x] 3.4 Add subscription guard for doctor routes
+    - Create SubscriptionGuard to check doctor subscriptionStatus
+    - Block access to doctor dashboard if subscriptionStatus is 'pending'
+    - Redirect to subscription page if not subscribed
+    - _Requirements: 7.5_
+
+- [x] 4. Update doctor matching to show only registered doctors
+  - [x] 4.1 Modify doctor matching service
+    - Update matchDoctors() to query doctors collection (not users)
+    - Filter doctors by subscriptionStatus === 'active'
+    - Exclude any fake or unregistered doctor profiles
+    - _Requirements: 6.3, 6.6_
+  - [x] 4.2 Update doctor list display
+    - Show doctor name, speciality, degree, experienceYears
+    - Add message button for each doctor
+    - Remove any fake doctor data from seed scripts
+    - _Requirements: 6.4, 6.6_
+
+- [x] 5. Implement patient-initiated messaging
+  - [x] 5.1 Update messaging flow for patient-to-doctor communication
+    - Modify messaging UI to allow patients to initiate conversations
+    - Remove doctor-initiated messaging functionality
+    - Update message button placement in patient's doctor list view
+    - _Requirements: 9.1, 9.2, 9.6_
+  - [x] 5.2 Update doctor dashboard to show patient messages
+    - Display all messages received from patients on doctor dashboard
+    - Show patient name, message preview, and timestamp
+    - Add reply functionality for doctors
+    - _Requirements: 9.3_
+  - [x] 5.3 Implement patient list visibility after messaging
+    - Create logic to add patient to doctor's patient list when first message is sent
+    - Ensure patients only appear after chatbot completion AND messaging
+    - Display patient symptoms, predictions, and blood group in doctor's view
+    - _Requirements: 8.2, 8.3, 8.4_
+
+- [x] 6. Implement doctor-side consultation booking with email video links
+  - [x] 6.1 Remove patient-side consultation scheduling
+    - Delete patient consultation scheduling components
+    - Remove schedule consultation buttons from patient UI
+    - Keep only messaging functionality for patients
+    - _Requirements: 10.7_
+  - [x] 6.2 Create doctor-side consultation booking interface
+    - Add book consultation button in doctor's patient message view
+    - Create consultation booking form with date and time picker
+    - Implement booking confirmation flow
+    - _Requirements: 10.1, 10.2_
+  - [x] 6.3 Integrate video call link generation
+    - Choose video service (Jitsi Meet, Whereby, Daily.co)
+    - Generate unique video room link for each consultation
+    - Store video link in consultation document
+    - _Requirements: 11.1, 11.2_
+  - [x] 6.4 Implement email notification with video links
+    - Update emailService.js to send consultation booking emails
+    - Send email to patient with doctor name, date, time, and video link
+    - Send email to doctor with patient name, date, time, and video link
+    - _Requirements: 10.4, 10.5, 11.2_
+  - [x] 6.5 Add consultation management on doctor dashboard
+    - Display upcoming consultations with join video call buttons
+    - Show consultation details (patient, date, time)
+    - Add join call button that opens video link
+    - _Requirements: 10.6, 11.7_
+
+- [x] 7. Update video consultation to work via email links
+  - [x] 7.1 Implement video service integration
+    - Set up Jitsi Meet embed or Whereby API integration
+    - Create video room generation function
+    - Generate unique room URLs for each consultation
+    - _Requirements: 11.1, 11.2_
+  - [x] 7.2 Update consultation email templates
+    - Design email template with consultation details
+    - Include prominent "Join Video Call" button with link
+    - Add calendar invite attachment (optional)
+    - _Requirements: 11.2_
+  - [x] 7.3 Test video call functionality
+    - Verify video links work from email
+    - Test two-way video and audio
+    - Verify call controls (mute, video toggle, end call)
+    - _Requirements: 11.3, 11.4, 11.5, 11.6_
+
+- [x] 8. Update admin functionality for new database structure
+  - [x] 8.1 Modify admin metrics to query separate collections
+    - Update metrics calculation to count from patients, doctors, admins collections
+    - Calculate total registered users across all collections
+    - Update active users query for all three collections
+    - _Requirements: 14.1, 14.2, 14.3_
+  - [x] 8.2 Update admin user management
+    - Modify user list to fetch from patients, doctors, admins collections
+    - Display users with their collection type (patient/doctor/admin)
+    - Update user detail view to show collection-specific fields
+    - _Requirements: 13.2, 13.3, 13.4_
+
+- [x] 9. Update seed data and database migration
+  - [x] 9.1 Create database migration script
+    - Write script to migrate existing user data to separate collections
+    - Move patient users to patients collection
+    - Move doctor users to doctors collection
+    - Create admin record for admin@gmail.com
+    - _Requirements: 1.9_
+  - [x] 9.2 Update seed data script
+    - Remove fake doctor data
+    - Create only registered doctors with proper credentials
+    - Add sample patients with blood group data
+    - Create admin user with hardcoded credentials
+    - _Requirements: 1.8, 6.6_
+
+- [x] 10. Final integration testing
+  - [x] 10.1 Test patient flow
+    - Test patient signup with name, DOB, email, password, blood group
+    - Test patient login and dashboard access
+    - Test chatbot symptom submission
+    - Test viewing registered doctors only
+    - Test messaging doctorsNo — No model learning loop; advice depends fully on doctor interaction
+    - Test receiving consultation email with video link
+    - _Requirements: All patient requirements_
+  - [x] 10.2 Test doctor flow
+    - Test doctor signup with name, DOB, email, password, degree, speciality, experience
+    - Test mandatory subscription payment flow
+    - Test subscription guard blocking dashboard access
+    - Test doctor dashboard access after payment
+    - Test viewing patient messages
+    - Test booking consultations
+    - Test video call link generation and email sending
+    - _Requirements: All doctor requirements_
+  - [x] 10.3 Test admin flow
+    - Test admin login with admin@gmail.com / admin@123
+    - Test viewing metrics from all collections
+    - Test user management across all collections
+    - _Requirements: All admin requirements_
+  - [x] 10.4 Test email and video functionality
+    - Verify OTP emails for password reset
+    - Verify consultation booking emails with video links
+    - Test video calls from email links
+    - _Requirements: 11.2, 11.6_
+

@@ -1,0 +1,7 @@
+node_modules/
+.env
+*.log
+.DS_Store
+
+# Payment logs (keep directory structure but ignore log files)
+logs/*.log

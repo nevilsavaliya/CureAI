@@ -1,0 +1,218 @@
+const jwt = require('jsonwebtoken');
+const Patient = require('../models/Patient');
+const Doctor = require('../models/Doctor');
+const Admin = require('../models/Admin');
+
+class AuthService {
+  // Generate JWT token
+  generateToken(userId, role) {
+    return jwt.sign(
+      { id: userId, role: role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+    );
+  }
+
+  // Verify JWT token
+  verifyToken(token) {
+    try {
+      return jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      throw new Error('Invalid or expired token');
+    }
+  }
+
+  // Check if email exists in any collection
+  async checkEmailExists(email) {
+    const patient = await Patient.findOne({ email });
+    const doctor = await Doctor.findOne({ email });
+    const admin = await Admin.findOne({ email });
+    return patient || doctor || admin;
+  }
+
+  // Register new patient
+  async signupPatient(userData) {
+    try {
+      const { name, email, password, dateOfBirth, bloodGroup } = userData;
+
+      // Check if email already exists
+      const existingUser = await this.checkEmailExists(email);
+      if (existingUser) {
+        throw new Error('User with this email already exists');
+      }
+
+      // Create new patient
+      const patient = new Patient({
+        name,
+        email,
+        password,
+        dateOfBirth,
+        bloodGroup
+      });
+
+      await patient.save();
+
+      return {
+        userId: patient._id,
+        name: patient.name,
+        email: patient.email,
+        role: 'patient'
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Register new doctor
+  async signupDoctor(userData) {
+    try {
+      const { name, email, password, dateOfBirth, degree, speciality, specializations, experienceYears } = userData;
+
+      // Check if email already exists
+      const existingUser = await this.checkEmailExists(email);
+      if (existingUser) {
+        throw new Error('User with this email already exists');
+      }
+
+      // Create new doctor with pending subscription
+      const doctor = new Doctor({
+        name,
+        email,
+        password,
+        dateOfBirth,
+        degree,
+        speciality: speciality || (specializations && specializations[0]), // Backward compatibility
+        specializations: specializations || [speciality], // New field
+        experienceYears,
+        subscriptionStatus: 'pending'
+      });
+
+      await doctor.save();
+
+      return {
+        userId: doctor._id,
+        name: doctor.name,
+        email: doctor.email,
+        role: 'doctor',
+        subscriptionStatus: 'pending'
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Login user - checks all three collections
+  async login(email, password) {
+    try {
+      let user = null;
+      let role = null;
+      let Model = null;
+
+      // Check for hardcoded admin first
+      if (email === 'admin@gmail.com' && password === 'admin@123') {
+        // Check if admin exists, if not create it
+        user = await Admin.findOne({ email: 'admin@gmail.com' });
+        if (!user) {
+          user = new Admin({
+            name: 'Admin',
+            email: 'admin@gmail.com',
+            password: 'admin@123'
+          });
+          await user.save();
+        }
+        role = 'admin';
+        Model = Admin;
+      } else {
+        // Try to find in patients collection
+        user = await Patient.findOne({ email });
+        if (user) {
+          role = 'patient';
+          Model = Patient;
+        }
+
+        // If not found, try doctors collection
+        if (!user) {
+          user = await Doctor.findOne({ email });
+          if (user) {
+            role = 'doctor';
+            Model = Doctor;
+          }
+        }
+
+        // If not found, try admins collection
+        if (!user) {
+          user = await Admin.findOne({ email });
+          if (user) {
+            role = 'admin';
+            Model = Admin;
+          }
+        }
+
+        if (!user) {
+          throw new Error('Invalid email or password');
+        }
+
+        // Check if user is active
+        if (!user.isActive) {
+          throw new Error('Account is deactivated');
+        }
+
+        // Verify password
+        const isPasswordValid = await user.comparePassword(password);
+        if (!isPasswordValid) {
+          throw new Error('Invalid email or password');
+        }
+      }
+
+      // Update last login
+      await user.updateLastLogin();
+
+      // Generate token
+      const token = this.generateToken(user._id, role);
+
+      const response = {
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: role
+        }
+      };
+
+      // Add subscription status for doctors
+      if (role === 'doctor') {
+        response.user.subscriptionStatus = user.subscriptionStatus;
+      }
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Get user by ID and role
+  async getUserById(userId, role) {
+    try {
+      let user = null;
+
+      if (role === 'patient') {
+        user = await Patient.findById(userId).select('-password');
+      } else if (role === 'doctor') {
+        user = await Doctor.findById(userId).select('-password');
+      } else if (role === 'admin') {
+        user = await Admin.findById(userId).select('-password');
+      }
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      return { ...user.toObject(), role };
+    } catch (error) {
+      throw error;
+    }
+  }
+}
+
+module.exports = new AuthService();
