@@ -22,7 +22,33 @@ const patientSchema = new mongoose.Schema({
   },
   dateOfBirth: {
     type: Date,
-    required: [true, 'Date of birth is required']
+    required: [true, 'Date of birth is required'],
+    validate: {
+      validator: function(value) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const dob = new Date(value);
+        dob.setHours(0, 0, 0, 0);
+        
+        // Check if date is not in the future
+        if (dob > today) {
+          return false;
+        }
+        
+        // Check if date is not more than 150 years ago
+        const minDate = new Date();
+        minDate.setFullYear(minDate.getFullYear() - 150);
+        minDate.setHours(0, 0, 0, 0);
+        
+        if (dob < minDate) {
+          return false;
+        }
+        
+        return true;
+      },
+      message: 'Date of birth must be a valid date (not in the future and not more than 150 years ago)'
+    }
   },
   bloodGroup: {
     type: String,

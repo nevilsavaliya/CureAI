@@ -15,6 +15,11 @@ import { AdminDashboardComponent } from './components/admin-dashboard/admin-dash
 import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { SubscriptionComponent } from './components/subscription/subscription.component';
+import { PatientCasesComponent } from './components/patient-cases/patient-cases.component';
+import { DoctorCasesComponent } from './components/doctor-cases/doctor-cases.component';
+import { NotificationsComponent } from './components/notifications/notifications.component';
+import { ClickOutsideDirective } from './directives/click-outside.directive';
+import { PendingCasesComponent } from './components/pending-cases/pending-cases.component';
 
 @NgModule({
   declarations: [
@@ -25,7 +30,12 @@ import { SubscriptionComponent } from './components/subscription/subscription.co
     DoctorDashboardComponent,
     AdminDashboardComponent,
     ForgotPasswordComponent,
-    SubscriptionComponent
+    SubscriptionComponent,
+    PatientCasesComponent,
+    DoctorCasesComponent,
+    NotificationsComponent,
+    ClickOutsideDirective,
+    PendingCasesComponent
   ],
   imports: [
     BrowserModule,

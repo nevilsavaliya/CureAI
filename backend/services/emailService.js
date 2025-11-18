@@ -20,7 +20,7 @@ class EmailService {
     }
   }
 
-  // Send OTP email
+  // Send OTP email (for password reset)
   async sendOTP(email, otp) {
     // If email not configured, just log to console for testing
     if (!this.isConfigured) {
@@ -59,6 +59,93 @@ class EmailService {
       return true;
     } catch (error) {
       console.error('❌ Error sending OTP email:', error.message);
+      return false;
+    }
+  }
+
+  // Send Signup Verification OTP email
+  async sendSignupOTP(email, otp) {
+    // If email not configured, just log to console for testing
+    if (!this.isConfigured) {
+      console.log('\n=================================');
+      console.log('📧 SIGNUP OTP EMAIL (Console Mode)');
+      console.log('=================================');
+      console.log(`To: ${email}`);
+      console.log(`OTP: ${otp}`);
+      console.log(`Expires: 10 minutes`);
+      console.log('=================================\n');
+      return true;
+    }
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'Healthcare Platform <noreply@healthcare.com>',
+      to: email,
+      subject: 'Email Verification OTP - Healthcare Platform',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 28px;">🏥 Healthcare Platform</h1>
+              <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 14px;">Your Health, Our Priority</p>
+            </div>
+            
+            <!-- Main Content -->
+            <div style="padding: 40px 30px;">
+              <h2 style="color: #333; margin: 0 0 20px 0; font-size: 24px;">Verify Your Email Address</h2>
+              
+              <p style="color: #666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                Thank you for signing up! To complete your registration, please verify your email address using the OTP below:
+              </p>
+              
+              <!-- OTP Box -->
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; margin: 30px 0; border-radius: 10px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                <p style="color: white; margin: 0 0 10px 0; font-size: 14px; font-weight: 600; letter-spacing: 1px;">YOUR VERIFICATION CODE</p>
+                <h1 style="color: white; font-size: 48px; margin: 0; letter-spacing: 8px; font-weight: bold;">${otp}</h1>
+              </div>
+              
+              <!-- Instructions -->
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; margin: 20px 0;">
+                <p style="margin: 0; color: #333; font-size: 14px; line-height: 1.6;">
+                  <strong>📌 Important:</strong><br>
+                  • This OTP will expire in <strong>10 minutes</strong><br>
+                  • Enter this code on the verification page to complete your signup<br>
+                  • Do not share this code with anyone
+                </p>
+              </div>
+              
+              <p style="color: #666; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0;">
+                If you didn't request this verification, please ignore this email or contact our support team.
+              </p>
+            </div>
+            
+            <!-- Footer -->
+            <div style="background: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+              <p style="color: #999; font-size: 12px; margin: 0 0 5px 0;">
+                Healthcare Platform - Your Health, Our Priority
+              </p>
+              <p style="color: #999; font-size: 11px; margin: 0;">
+                This is an automated email. Please do not reply.
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+      console.log(`✅ Signup OTP sent to ${email}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Error sending signup OTP email:', error.message);
       return false;
     }
   }

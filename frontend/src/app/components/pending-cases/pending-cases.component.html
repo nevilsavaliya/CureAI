@@ -1,0 +1,63 @@
+<div class="pending-cases-container" appClickOutside (clickOutside)="closeDropdown()">
+  <button class="pending-cases-btn" (click)="toggleDropdown()">
+    <span class="icon">📋</span>
+    <span class="label">Pending Cases</span>
+    <span class="badge" *ngIf="pendingCount > 0">{{ pendingCount }}</span>
+  </button>
+
+  <div class="dropdown-panel" *ngIf="showDropdown">
+    <div class="dropdown-header">
+      <h3>Pending Case Requests</h3>
+      <button class="close-btn" (click)="closeDropdown()">&times;</button>
+    </div>
+
+    <div class="dropdown-content">
+      <div *ngIf="loading" class="loading-state">
+        <p>Loading pending cases...</p>
+      </div>
+
+      <div *ngIf="!loading && pendingCases.length === 0" class="empty-state">
+        <p>No pending case requests</p>
+      </div>
+
+      <div *ngIf="!loading && pendingCases.length > 0" class="cases-list">
+        <div *ngFor="let caseItem of pendingCases" class="case-item">
+          <div class="case-header">
+            <h4>{{ getPatientName(caseItem) }}</h4>
+            <span class="case-date">{{ caseItem.createdAt | date:'short' }}</span>
+          </div>
+          
+          <div class="case-info">
+            <p class="patient-email">
+              <strong>Email:</strong> {{ getPatientEmail(caseItem) }}
+            </p>
+            <p class="blood-group" *ngIf="hasPatientBloodGroup(caseItem)">
+              <strong>Blood Group:</strong> {{ getPatientBloodGroup(caseItem) }}
+            </p>
+          </div>
+
+          <div class="symptoms-preview" *ngIf="caseItem.symptoms && caseItem.symptoms.length > 0">
+            <strong>Symptoms:</strong>
+            <p>{{ getSymptomsPreview(caseItem.symptoms) }}</p>
+          </div>
+
+          <div class="predictions-preview" *ngIf="caseItem.predictedConditions && caseItem.predictedConditions.length > 0">
+            <strong>Predicted Conditions:</strong>
+            <div class="prediction-tags">
+              <span *ngFor="let condition of caseItem.predictedConditions.slice(0, 2)" class="prediction-tag">
+                {{ condition }}
+              </span>
+              <span *ngIf="caseItem.predictedConditions.length > 2" class="more-tag">
+                +{{ caseItem.predictedConditions.length - 2 }} more
+              </span>
+            </div>
+          </div>
+
+          <button class="btn-view-details" (click)="viewCaseDetails(caseItem)">
+            View Details
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

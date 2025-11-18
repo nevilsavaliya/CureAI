@@ -1,25 +1,19 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const http = require('http');
 const connectDB = require('./config/database');
-const kotakConfig = require('./config/kotakConfig');
-
+const socketService = require('./services/socketService');
 const app = express();
+
+// Create HTTP server
+const server = http.createServer(app);
 
 // Connect to MongoDB
 connectDB();
 
-// Validate Kotak API Configuration
-try {
-  kotakConfig.validate();
-  console.log('✓ Kotak API configuration validated successfully');
-  console.log('Kotak Config:', kotakConfig.getSanitizedConfig());
-} catch (error) {
-  console.warn('⚠ Kotak API Configuration Warning:');
-  console.warn(error.message);
-  console.warn('\nKotak UPI payment integration will be disabled.');
-  console.warn('The application will continue to run with other payment methods.\n');
-}
+// Initialize Socket.IO
+socketService.initialize(server);
 
 // Middleware
 app.use(cors({
@@ -42,8 +36,9 @@ const consultationRoutes = require('./routes/consultationRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const passwordResetRoutes = require('./routes/passwordResetRoutes');
-const kotakPaymentRoutes = require('./routes/kotakPaymentRoutes');
-const paymentMetricsRoutes = require('./routes/paymentMetricsRoutes');
+const testPaymentRoutes = require('./routes/testPaymentRoutes');
+const caseRoutes = require('./routes/caseRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Healthcare Platform API is running' });
@@ -59,15 +54,17 @@ app.use('/api', consultationRoutes);
 app.use('/api', feedbackRoutes);
 app.use('/api', adminRoutes);
 app.use('/api/password', passwordResetRoutes);
-app.use('/api', kotakPaymentRoutes);
-app.use('/api/payment-metrics', paymentMetricsRoutes);
+app.use('/api/test-payment', testPaymentRoutes);
+app.use('/api', caseRoutes);
+app.use('/api', notificationRoutes);
 
 // Error handling middleware will be added here
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  console.log(`Socket.IO server is ready`);
 });
 
-module.exports = app;
+module.exports = { app, server };

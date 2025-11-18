@@ -39,10 +39,14 @@
           id="dateOfBirth" 
           formControlName="dateOfBirth"
           class="form-control"
+          [max]="maxDate"
+          [min]="minDate"
           [class.is-invalid]="f['dateOfBirth'].invalid && f['dateOfBirth'].touched"
         />
         <div class="error-message" *ngIf="f['dateOfBirth'].invalid && f['dateOfBirth'].touched">
           <span *ngIf="f['dateOfBirth'].errors?.['required']">Date of birth is required</span>
+          <span *ngIf="f['dateOfBirth'].errors?.['futureDate']">Date of birth cannot be in the future</span>
+          <span *ngIf="f['dateOfBirth'].errors?.['tooOld']">Please enter a valid date of birth</span>
         </div>
       </div>
 

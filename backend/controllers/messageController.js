@@ -1,6 +1,8 @@
 const Message = require('../models/Message');
 const Patient = require('../models/Patient');
 const Doctor = require('../models/Doctor');
+const Case = require('../models/Case');
+const socketService = require('../services/socketService');
 
 // Send message
 exports.sendMessage = async (req, res) => {
@@ -205,6 +207,245 @@ exports.getDoctorConversations = async (req, res) => {
     res.status(400).json({
       success: false,
       message: error.message
+    });
+  }
+};
+
+// ============================================
+// Case-specific messaging endpoints
+// ============================================
+
+// Send message in a case
+exports.sendCaseMessage = async (req, res) => {
+  try {
+    const { caseId } = req.params;
+    const { content } = req.body;
+    const senderId = req.user.id;
+    const senderRole = req.user.role;
+
+    // Validate content
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message content is required'
+      });
+    }
+
+    if (content.length > 5000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message content cannot exceed 5000 characters'
+      });
+    }
+
+    // Fetch case
+    const caseData = await Case.findById(caseId);
+    if (!caseData) {
+      return res.status(404).json({
+        success: false,
+        message: 'Case not found'
+      });
+    }
+
+    // Verify user has access to this case
+    const isPatient = senderRole === 'patient' && caseData.patientId.toString() === senderId;
+    const isDoctor = senderRole === 'doctor' && caseData.doctorId.toString() === senderId;
+
+    if (!isPatient && !isDoctor) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. You do not have permission to send messages in this case'
+      });
+    }
+
+    // Verify case is in ongoing status (can only message in ongoing cases)
+    // This ensures treated cases remain read-only and data is preserved
+    if (caseData.status !== 'ongoing') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot send messages in a case with status: ${caseData.status}. Treated and completed cases are read-only to preserve medical records.`
+      });
+    }
+
+    // Determine sender and receiver
+    let senderModel, receiverId, receiverModel;
+    
+    if (senderRole === 'patient') {
+      senderModel = 'Patient';
+      receiverId = caseData.doctorId;
+      receiverModel = 'Doctor';
+    } else {
+      senderModel = 'Doctor';
+      receiverId = caseData.patientId;
+      receiverModel = 'Patient';
+    }
+
+    // Create message
+    const message = new Message({
+      caseId,
+      senderId,
+      senderModel,
+      recipientId: receiverId,
+      recipientModel: receiverModel,
+      content: content.trim(),
+      messageType: 'text'
+    });
+
+    await message.save();
+
+    // Update case's lastMessageAt timestamp
+    await caseData.updateLastMessage();
+
+    // Populate sender and recipient details
+    const populatedMessage = await Message.findById(message._id)
+      .populate('senderId', 'name email')
+      .populate('recipientId', 'name email');
+
+    // Broadcast message via WebSocket
+    try {
+      socketService.emitNewMessage(caseId, populatedMessage);
+    } catch (socketError) {
+      console.error('Failed to broadcast message via WebSocket:', socketError);
+      // Continue even if WebSocket fails - message is saved in DB
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Message sent successfully',
+      data: populatedMessage
+    });
+  } catch (error) {
+    console.error('Error sending case message:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to send message'
+    });
+  }
+};
+
+// Get all messages for a case
+exports.getCaseMessages = async (req, res) => {
+  try {
+    const { caseId } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const { page = 1, limit = 50 } = req.query;
+
+    // Fetch case
+    const caseData = await Case.findById(caseId);
+    if (!caseData) {
+      return res.status(404).json({
+        success: false,
+        message: 'Case not found'
+      });
+    }
+
+    // Verify user has access to this case
+    const isPatient = userRole === 'patient' && caseData.patientId.toString() === userId;
+    const isDoctor = userRole === 'doctor' && caseData.doctorId.toString() === userId;
+
+    if (!isPatient && !isDoctor) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. You do not have permission to view messages in this case'
+      });
+    }
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Fetch messages with pagination
+    const messages = await Message.find({ caseId })
+      .populate('senderId', 'name email')
+      .populate('recipientId', 'name email')
+      .sort({ createdAt: 1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Get total count for pagination
+    const totalMessages = await Message.countDocuments({ caseId });
+
+    res.status(200).json({
+      success: true,
+      count: messages.length,
+      totalMessages,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalMessages / parseInt(limit)),
+      messages
+    });
+  } catch (error) {
+    console.error('Error fetching case messages:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch messages'
+    });
+  }
+};
+
+// Mark message as read (case-specific)
+exports.markCaseMessageAsRead = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    // Fetch message
+    const message = await Message.findById(id);
+    if (!message) {
+      return res.status(404).json({
+        success: false,
+        message: 'Message not found'
+      });
+    }
+
+    // Verify user is the recipient of this message
+    if (message.recipientId.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. You can only mark messages sent to you as read'
+      });
+    }
+
+    // If message is associated with a case, verify access
+    if (message.caseId) {
+      const caseData = await Case.findById(message.caseId);
+      if (caseData) {
+        const isPatient = userRole === 'patient' && caseData.patientId.toString() === userId;
+        const isDoctor = userRole === 'doctor' && caseData.doctorId.toString() === userId;
+
+        if (!isPatient && !isDoctor) {
+          return res.status(403).json({
+            success: false,
+            message: 'Access denied. You do not have permission to access this message'
+          });
+        }
+      }
+    }
+
+    // Mark message as read
+    if (!message.isRead) {
+      await message.markAsRead();
+
+      // Broadcast message read event via WebSocket
+      if (message.caseId) {
+        try {
+          socketService.emitMessageRead(message.caseId.toString(), message._id.toString(), userId);
+        } catch (socketError) {
+          console.error('Failed to broadcast message read via WebSocket:', socketError);
+          // Continue even if WebSocket fails
+        }
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Message marked as read'
+    });
+  } catch (error) {
+    console.error('Error marking message as read:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to mark message as read'
     });
   }
 };

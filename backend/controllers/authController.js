@@ -1,9 +1,9 @@
 const authService = require('../services/authService');
 
-// Patient signup controller
+// Patient signup - Step 1: Submit details and send OTP
 exports.signupPatient = async (req, res) => {
   try {
-    const { name, email, password, confirmPassword, dateOfBirth, bloodGroup } = req.body;
+    const { name, email, password, confirmPassword, dateOfBirth, bloodGroup, otp } = req.body;
 
     // Validate required fields
     if (!name || !email || !password || !dateOfBirth || !bloodGroup) {
@@ -21,18 +21,60 @@ exports.signupPatient = async (req, res) => {
       });
     }
 
-    // Register patient
-    const user = await authService.signupPatient(req.body);
+    // Check if email already exists
+    const existingUser = await authService.checkEmailExists(email);
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is already registered. Please login instead.'
+      });
+    }
 
-    // Generate token for immediate login
-    const token = authService.generateToken(user.userId, 'patient');
+    // If OTP is provided, verify it and create account
+    if (otp) {
+      const emailVerificationService = require('../services/emailVerificationService');
+      
+      try {
+        // Verify OTP
+        await emailVerificationService.verifyOTP(email, otp, 'signup');
+        
+        // OTP verified, create account
+        const user = await authService.signupPatient(req.body);
+        const token = authService.generateToken(user.userId, 'patient');
 
-    res.status(201).json({
-      success: true,
-      message: 'Patient registered successfully',
-      token,
-      user
-    });
+        return res.status(201).json({
+          success: true,
+          message: 'Account created successfully! You can now login.',
+          token,
+          user
+        });
+      } catch (error) {
+        return res.status(400).json({
+          success: false,
+          message: error.message || 'Invalid or expired OTP'
+        });
+      }
+    }
+
+    // No OTP provided, send OTP to email
+    const emailVerificationService = require('../services/emailVerificationService');
+    const otpSent = await emailVerificationService.sendVerificationOTP(email, 'signup');
+
+    if (otpSent) {
+      // Store signup data temporarily (you might want to use session or cache)
+      // For now, just return success and ask for OTP
+      return res.status(200).json({
+        success: true,
+        message: 'Verification OTP sent to your email. Please check your inbox.',
+        requiresOTP: true,
+        email: email
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send OTP. Please try again.'
+      });
+    }
   } catch (error) {
     res.status(400).json({
       success: false,
@@ -41,10 +83,10 @@ exports.signupPatient = async (req, res) => {
   }
 };
 
-// Doctor signup controller
+// Doctor signup - Step 1: Submit details and send OTP
 exports.signupDoctor = async (req, res) => {
   try {
-    const { name, email, password, confirmPassword, dateOfBirth, degree, speciality, specializations, experienceYears } = req.body;
+    const { name, email, password, confirmPassword, dateOfBirth, degree, speciality, specializations, experienceYears, otp } = req.body;
 
     // Handle both single speciality and multiple specializations
     let doctorSpecializations = [];
@@ -77,25 +119,64 @@ exports.signupDoctor = async (req, res) => {
       });
     }
 
-    // Add specializations to request body
-    const doctorData = {
-      ...req.body,
-      specializations: doctorSpecializations,
-      speciality: doctorSpecializations[0] // Keep first one for backward compatibility
-    };
+    // Check if email already exists
+    const existingUser = await authService.checkEmailExists(email);
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is already registered. Please login instead.'
+      });
+    }
 
-    // Register doctor
-    const user = await authService.signupDoctor(doctorData);
+    // If OTP is provided, verify it and create account
+    if (otp) {
+      const emailVerificationService = require('../services/emailVerificationService');
+      
+      try {
+        // Verify OTP
+        await emailVerificationService.verifyOTP(email, otp, 'signup');
+        
+        // OTP verified, create account
+        const doctorData = {
+          ...req.body,
+          specializations: doctorSpecializations,
+          speciality: doctorSpecializations[0]
+        };
+        
+        const user = await authService.signupDoctor(doctorData);
+        const token = authService.generateToken(user.userId, 'doctor');
 
-    // Generate token for immediate login
-    const token = authService.generateToken(user.userId, 'doctor');
+        return res.status(201).json({
+          success: true,
+          message: 'Doctor account created successfully! Please complete subscription to access dashboard.',
+          token,
+          user
+        });
+      } catch (error) {
+        return res.status(400).json({
+          success: false,
+          message: error.message || 'Invalid or expired OTP'
+        });
+      }
+    }
 
-    res.status(201).json({
-      success: true,
-      message: 'Doctor registered successfully. Please complete subscription to access dashboard.',
-      token,
-      user
-    });
+    // No OTP provided, send OTP to email
+    const emailVerificationService = require('../services/emailVerificationService');
+    const otpSent = await emailVerificationService.sendVerificationOTP(email, 'signup');
+
+    if (otpSent) {
+      return res.status(200).json({
+        success: true,
+        message: 'Verification OTP sent to your email. Please check your inbox.',
+        requiresOTP: true,
+        email: email
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send OTP. Please try again.'
+      });
+    }
   } catch (error) {
     res.status(400).json({
       success: false,

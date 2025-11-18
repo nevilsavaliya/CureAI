@@ -2,6 +2,8 @@
   <header class="dashboard-header">
     <h1>Healthcare Platform - Patient Dashboard</h1>
     <div class="user-info">
+      <button routerLink="/patient/cases" class="btn-cases">My Cases</button>
+      <app-notifications></app-notifications>
       <span>Welcome, {{ userName }}!</span>
       <button (click)="logout()" class="btn-logout">Logout</button>
     </div>
@@ -93,14 +95,17 @@
                   </span>
                 </div>
                 <p class="contact-info">
-                  <strong>Contact:</strong> {{ doctor.contactNumber }}
-                </p>
-                <p class="contact-info">
                   <strong>Email:</strong> {{ doctor.email }}
                 </p>
               </div>
               <div class="doctor-actions">
-                <button class="btn-secondary" (click)="openMessageModal(doctor)">Send Message</button>
+                <button 
+                  class="btn-primary" 
+                  (click)="requestConsultation(doctor)"
+                  [disabled]="isDoctorRequested(doctor._id)"
+                  [class.btn-disabled]="isDoctorRequested(doctor._id)">
+                  {{ isDoctorRequested(doctor._id) ? 'Already Requested' : 'Request Consultation' }}
+                </button>
               </div>
             </div>
           </div>
@@ -113,23 +118,54 @@
     </div>
   </div>
 
-  <!-- Message Modal -->
-  <div class="modal-overlay" *ngIf="showMessageModal" (click)="closeMessageModal()">
+  <!-- Case Request Modal -->
+  <div class="modal-overlay" *ngIf="showCaseRequestModal" (click)="closeCaseRequestModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>Send Message to {{ selectedDoctor?.name }}</h3>
-        <button class="close-btn" (click)="closeMessageModal()">&times;</button>
+        <h3>Request Consultation</h3>
+        <button class="close-btn" (click)="closeCaseRequestModal()">&times;</button>
       </div>
       <div class="modal-body">
-        <textarea 
-          [(ngModel)]="messageText"
-          placeholder="Type your message here..."
-          rows="6"
-        ></textarea>
+        <div class="doctor-summary">
+          <h4>Doctor Details</h4>
+          <p><strong>Name:</strong> {{ selectedDoctor?.name }}</p>
+          <p><strong>Specialization:</strong> {{ selectedDoctor?.speciality }}</p>
+          <p><strong>Experience:</strong> {{ selectedDoctor?.experienceYears }} years</p>
+          <p><strong>Rating:</strong> ⭐ {{ selectedDoctor?.rating }}/5</p>
+        </div>
+        
+        <div class="patient-summary" *ngIf="predictedDiseases.length > 0">
+          <h4>Your Symptoms & Predictions</h4>
+          <div class="symptoms-list">
+            <p><strong>Symptoms:</strong> {{ getSymptomsList() }}</p>
+          </div>
+          <div class="predictions-list">
+            <p><strong>Predicted Conditions:</strong></p>
+            <ul>
+              <li *ngFor="let disease of predictedDiseases">
+                {{ disease.name }} ({{ disease.confidence }}% confidence)
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="confirmation-message">
+          <p>Are you sure you want to request a consultation with {{ selectedDoctor?.name }}?</p>
+          <p class="info-text">The doctor will review your case and accept or decline the request.</p>
+        </div>
+
+        <div class="error-message" *ngIf="caseRequestError">
+          <p class="error">{{ caseRequestError }}</p>
+          <button class="btn-link" *ngIf="existingCaseId" (click)="viewExistingCase()">
+            View Existing Case
+          </button>
+        </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeMessageModal()">Cancel</button>
-        <button class="btn-primary" (click)="sendMessage()" [disabled]="!messageText.trim()">Send Message</button>
+        <button class="btn-secondary" (click)="closeCaseRequestModal()">Cancel</button>
+        <button class="btn-primary" (click)="confirmCaseRequest()" [disabled]="isCreatingCase">
+          {{ isCreatingCase ? 'Creating...' : 'Confirm Request' }}
+        </button>
       </div>
     </div>
   </div>

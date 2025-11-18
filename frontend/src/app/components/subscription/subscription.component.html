@@ -5,8 +5,8 @@
       <p class="subtitle">Activate your doctor account to start receiving patient consultations</p>
     </div>
 
-    <!-- Plan Details Section (shown when payment not initiated) -->
-    <div class="plan-details" *ngIf="!paymentState.paymentInitiated">
+    <!-- Plan Details Section -->
+    <div class="plan-details" *ngIf="!success">
       <div class="plan-header">
         <h2>{{ planDetails.name }}</h2>
         <div class="price">
@@ -43,96 +43,55 @@
         </p>
       </div>
 
-      <div class="error-message" *ngIf="paymentState.error && paymentState.status === 'idle'">
+      <!-- Error Message -->
+      <div class="error-message" *ngIf="error">
         <i class="error-icon">⚠️</i>
-        {{ paymentState.error }}
+        {{ error }}
       </div>
 
+      <!-- Payment Actions -->
       <div class="actions">
         <button 
           class="btn-primary" 
-          (click)="initiatePayment()" 
-          [disabled]="paymentState.loading">
-          <span *ngIf="!paymentState.loading">
+          (click)="payWithUPI()" 
+          [disabled]="loading">
+          <span *ngIf="!loading">
             <i class="icon">💳</i>
             Pay with UPI
           </span>
-          <span *ngIf="paymentState.loading">
+          <span *ngIf="loading">
             <i class="spinner">⏳</i>
-            Initiating Payment...
+            Processing Payment...
           </span>
         </button>
 
         <button 
           class="btn-secondary" 
           (click)="goToLogin()" 
-          [disabled]="paymentState.loading">
+          [disabled]="loading">
           Cancel & Logout
         </button>
-      </div>
-    </div>
 
-    <!-- Payment Details Section (shown after payment initiated) -->
-    <div class="payment-section" *ngIf="paymentState.paymentInitiated && paymentState.status === 'pending'">
-      <div class="payment-header">
-        <h2>Complete Your Payment</h2>
-        <p class="payment-subtitle">Scan the QR code below with any UPI app</p>
-      </div>
-
-      <div class="payment-details">
-        <div class="payment-amount">
-          <span class="label">Amount to Pay:</span>
-          <span class="amount-value">₹{{ paymentState.paymentDetails?.amount }}</span>
-        </div>
-
-        <div class="merchant-info">
-          <span class="label">Pay to:</span>
-          <span class="merchant-vpa">{{ paymentState.paymentDetails?.merchantVPA }}</span>
-        </div>
-
-        <div class="transaction-id">
-          <span class="label">Transaction ID:</span>
-          <span class="txn-id">{{ paymentState.paymentDetails?.txnId }}</span>
-        </div>
-      </div>
-
-      <!-- QR Code Display -->
-      <div class="qr-code-container" *ngIf="paymentState.qrCodeImage">
-        <div class="qr-code-wrapper">
-          <img [src]="paymentState.qrCodeImage" alt="UPI QR Code" class="qr-code-image">
-        </div>
-        <p class="qr-instruction">
-          Open any UPI app (Google Pay, PhonePe, Paytm, etc.) and scan this QR code
-        </p>
-      </div>
-
-      <!-- Loading Indicator -->
-      <div class="payment-status">
-        <div class="loading-indicator">
-          <div class="spinner-circle"></div>
-          <p class="status-text">Waiting for payment confirmation...</p>
-          <p class="status-subtext">Please complete the payment in your UPI app</p>
-        </div>
-      </div>
-
-      <div class="payment-actions">
+        <!-- Retry Button (if error) -->
         <button 
-          class="btn-secondary-small" 
+          class="btn-retry" 
+          *ngIf="error && !loading"
           (click)="retryPayment()">
-          Cancel & Start New Payment
+          <i class="icon">🔄</i>
+          Try Again
         </button>
       </div>
     </div>
 
     <!-- Success Message Section -->
-    <div class="success-section" *ngIf="paymentState.status === 'completed'">
+    <div class="success-section" *ngIf="success">
       <div class="success-icon">✓</div>
       <h2 class="success-title">Payment Successful!</h2>
       <p class="success-message">Your subscription has been activated successfully.</p>
       <div class="redirect-info">
-        <p>Redirecting to dashboard in {{ paymentState.redirectCountdown }} seconds...</p>
+        <p>Redirecting to dashboard in {{ redirectCountdown }} seconds...</p>
         <div class="progress-bar">
-          <div class="progress-fill" [style.width.%]="(3 - paymentState.redirectCountdown) * 33.33"></div>
+          <div class="progress-fill" [style.width.%]="(3 - redirectCountdown) * 33.33"></div>
         </div>
       </div>
       <button class="btn-primary" (click)="goToDashboard()">
@@ -140,79 +99,7 @@
       </button>
     </div>
 
-    <!-- Error Message Section -->
-    <div class="error-section" *ngIf="paymentState.status === 'failed' || paymentState.status === 'timeout'">
-      <div class="error-icon-large">⚠️</div>
-      <h2 class="error-title">
-        {{ paymentState.status === 'timeout' ? 'Payment Verification Timeout' : 'Payment Failed' }}
-      </h2>
-      <div class="error-message-box">
-        <p class="error-main-message">{{ paymentState.error }}</p>
-        <p class="error-code" *ngIf="paymentState.errorCode">
-          Error Code: {{ paymentState.errorCode }}
-        </p>
-      </div>
-      
-      <!-- Recommended Action -->
-      <div class="recommended-action" *ngIf="paymentState.recommendedAction">
-        <div class="action-icon">💡</div>
-        <p>{{ paymentState.recommendedAction }}</p>
-      </div>
-
-      <!-- Transaction Details (for timeout) -->
-      <div class="transaction-details" *ngIf="paymentState.status === 'timeout' && paymentState.paymentDetails">
-        <p class="details-label">Transaction Details:</p>
-        <div class="details-row">
-          <span class="label">Transaction ID:</span>
-          <span class="value">{{ paymentState.paymentDetails.txnId }}</span>
-        </div>
-        <div class="details-row">
-          <span class="label">Amount:</span>
-          <span class="value">₹{{ paymentState.paymentDetails.amount }}</span>
-        </div>
-      </div>
-
-      <div class="error-actions">
-        <!-- Manual Status Check Button (for timeout) -->
-        <button 
-          class="btn-check-status" 
-          *ngIf="paymentState.status === 'timeout'"
-          (click)="checkPaymentStatus()"
-          [disabled]="paymentState.checkingStatus">
-          <span *ngIf="!paymentState.checkingStatus">
-            <i class="icon">🔍</i>
-            Check Payment Status
-          </span>
-          <span *ngIf="paymentState.checkingStatus">
-            <i class="spinner">⏳</i>
-            Checking...
-          </span>
-        </button>
-
-        <!-- Retry Button (if retryable) -->
-        <button 
-          class="btn-primary" 
-          *ngIf="paymentState.isRetryable"
-          (click)="retryPayment()">
-          <i class="icon">🔄</i>
-          Start New Payment
-        </button>
-
-        <!-- Contact Support Button (if not retryable) -->
-        <button 
-          class="btn-warning" 
-          *ngIf="!paymentState.isRetryable">
-          <i class="icon">📞</i>
-          Contact Support
-        </button>
-
-        <button class="btn-secondary" (click)="goToLogin()">
-          Cancel & Logout
-        </button>
-      </div>
-    </div>
-
-    <div class="footer-note" *ngIf="!paymentState.paymentInitiated">
+    <div class="footer-note" *ngIf="!success">
       <p>
         <strong>Note:</strong> Your subscription will be valid for 30 days from the date of payment.
         You'll need to renew it to continue accessing the platform.

@@ -58,6 +58,10 @@
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "liveReload": false,
+            "hmr": false
+          },
           "configurations": {
             "production": {
               "browserTarget": "healthcare-platform-frontend:build:production"

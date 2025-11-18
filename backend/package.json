@@ -8,6 +8,8 @@
     "dev": "nodemon server.js",
     "seed": "node scripts/seedData.js",
     "clean": "node scripts/cleanDatabase.js",
+    "reset": "node scripts/reset-database.js",
+    "reset:quick": "node scripts/quick-reset.js",
     "test": "jest --runInBand --detectOpenHandles",
     "test:patient": "jest backend/tests/integration/patient-flow.test.js --runInBand",
     "test:doctor": "jest backend/tests/integration/doctor-flow.test.js --runInBand",
@@ -30,7 +32,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.6.3",
     "nodemailer": "^6.10.1",
-    "razorpay": "^2.9.6"
+    "razorpay": "^2.9.6",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "jest": "^29.7.0",

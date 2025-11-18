@@ -2,7 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
 const authController = require('../controllers/authController');
+const emailVerificationController = require('../controllers/emailVerificationController');
 const { authenticate } = require('../middleware/auth');
+const { validateDateOfBirth } = require('../middleware/validation');
 
 // Validation middleware for patient signup
 const validatePatientSignup = [
@@ -29,9 +31,14 @@ const validateLogin = [
   body('password').notEmpty().withMessage('Password is required')
 ];
 
+// Email Verification Routes
+router.post('/send-verification-otp', emailVerificationController.sendVerificationOTP);
+router.post('/verify-otp', emailVerificationController.verifyOTP);
+router.post('/resend-otp', emailVerificationController.resendOTP);
+
 // Routes
-router.post('/signup/patient', validatePatientSignup, authController.signupPatient);
-router.post('/signup/doctor', validateDoctorSignup, authController.signupDoctor);
+router.post('/signup/patient', validatePatientSignup, validateDateOfBirth, authController.signupPatient);
+router.post('/signup/doctor', validateDoctorSignup, validateDateOfBirth, authController.signupDoctor);
 router.post('/login', validateLogin, authController.login);
 router.get('/verify', authenticate, authController.verify);
 router.post('/logout', authenticate, authController.logout);

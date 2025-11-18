@@ -148,19 +148,20 @@ class AuthService {
           }
         }
 
+        // Better error message: Email not registered
         if (!user) {
-          throw new Error('Invalid email or password');
+          throw new Error('Email is not registered. Please sign up first.');
         }
 
         // Check if user is active
         if (!user.isActive) {
-          throw new Error('Account is deactivated');
+          throw new Error('Account is deactivated. Please contact support.');
         }
 
-        // Verify password
+        // Verify password - Better error message
         const isPasswordValid = await user.comparePassword(password);
         if (!isPasswordValid) {
-          throw new Error('Invalid email or password');
+          throw new Error('Password is incorrect. Please try again.');
         }
       }
 

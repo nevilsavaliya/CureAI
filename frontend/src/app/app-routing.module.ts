@@ -3,7 +3,9 @@ import { RouterModule, Routes } from '@angular/router';
 import { LoginComponent } from './components/login/login.component';
 import { SignupComponent } from './components/signup/signup.component';
 import { PatientDashboardComponent } from './components/patient-dashboard/patient-dashboard.component';
+import { PatientCasesComponent } from './components/patient-cases/patient-cases.component';
 import { DoctorDashboardComponent } from './components/doctor-dashboard/doctor-dashboard.component';
+import { DoctorCasesComponent } from './components/doctor-cases/doctor-cases.component';
 import { AdminDashboardComponent } from './components/admin-dashboard/admin-dashboard.component';
 import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
 import { SubscriptionComponent } from './components/subscription/subscription.component';
@@ -29,8 +31,20 @@ const routes: Routes = [
     data: { roles: ['patient'] }
   },
   { 
+    path: 'patient/cases', 
+    component: PatientCasesComponent,
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['patient'] }
+  },
+  { 
     path: 'doctor/dashboard', 
     component: DoctorDashboardComponent,
+    canActivate: [AuthGuard, RoleGuard, SubscriptionGuard],
+    data: { roles: ['doctor'] }
+  },
+  { 
+    path: 'doctor/cases', 
+    component: DoctorCasesComponent,
     canActivate: [AuthGuard, RoleGuard, SubscriptionGuard],
     data: { roles: ['doctor'] }
   },

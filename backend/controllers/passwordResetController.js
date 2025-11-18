@@ -1,4 +1,6 @@
-const User = require('../models/User');
+const Patient = require('../models/Patient');
+const Doctor = require('../models/Doctor');
+const Admin = require('../models/Admin');
 const OTP = require('../models/OTP');
 const emailService = require('../services/emailService');
 const bcrypt = require('bcrypt');
@@ -20,8 +22,15 @@ exports.requestOTP = async (req, res) => {
       });
     }
 
-    // Check if user exists
-    const user = await User.findOne({ email: email.toLowerCase() });
+    // Check if user exists in any collection
+    let user = await Patient.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      user = await Doctor.findOne({ email: email.toLowerCase() });
+    }
+    if (!user) {
+      user = await Admin.findOne({ email: email.toLowerCase() });
+    }
+    
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -135,8 +144,19 @@ exports.resetPassword = async (req, res) => {
       });
     }
 
-    // Find user
-    const user = await User.findOne({ email: email.toLowerCase() });
+    // Find user in any collection
+    let user = await Patient.findOne({ email: email.toLowerCase() });
+    let userType = 'patient';
+    
+    if (!user) {
+      user = await Doctor.findOne({ email: email.toLowerCase() });
+      userType = 'doctor';
+    }
+    if (!user) {
+      user = await Admin.findOne({ email: email.toLowerCase() });
+      userType = 'admin';
+    }
+    
     if (!user) {
       return res.status(404).json({
         success: false,

@@ -43,7 +43,7 @@ export class SignupComponent implements OnInit {
     this.signupForm = this.formBuilder.group({
       role: ['patient', [Validators.required]],
       name: ['', [Validators.required]],
-      dateOfBirth: ['', [Validators.required]],
+      dateOfBirth: ['', [Validators.required, SignupComponent.dateOfBirthValidator]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required]],
@@ -53,7 +53,7 @@ export class SignupComponent implements OnInit {
       degree: [''],
       speciality: [''],
       experienceYears: ['']
-    }, { validators: this.passwordMatchValidator });
+    }, { validators: SignupComponent.passwordMatchValidator });
 
     // Listen to role changes
     this.signupForm.get('role')?.valueChanges.subscribe(role => {
@@ -66,7 +66,7 @@ export class SignupComponent implements OnInit {
   }
 
   // Custom validator to check if passwords match
-  passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
+  static passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
     const password = control.get('password');
     const confirmPassword = control.get('confirmPassword');
 
@@ -75,6 +75,54 @@ export class SignupComponent implements OnInit {
     }
 
     return password.value === confirmPassword.value ? null : { passwordMismatch: true };
+  }
+
+  // Custom validator to check if date of birth is not in the future
+  static dateOfBirthValidator(control: AbstractControl): ValidationErrors | null {
+    if (!control.value) {
+      return null;
+    }
+
+    const selectedDate = new Date(control.value);
+    const today = new Date();
+    
+    // Set time to midnight for accurate comparison
+    today.setHours(0, 0, 0, 0);
+    selectedDate.setHours(0, 0, 0, 0);
+
+    if (selectedDate > today) {
+      return { futureDate: true };
+    }
+
+    // Optional: Check if date is too far in the past (e.g., more than 150 years)
+    const minDate = new Date();
+    minDate.setFullYear(minDate.getFullYear() - 150);
+    minDate.setHours(0, 0, 0, 0);
+
+    if (selectedDate < minDate) {
+      return { tooOld: true };
+    }
+
+    return null;
+  }
+
+  // Get max date for date picker (today)
+  get maxDate(): string {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // Get min date for date picker (150 years ago)
+  get minDate(): string {
+    const minDate = new Date();
+    minDate.setFullYear(minDate.getFullYear() - 150);
+    const year = minDate.getFullYear();
+    const month = String(minDate.getMonth() + 1).padStart(2, '0');
+    const day = String(minDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   updateValidators(): void {

@@ -26,8 +26,8 @@ export class SubscriptionGuard implements CanActivate {
       return true;
     }
 
-    // Check doctor's subscription status
-    return this.subscriptionService.getSubscriptionStatus(currentUser.id).pipe(
+    // Check doctor's subscription status using test payment endpoint
+    return this.subscriptionService.getTestPaymentStatus().pipe(
       map(response => {
         if (response.subscriptionStatus === 'active') {
           // Subscription is active, allow access
