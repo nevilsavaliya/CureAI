@@ -1,0 +1,43 @@
+# IDE and Editor folders
+.kiro/
+.vscode/
+.idea/
+
+# Documentation (except README)
+*.md
+!README.md
+
+# Test files
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+**/tests/
+**/__tests__/
+
+# Certificates
+certs/
+
+# Documentation folder
+docs/
+
+# Scripts folder
+scripts/
+
+# Notebooks
+notebooks/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+
+# Build outputs
+dist/
+build/
+*.log
