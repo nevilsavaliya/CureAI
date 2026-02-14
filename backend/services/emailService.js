@@ -7,28 +7,54 @@ class EmailService {
                         process.env.EMAIL_USER !== 'your-email@gmail.com';
     
     if (this.isConfigured) {
-      // Create transporter (using Gmail for demo - configure with your SMTP)
+      // Determine SMTP provider (default to Gmail)
+      const emailProvider = process.env.EMAIL_PROVIDER || 'gmail';
+      
+      // SMTP configurations for different providers
+      const smtpConfigs = {
+        gmail: {
+          host: 'smtp.gmail.com',
+          port: 465,
+          secure: true
+        },
+        sendgrid: {
+          host: 'smtp.sendgrid.net',
+          port: 587,
+          secure: false
+        },
+        mailgun: {
+          host: 'smtp.mailgun.org',
+          port: 587,
+          secure: false
+        },
+        ses: {
+          host: process.env.SES_SMTP_HOST || 'email-smtp.us-east-1.amazonaws.com',
+          port: 587,
+          secure: false
+        },
+        custom: {
+          host: process.env.SMTP_HOST || 'smtp.gmail.com',
+          port: parseInt(process.env.SMTP_PORT) || 587,
+          secure: process.env.SMTP_SECURE === 'true'
+        }
+      };
+
+      const config = smtpConfigs[emailProvider] || smtpConfigs.gmail;
+
+      // Create transporter
       this.transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false, // Use STARTTLS
+        ...config,
         auth: {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASSWORD
         },
         tls: {
-          // Do not fail on invalid certificates
           rejectUnauthorized: false,
-          // Minimum TLS version
-          minVersion: 'TLSv1.2',
-          // Cipher configuration
-          ciphers: 'SSLv3'
+          minVersion: 'TLSv1.2'
         },
-        // Connection timeout
-        connectionTimeout: 10000,
-        // Socket timeout
-        socketTimeout: 10000,
-        // Enable debug output
+        connectionTimeout: 30000, // Increased timeout for cloud servers
+        socketTimeout: 30000,
+        greetingTimeout: 30000,
         debug: process.env.NODE_ENV === 'development',
         logger: process.env.NODE_ENV === 'development'
       });

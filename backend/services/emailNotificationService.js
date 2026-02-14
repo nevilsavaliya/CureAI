@@ -4,26 +4,58 @@ const AuditLog = require('../models/AuditLog');
 class EmailNotificationService {
   constructor() {
     // Check if email is configured
-    this.isConfigured = process.env.EMAIL_USER && process.env.EMAIL_PASSWORD && 
-                        process.env.EMAIL_USER !== 'your-email@gmail.com';
-    
+    this.isConfigured = process.env.EMAIL_USER && process.env.EMAIL_PASSWORD &&
+      process.env.EMAIL_USER !== 'your-email@gmail.com';
+
     if (this.isConfigured) {
-      // Create transporter (using Gmail for demo - configure with your SMTP)
+      // Determine SMTP provider (default to Gmail)
+      const emailProvider = process.env.EMAIL_PROVIDER || 'gmail';
+
+      // SMTP configurations for different providers
+      const smtpConfigs = {
+        gmail: {
+          host: 'smtp.gmail.com',
+          port: 465,
+          secure: true
+        },
+        sendgrid: {
+          host: 'smtp.sendgrid.net',
+          port: 587,
+          secure: false
+        },
+        mailgun: {
+          host: 'smtp.mailgun.org',
+          port: 587,
+          secure: false
+        },
+        ses: {
+          host: process.env.SES_SMTP_HOST || 'email-smtp.us-east-1.amazonaws.com',
+          port: 587,
+          secure: false
+        },
+        custom: {
+          host: process.env.SMTP_HOST || 'smtp.gmail.com',
+          port: parseInt(process.env.SMTP_PORT) || 587,
+          secure: process.env.SMTP_SECURE === 'true'
+        }
+      };
+
+      const config = smtpConfigs[emailProvider] || smtpConfigs.gmail;
+
+      // Create transporter
       this.transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false, // Use STARTTLS
+        ...config,
         auth: {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASSWORD
         },
         tls: {
           rejectUnauthorized: false,
-          minVersion: 'TLSv1.2',
-          ciphers: 'SSLv3'
+          minVersion: 'TLSv1.2'
         },
-        connectionTimeout: 10000,
-        socketTimeout: 10000,
+        connectionTimeout: 30000, // Increased timeout for cloud servers
+        socketTimeout: 30000,
+        greetingTimeout: 30000,
         debug: process.env.NODE_ENV === 'development',
         logger: process.env.NODE_ENV === 'development'
       });
@@ -92,7 +124,7 @@ class EmailNotificationService {
       };
 
       const result = await this._sendEmailWithRetry(mailOptions, 'USER_REMOVAL_NOTIFICATION');
-      
+
       if (result.success) {
         this.deliveryStats.sent++;
         console.log(`✅ User removal notification sent to ${email}`);
@@ -121,7 +153,7 @@ class EmailNotificationService {
   async sendNewAdminWelcomeEmail(adminData, temporaryPassword, createdByName = 'Root Administrator', options = {}) {
     try {
       const { email, name } = adminData;
-      const { 
+      const {
         loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:4200'}/admin/login`,
         supportEmail = 'support@healthcare.com',
         passwordChangeRequired = true
@@ -159,7 +191,7 @@ class EmailNotificationService {
       };
 
       const result = await this._sendEmailWithRetry(mailOptions, 'ADMIN_WELCOME');
-      
+
       if (result.success) {
         this.deliveryStats.sent++;
         console.log(`✅ Admin welcome email sent to ${email}`);
@@ -188,7 +220,7 @@ class EmailNotificationService {
   async sendUserRestorationNotification(userData, restoredByName = 'Administrator', notes = '', options = {}) {
     try {
       const { email, name, userType } = userData;
-      const { 
+      const {
         loginUrl = this._getLoginUrl(userType),
         supportEmail = 'support@healthcare.com'
       } = options;
@@ -225,7 +257,7 @@ class EmailNotificationService {
       };
 
       const result = await this._sendEmailWithRetry(mailOptions, 'USER_RESTORATION_NOTIFICATION');
-      
+
       if (result.success) {
         this.deliveryStats.sent++;
         console.log(`✅ User restoration notification sent to ${email}`);
@@ -252,7 +284,7 @@ class EmailNotificationService {
    */
   async sendBulkOperationSummary(adminEmail, operationSummary, options = {}) {
     try {
-      const { 
+      const {
         operation,
         userType,
         totalRequested,
@@ -295,7 +327,7 @@ class EmailNotificationService {
       };
 
       const result = await this._sendEmailWithRetry(mailOptions, 'BULK_OPERATION_SUMMARY');
-      
+
       if (result.success) {
         this.deliveryStats.sent++;
         console.log(`✅ Bulk operation summary sent to ${adminEmail}`);
@@ -320,7 +352,7 @@ class EmailNotificationService {
   getDeliveryStatistics() {
     return {
       ...this.deliveryStats,
-      successRate: this.deliveryStats.sent + this.deliveryStats.failed > 0 
+      successRate: this.deliveryStats.sent + this.deliveryStats.failed > 0
         ? ((this.deliveryStats.sent / (this.deliveryStats.sent + this.deliveryStats.failed)) * 100).toFixed(2)
         : 0
     };
@@ -336,11 +368,11 @@ class EmailNotificationService {
    */
   async _sendEmailWithRetry(mailOptions, emailType, maxRetries = 3) {
     let lastError;
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const info = await this.transporter.sendMail(mailOptions);
-        
+
         // Log successful email delivery
         await this._logEmailDelivery(mailOptions.to, emailType, 'success', {
           messageId: info.messageId,
@@ -352,9 +384,9 @@ class EmailNotificationService {
       } catch (error) {
         lastError = error;
         this.deliveryStats.retries++;
-        
+
         console.warn(`Email delivery attempt ${attempt}/${maxRetries} failed for ${mailOptions.to}: ${error.message}`);
-        
+
         // Wait before retry (exponential backoff)
         if (attempt < maxRetries) {
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
@@ -440,7 +472,7 @@ class EmailNotificationService {
    */
   _generateUserRemovalTemplate(data) {
     const { name, userType, reason, adminName, supportEmail, appealProcess } = data;
-    
+
     return `
       <!DOCTYPE html>
       <html>
@@ -544,7 +576,7 @@ class EmailNotificationService {
    */
   _generateAdminWelcomeTemplate(data) {
     const { name, email, temporaryPassword, createdByName, loginUrl, supportEmail, passwordChangeRequired } = data;
-    
+
     return `
       <!DOCTYPE html>
       <html>
@@ -668,7 +700,7 @@ class EmailNotificationService {
    */
   _generateUserRestorationTemplate(data) {
     const { name, userType, restoredByName, notes, loginUrl, supportEmail } = data;
-    
+
     return `
       <!DOCTYPE html>
       <html>
@@ -791,7 +823,7 @@ class EmailNotificationService {
    */
   _generateBulkOperationSummaryTemplate(data) {
     const { operation, userType, totalRequested, successful, failed, failedUsers, reason } = data;
-    
+
     return `
       <!DOCTYPE html>
       <html>
@@ -930,7 +962,7 @@ class EmailNotificationService {
       };
 
       const result = await this._sendEmailWithRetry(mailOptions, 'SUSPICIOUS_ACTIVITY_ALERT');
-      
+
       if (result.success) {
         this.deliveryStats.sent++;
         console.log(`✅ Suspicious activity alert sent to ${rootAdminEmail}`);
