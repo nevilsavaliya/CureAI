@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    ports:
+      - "${BACKEND_PORT:-3000}:${PORT:-3000}"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-3000}
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - API_URL=${API_URL}
+      - API_BASE_URL=${API_BASE_URL}
+      - SOCKET_URL=${SOCKET_URL}
+      - HEALTH_CHECK_URL=${HEALTH_CHECK_URL}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - ENCRYPTION_MASTER_KEY=${ENCRYPTION_MASTER_KEY}
+      - API_RATE_LIMIT=${API_RATE_LIMIT:-100}
+      - HOSPITAL_API_KEY_PREFIX=${HOSPITAL_API_KEY_PREFIX:-HK_}
+      - HOSPITAL_API_SECRET_LENGTH=${HOSPITAL_API_SECRET_LENGTH:-64}
+      - PAYMENT_TIMEOUT_MINUTES=${PAYMENT_TIMEOUT_MINUTES:-10}
+      - PAYMENT_POLL_INTERVAL_SECONDS=${PAYMENT_POLL_INTERVAL_SECONDS:-5}
+      - PAYMENT_MAX_RETRIES=${PAYMENT_MAX_RETRIES:-3}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - UPI_ID=${UPI_ID}
+      - KOTAK_API_BASE_URL=${KOTAK_API_BASE_URL}
+      - KOTAK_CLIENT_ID=${KOTAK_CLIENT_ID}
+      - KOTAK_CLIENT_SECRET=${KOTAK_CLIENT_SECRET}
+      - KOTAK_MERCHANT_VPA=${KOTAK_MERCHANT_VPA}
+      - KOTAK_MERCHANT_MOBILE=${KOTAK_MERCHANT_MOBILE}
+      - KOTAK_AGGREGATOR_ID=${KOTAK_AGGREGATOR_ID}
+      - KOTAK_MERCHANT_ID=${KOTAK_MERCHANT_ID}
+      - KOTAK_SECRET_KEY=${KOTAK_SECRET_KEY}
+    volumes:
+      - ./backend/uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "${HEALTH_CHECK_URL:-http://backend:${PORT:-3000}/api/health}"]
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-40s}
+    networks:
+      - healthcare-network
+
+  # Optional: MongoDB for local development
+  mongodb:
+    image: mongo:${MONGODB_VERSION:-6}
+    ports:
+      - "${MONGODB_PORT:-27017}:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGODB_ROOT_USERNAME:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_ROOT_PASSWORD:-password}
+      - MONGO_INITDB_DATABASE=${MONGODB_DATABASE:-healthcare-platform}
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
+    networks:
+      - healthcare-network
+    profiles:
+      - local-db
+
+volumes:
+  mongodb_data:
+
+networks:
+  healthcare-network:
+    driver: bridge

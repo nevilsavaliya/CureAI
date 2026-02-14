@@ -18,6 +18,9 @@ interface DoctorCase {
   status: 'pending' | 'ongoing' | 'treated' | 'rejected';
   symptoms: string[];
   predictedConditions: string[];
+  predictionConfidence?: Array<{
+    confidence: number;
+  }>;
   chatbotHistory: Array<{
     question: string;
     answer: string;
@@ -922,5 +925,11 @@ export class DoctorCasesComponent implements OnInit, OnDestroy {
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  getConfidenceClass(confidence: number): string {
+    if (confidence >= 70) return 'confidence-high';
+    if (confidence >= 50) return 'confidence-medium';
+    return 'confidence-low';
   }
 }

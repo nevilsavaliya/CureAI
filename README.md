@@ -46,8 +46,17 @@ cd backend
 npm install
 ```
 
-3. Create .env file (copy from .env.example):
+3. Setup environment configuration:
 ```bash
+# Interactive setup (recommended)
+npm run setup
+
+# Or copy and edit manually
+cp .env.example .env
+# Edit .env with your values
+
+# Validate configuration
+npm run setup:validate
 cp .env.example .env
 ```
 
@@ -82,6 +91,41 @@ ng serve
 ```
 
 Frontend will run on http://localhost:4200
+
+## 🔐 SSL/HTTPS Setup (Optional)
+
+For secure HTTPS connections in development and production:
+
+### Quick SSL Setup
+
+```bash
+# Development (self-signed certificates)
+./scripts/ssl-setup.sh --domain localhost --type self-signed
+docker-compose -f docker-compose.ssl.yml up -d
+
+# Production (Let's Encrypt certificates)
+./scripts/ssl-setup.sh \
+  --domain yourdomain.com \
+  --email admin@yourdomain.com \
+  --type letsencrypt \
+  --env production
+```
+
+### Access with HTTPS
+- Frontend: https://localhost (or your domain)
+- Backend: https://localhost:3443 (or your domain:3443)
+- API Docs: https://localhost:3443/api-docs
+
+### SSL Validation
+```bash
+# Validate SSL configuration
+./scripts/validate-ssl.sh --domain localhost
+
+# Validate production domain
+./scripts/validate-ssl.sh --domain yourdomain.com
+```
+
+See [SSL Setup Guide](docs/SSL_SETUP_GUIDE.md) for detailed instructions.
 
 ## Features
 

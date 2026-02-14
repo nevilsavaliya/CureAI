@@ -3,6 +3,10 @@
  * Limits API calls to 100 requests per hour per hospital
  */
 
+const logger = require('../services/logger');
+const { trackRateLimitError } = require('./errorTracking');
+const { trackRateLimitExceeded } = require('./apiMonitoring');
+
 // In-memory store for rate limiting
 // Structure: { hospitalId: { count: number, resetTime: timestamp } }
 const rateLimitStore = new Map();
@@ -75,6 +79,24 @@ exports.rateLimitHospitalApi = (req, res, next) => {
     if (rateLimitData.count > RATE_LIMIT) {
       const retryAfter = Math.ceil((rateLimitData.resetTime - now) / 1000); // seconds
       
+      // Track rate limit exceeded in monitoring
+      trackRateLimitExceeded({
+        hospitalId: hospitalId,
+        hospitalName: req.hospital.name || req.hospital.hospitalName,
+        requestCount: rateLimitData.count,
+        limit: RATE_LIMIT
+      }, req);
+      
+      // Log rate limit exceeded
+      logger.security.rateLimitExceeded({
+        hospitalId: hospitalId,
+        hospitalName: req.hospital.name || req.hospital.hospitalName,
+        endpoint: req.originalUrl,
+        requestCount: rateLimitData.count,
+        limit: RATE_LIMIT,
+        ip: logger.getClientIP(req)
+      });
+      
       res.setHeader('Retry-After', retryAfter);
       
       return res.status(429).json({
@@ -93,7 +115,15 @@ exports.rateLimitHospitalApi = (req, res, next) => {
     // Allow request to proceed
     next();
   } catch (error) {
-    console.error('Rate limiting error:', error);
+    logger.error('Rate limiting error', {
+      type: 'RATE_LIMITER_ERROR',
+      hospitalId: req.hospital?.id,
+      error: error.message,
+      stack: error.stack,
+      endpoint: req.originalUrl,
+      timestamp: new Date().toISOString()
+    });
+
     // On error, allow request to proceed (fail open)
     // This prevents rate limiting issues from blocking legitimate requests
     next();

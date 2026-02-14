@@ -185,7 +185,7 @@ exports.signupDoctor = async (req, res) => {
   }
 };
 
-// Login controller
+// Login controller with enhanced admin authentication
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -198,8 +198,40 @@ exports.login = async (req, res) => {
       });
     }
 
+    // Get client IP and user agent for security tracking
+    const clientIP = req.headers['x-forwarded-for'] || 
+                     req.headers['x-real-ip'] || 
+                     req.connection?.remoteAddress || 
+                     req.socket?.remoteAddress ||
+                     req.ip ||
+                     'unknown';
+    
+    const userAgent = req.headers['user-agent'] || 'unknown';
+
     // Authenticate user
     const result = await authService.login(email, password);
+
+    // For admin users, update last login with IP and user agent tracking
+    if (result.user.role === 'admin') {
+      const Admin = require('../models/Admin');
+      const admin = await Admin.findById(result.user.id);
+      
+      if (admin) {
+        await admin.updateLastLogin(clientIP, userAgent);
+        
+        // Update response with latest admin information
+        result.user.lastLogin = admin.lastLogin;
+        result.user.lastLoginIP = admin.lastLoginIP;
+      }
+    }
+
+    // Set session headers for admin users
+    if (result.user.role === 'admin') {
+      res.set({
+        'X-Admin-Session': 'active',
+        'X-Root-Admin': result.user.isRootAdmin ? 'true' : 'false'
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -214,7 +246,7 @@ exports.login = async (req, res) => {
   }
 };
 
-// Verify token controller
+// Verify token controller with admin session validation
 exports.verify = async (req, res) => {
   try {
     // If middleware passed, token is valid
@@ -228,6 +260,55 @@ exports.verify = async (req, res) => {
 
     // User is already attached to req by auth middleware
     const user = await authService.getUserById(req.user.id, req.user.role);
+
+    // For admin users, perform additional session validation
+    if (req.user.role === 'admin') {
+      const Admin = require('../models/Admin');
+      const admin = await Admin.findById(req.user.id);
+      
+      if (!admin) {
+        return res.status(401).json({
+          valid: false,
+          success: false,
+          message: 'Admin user not found',
+          requiresLogin: true
+        });
+      }
+
+      // Check if admin is active
+      if (!admin.isActive) {
+        return res.status(403).json({
+          valid: false,
+          success: false,
+          message: 'Admin account is deactivated',
+          requiresLogin: true
+        });
+      }
+
+      // Check if admin account is locked
+      if (admin.isAccountLocked()) {
+        return res.status(423).json({
+          valid: false,
+          success: false,
+          message: 'Admin account is temporarily locked',
+          requiresLogin: true,
+          lockedUntil: admin.accountLockedUntil
+        });
+      }
+
+      // Add admin-specific information to user object
+      user.isRootAdmin = admin.isRoot();
+      user.permissions = admin.permissions || [];
+      user.lastLogin = admin.lastLogin;
+      user.lastLoginIP = admin.lastLoginIP;
+
+      // Set admin session headers
+      res.set({
+        'X-Admin-Session': 'active',
+        'X-Root-Admin': admin.isRoot() ? 'true' : 'false',
+        'X-Admin-Permissions': JSON.stringify(admin.permissions || [])
+      });
+    }
 
     res.status(200).json({
       valid: true,

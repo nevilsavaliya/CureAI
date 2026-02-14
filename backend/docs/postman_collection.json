@@ -1,0 +1,430 @@
+{
+  "info": {
+    "name": "Healthcare Platform API",
+    "description": "Complete API collection for Healthcare Platform including hospital integration",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "hospital_api_key",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "hospital_api_secret",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Hospital",
+      "item": [
+        {
+          "name": "Register Hospital",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "Dr. John Smith",
+                  "type": "text"
+                },
+                {
+                  "key": "email",
+                  "value": "contact@cityhospital.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "SecurePass123!",
+                  "type": "text"
+                },
+                {
+                  "key": "hospitalName",
+                  "value": "City General Hospital",
+                  "type": "text"
+                },
+                {
+                  "key": "registrationNumber",
+                  "value": "REG123456",
+                  "type": "text"
+                },
+                {
+                  "key": "contactNumber",
+                  "value": "+1234567890",
+                  "type": "text"
+                },
+                {
+                  "key": "address[city]",
+                  "value": "New York",
+                  "type": "text"
+                },
+                {
+                  "key": "address[state]",
+                  "value": "NY",
+                  "type": "text"
+                },
+                {
+                  "key": "specializations",
+                  "value": "[\"Cardiology\",\"Emergency Medicine\"]",
+                  "type": "text"
+                },
+                {
+                  "key": "numberOfBeds",
+                  "value": "250",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hospitals/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hospitals", "register"]
+            }
+          }
+        },
+        {
+          "name": "Hospital Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.token);",
+                  "    pm.collectionVariables.set('hospital_api_key', response.hospital.apiKey);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"contact@cityhospital.com\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hospitals/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hospitals", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Hospital Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/hospitals/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hospitals", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Hospital Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contactNumber\": \"+1234567899\",\n  \"website\": \"https://cityhospital.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hospitals/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hospitals", "profile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hospital API",
+      "item": [
+        {
+          "name": "Get Patient Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiKey\": \"{{hospital_api_key}}\",\n  \"apiSecret\": \"{{hospital_api_secret}}\",\n  \"patientEmail\": \"patient@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hospitals/api/patient-data",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hospitals", "api", "patient-data"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hospital Admin",
+      "item": [
+        {
+          "name": "Get Hospital Statistics",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/hospitals/statistics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "hospitals", "statistics"]
+            }
+          }
+        },
+        {
+          "name": "Get All Hospitals",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/hospitals?status=pending",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "hospitals"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Hospital Details",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/hospitals/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "hospitals", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "hospital_id_here"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Verify Hospital",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/hospitals/:id/verify",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "hospitals", ":id", "verify"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "hospital_id_here"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reject Hospital",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Incomplete documentation\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/hospitals/:id/reject",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "hospitals", ":id", "reject"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "hospital_id_here"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Revoke Hospital Access",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Terms of service violation\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/hospitals/:id/revoke",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "hospitals", ":id", "revoke"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "hospital_id_here"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/health",
+          "host": ["{{base_url}}"],
+          "path": ["api", "health"]
+        }
+      }
+    }
+  ]
+}

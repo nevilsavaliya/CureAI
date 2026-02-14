@@ -34,68 +34,36 @@
       <div class="sidebar-header">
         <h2>Cases</h2>
         <div class="search-box">
-          <input 
-            type="text" 
-            [(ngModel)]="searchQuery"
-            (ngModelChange)="onSearchChange()"
-            placeholder="Search by doctor name..."
-          />
+          <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()"
+            placeholder="Search by doctor name..." />
         </div>
         <div class="date-filters">
           <div class="date-filter-group">
             <label>From:</label>
-            <input 
-              type="date" 
-              [(ngModel)]="searchStartDate"
-              (ngModelChange)="onSearchChange()"
-            />
+            <input type="date" [(ngModel)]="searchStartDate" (ngModelChange)="onSearchChange()" />
           </div>
           <div class="date-filter-group">
             <label>To:</label>
-            <input 
-              type="date" 
-              [(ngModel)]="searchEndDate"
-              (ngModelChange)="onSearchChange()"
-            />
+            <input type="date" [(ngModel)]="searchEndDate" (ngModelChange)="onSearchChange()" />
           </div>
         </div>
       </div>
 
       <!-- Filters -->
       <div class="filter-tabs">
-        <button 
-          [class.active]="selectedFilter === 'all'"
-          (click)="setFilter('all')"
-          class="filter-tab"
-        >
+        <button [class.active]="selectedFilter === 'all'" (click)="setFilter('all')" class="filter-tab">
           All ({{ getCaseCount('all') }})
         </button>
-        <button 
-          [class.active]="selectedFilter === 'pending'"
-          (click)="setFilter('pending')"
-          class="filter-tab"
-        >
+        <button [class.active]="selectedFilter === 'pending'" (click)="setFilter('pending')" class="filter-tab">
           Pending ({{ getCaseCount('pending') }})
         </button>
-        <button 
-          [class.active]="selectedFilter === 'ongoing'"
-          (click)="setFilter('ongoing')"
-          class="filter-tab"
-        >
+        <button [class.active]="selectedFilter === 'ongoing'" (click)="setFilter('ongoing')" class="filter-tab">
           Ongoing ({{ getCaseCount('ongoing') }})
         </button>
-        <button 
-          [class.active]="selectedFilter === 'treated'"
-          (click)="setFilter('treated')"
-          class="filter-tab"
-        >
+        <button [class.active]="selectedFilter === 'treated'" (click)="setFilter('treated')" class="filter-tab">
           Treated ({{ getCaseCount('treated') }})
         </button>
-        <button 
-          [class.active]="selectedFilter === 'rejected'"
-          (click)="setFilter('rejected')"
-          class="filter-tab"
-        >
+        <button [class.active]="selectedFilter === 'rejected'" (click)="setFilter('rejected')" class="filter-tab">
           Rejected ({{ getCaseCount('rejected') }})
         </button>
       </div>
@@ -104,31 +72,19 @@
       <div class="sort-options">
         <label>Sort by:</label>
         <div class="sort-buttons">
-          <button 
-            [class.active]="sortBy === 'date'"
-            (click)="setSortBy('date')"
-            class="sort-btn"
-          >
+          <button [class.active]="sortBy === 'date'" (click)="setSortBy('date')" class="sort-btn">
             Date
             <span class="sort-arrow" *ngIf="sortBy === 'date'">
               {{ sortOrder === 'asc' ? '↑' : '↓' }}
             </span>
           </button>
-          <button 
-            [class.active]="sortBy === 'status'"
-            (click)="setSortBy('status')"
-            class="sort-btn"
-          >
+          <button [class.active]="sortBy === 'status'" (click)="setSortBy('status')" class="sort-btn">
             Status
             <span class="sort-arrow" *ngIf="sortBy === 'status'">
               {{ sortOrder === 'asc' ? '↑' : '↓' }}
             </span>
           </button>
-          <button 
-            [class.active]="sortBy === 'unread'"
-            (click)="setSortBy('unread')"
-            class="sort-btn"
-          >
+          <button [class.active]="sortBy === 'unread'" (click)="setSortBy('unread')" class="sort-btn">
             Unread
             <span class="sort-arrow" *ngIf="sortBy === 'unread'">
               {{ sortOrder === 'asc' ? '↑' : '↓' }}
@@ -147,13 +103,8 @@
           <p>No cases found</p>
         </div>
 
-        <div 
-          *ngFor="let case of filteredCases"
-          [class.active]="selectedCase?._id === case._id"
-          [class.has-unread]="case.unreadCount && case.unreadCount > 0"
-          (click)="selectCase(case)"
-          class="case-item"
-        >
+        <div *ngFor="let case of filteredCases" [class.active]="selectedCase?._id === case._id"
+          [class.has-unread]="case.unreadCount && case.unreadCount > 0" (click)="selectCase(case)" class="case-item">
           <div class="case-item-header">
             <h3>Dr. {{ case.doctorId.name }}</h3>
             <span [class]="getStatusClass(case.status)" class="status-badge">
@@ -240,313 +191,360 @@
           </div>
         </div>
 
-        <!-- Medical History & Diagnostic Data -->
-        <div class="medical-history-section">
-          <div class="section-header">
-            <h3>📋 Medical History & Diagnostic Data</h3>
-            <button class="btn-export" (click)="exportCaseHistory()" title="Export case history">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-              </svg>
-              Export
-            </button>
-          </div>
-          
-          <div class="history-section">
-            <h4>🩺 Original Symptoms</h4>
-            <p class="section-description">Symptoms you reported during initial consultation</p>
-            <div class="symptoms-list">
-              <span *ngFor="let symptom of selectedCase.symptoms" class="symptom-tag">
-                {{ symptom }}
-              </span>
-            </div>
-            <div *ngIf="selectedCase.symptoms.length === 0" class="empty-data">
-              No symptoms recorded
-            </div>
-          </div>
-          
-          <div class="history-section" *ngIf="selectedCase.predictedConditions && selectedCase.predictedConditions.length > 0">
-            <h4>🔍 AI-Predicted Conditions</h4>
-            <p class="section-description">Conditions predicted by our diagnostic chatbot based on your symptoms</p>
-            <div class="conditions-list">
-              <span *ngFor="let condition of selectedCase.predictedConditions" class="condition-tag">
-                {{ condition }}
-              </span>
-            </div>
-          </div>
-          
-          <div class="history-section" *ngIf="selectedCase.chatbotHistory && selectedCase.chatbotHistory.length > 0">
-            <h4>💬 Chatbot Diagnostic Conversation</h4>
-            <p class="section-description">Complete conversation history with our AI diagnostic assistant</p>
-            <div class="chatbot-history-container">
-              <div *ngFor="let entry of selectedCase.chatbotHistory; let i = index" class="chatbot-entry">
-                <div class="entry-number">Exchange {{ i + 1 }}</div>
-                <div class="chatbot-question">
-                  <div class="message-label">Question:</div>
-                  <div class="message-text">{{ entry.question }}</div>
-                </div>
-                <div class="chatbot-answer">
-                  <div class="message-label">Your Answer:</div>
-                  <div class="message-text">{{ entry.answer }}</div>
-                </div>
-                <div class="entry-timestamp" *ngIf="entry.timestamp">
-                  {{ entry.timestamp | date:'MMM d, y h:mm a' }}
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="history-section" *ngIf="!selectedCase.chatbotHistory || selectedCase.chatbotHistory.length === 0">
-            <h4>💬 Chatbot Diagnostic Conversation</h4>
-            <p class="section-description">Complete conversation history with our AI diagnostic assistant</p>
-            <div class="empty-data">
-              No chatbot conversation history available
-            </div>
-          </div>
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+          <button [class.active]="activeTab === 'overview'" (click)="activeTab = 'overview'" class="tab-button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            </svg>
+            Overview
+          </button>
+          <button [class.active]="activeTab === 'messages'" (click)="activeTab = 'messages'" class="tab-button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            Messages
+            <span *ngIf="selectedCase.unreadCount && selectedCase.unreadCount > 0" class="tab-badge">
+              {{ selectedCase.unreadCount }}
+            </span>
+          </button>
+          <button [class.active]="activeTab === 'timeline'" (click)="activeTab = 'timeline'" class="tab-button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            Timeline
+          </button>
+          <button *ngIf="selectedCase.status === 'treated'" [class.active]="activeTab === 'feedback'"
+            (click)="activeTab = 'feedback'" class="tab-button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon
+                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+              </polygon>
+            </svg>
+            Feedback
+          </button>
         </div>
 
-        <!-- Consultation Timeline -->
-        <div class="consultation-timeline-section">
-          <div class="section-header">
-            <h3>📅 Consultation Timeline</h3>
-            <button class="btn-print" (click)="printTimeline()" title="Print timeline">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6 9 6 2 18 2 18 9"></polyline>
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-                <rect x="6" y="14" width="12" height="8"></rect>
-              </svg>
-              Print
-            </button>
+        <!-- Tab Content -->
+        <div class="tab-content">
+          <!-- Overview Tab -->
+          <div *ngIf="activeTab === 'overview'" class="tab-pane">
+            <div class="medical-history-section">
+              <div class="section-header">
+                <h3>📋 Medical History & Diagnostic Data</h3>
+                <button class="btn-export" (click)="exportCaseHistory()" title="Export case history">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  Export
+                </button>
+              </div>
+
+              <div class="history-section">
+                <h4>🩺 Original Symptoms</h4>
+                <p class="section-description">Symptoms you reported during initial consultation</p>
+                <div class="symptoms-list">
+                  <span *ngFor="let symptom of selectedCase.symptoms" class="symptom-tag">
+                    {{ symptom }}
+                  </span>
+                </div>
+                <div *ngIf="selectedCase.symptoms.length === 0" class="empty-data">
+                  No symptoms recorded
+                </div>
+              </div>
+
+              <div class="history-section"
+                *ngIf="selectedCase.predictedConditions && selectedCase.predictedConditions.length > 0">
+                <h4>🔍 AI-Predicted Conditions</h4>
+                <p class="section-description">Conditions predicted by our diagnostic chatbot based on your symptoms</p>
+                <div class="conditions-list-with-confidence">
+                  <div *ngFor="let condition of selectedCase.predictedConditions; let i = index"
+                    class="condition-item-with-confidence">
+                    <div class="condition-name">{{ condition }}</div>
+                    <div class="condition-confidence"
+                      *ngIf="selectedCase.predictionConfidence && selectedCase.predictionConfidence[i]">
+                      <span class="confidence-badge-small"
+                        [ngClass]="getConfidenceClass(selectedCase.predictionConfidence[i].confidence)">
+                        {{ selectedCase.predictionConfidence[i].confidence }}%
+                      </span>
+                      <div class="confidence-bar-small">
+                        <div class="confidence-fill-small"
+                          [ngClass]="getConfidenceClass(selectedCase.predictionConfidence[i].confidence)"
+                          [style.width.%]="selectedCase.predictionConfidence[i].confidence"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="history-section"
+                *ngIf="selectedCase.chatbotHistory && selectedCase.chatbotHistory.length > 0">
+                <h4>💬 Chatbot Diagnostic Conversation</h4>
+                <p class="section-description">Complete conversation history with our AI diagnostic assistant</p>
+                <div class="chatbot-history-container">
+                  <div *ngFor="let entry of selectedCase.chatbotHistory; let i = index" class="chatbot-entry">
+                    <div class="entry-number">Exchange {{ i + 1 }}</div>
+                    <div class="chatbot-question">
+                      <div class="message-label">Question:</div>
+                      <div class="message-text">{{ entry.question }}</div>
+                    </div>
+                    <div class="chatbot-answer">
+                      <div class="message-label">Your Answer:</div>
+                      <div class="message-text">{{ entry.answer }}</div>
+                    </div>
+                    <div class="entry-timestamp" *ngIf="entry.timestamp">
+                      {{ entry.timestamp | date:'MMM d, y h:mm a' }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="history-section"
+                *ngIf="!selectedCase.chatbotHistory || selectedCase.chatbotHistory.length === 0">
+                <h4>💬 Chatbot Diagnostic Conversation</h4>
+                <p class="section-description">Complete conversation history with our AI diagnostic assistant</p>
+                <div class="empty-data">
+                  No chatbot conversation history available
+                </div>
+              </div>
+            </div>
           </div>
-          
-          <div class="timeline-container">
-            <div class="timeline-event">
-              <div class="timeline-marker status-created"></div>
-              <div class="timeline-content">
-                <div class="timeline-header">
-                  <strong>Case Created</strong>
-                  <span class="timeline-date">{{ selectedCase.createdAt | date:'MMM d, y h:mm a' }}</span>
+
+          <!-- Messages Tab -->
+          <div *ngIf="activeTab === 'messages'" class="tab-pane">
+            <div class="messages-section">
+              <h3>Messages</h3>
+
+              <div class="messages-container">
+                <div *ngIf="loadingMessages" class="loading-messages">
+                  <p>Loading messages...</p>
                 </div>
-                <p class="timeline-description">You requested a consultation with Dr. {{ selectedCase.doctorId.name }}</p>
+
+                <div *ngIf="!loadingMessages && messages.length === 0" class="no-messages">
+                  <p>No messages yet. Start the conversation!</p>
+                </div>
+
+                <div class="message-list">
+                  <div *ngFor="let message of messages" [class.message-sent]="message.senderType === 'patient'"
+                    [class.message-received]="message.senderType === 'doctor'" class="message-item">
+                    <div class="message-bubble">
+                      <p class="message-content">{{ message.content }}</p>
+                      <div class="message-footer">
+                        <span class="message-time">{{ message.createdAt | date:'MMM d, h:mm a' }}</span>
+                        <span *ngIf="message.senderType === 'patient'" class="message-status"
+                          [class.read]="message.isRead" [title]="message.isRead ? 'Read' : 'Sent'">
+                          <svg *ngIf="!message.isRead" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                          <svg *ngIf="message.isRead" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                            <polyline points="23 6 12 17 7 12"></polyline>
+                          </svg>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-            
-            <div class="timeline-event" *ngIf="selectedCase.acceptedAt">
-              <div class="timeline-marker status-accepted"></div>
-              <div class="timeline-content">
-                <div class="timeline-header">
-                  <strong>Case Accepted</strong>
-                  <span class="timeline-date">{{ selectedCase.acceptedAt | date:'MMM d, y h:mm a' }}</span>
-                </div>
-                <p class="timeline-description">Dr. {{ selectedCase.doctorId.name }} accepted your consultation request</p>
+
+              <!-- Typing Indicator -->
+              <div *ngIf="isOtherUserTyping" class="typing-indicator">
+                <span class="typing-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </span>
+                <span class="typing-text">Doctor is typing...</span>
               </div>
-            </div>
-            
-            <div class="timeline-event" *ngIf="selectedCase.rejectedAt">
-              <div class="timeline-marker status-rejected"></div>
-              <div class="timeline-content">
-                <div class="timeline-header">
-                  <strong>Case Rejected</strong>
-                  <span class="timeline-date">{{ selectedCase.rejectedAt | date:'MMM d, y h:mm a' }}</span>
-                </div>
-                <p class="timeline-description">Dr. {{ selectedCase.doctorId.name }} was unable to accept your consultation request</p>
+
+              <!-- Message Input -->
+              <div *ngIf="selectedCase.status === 'ongoing'" class="message-input-container">
+                <textarea [(ngModel)]="messageText" (input)="onMessageInput()"
+                  (keydown.enter)="$event.preventDefault(); sendMessage()" placeholder="Type your message..." rows="3"
+                  [disabled]="sendingMessage"></textarea>
+                <button (click)="sendMessage()" [disabled]="!messageText.trim() || sendingMessage" class="btn-send">
+                  {{ sendingMessage ? 'Sending...' : 'Send' }}
+                </button>
               </div>
-            </div>
-            
-            <div class="timeline-event" *ngFor="let message of messages">
-              <div class="timeline-marker" [class.message-sent]="message.senderType === 'patient'" [class.message-received]="message.senderType === 'doctor'"></div>
-              <div class="timeline-content">
-                <div class="timeline-header">
-                  <strong>{{ message.senderType === 'patient' ? 'You' : 'Dr. ' + selectedCase.doctorId.name }}</strong>
-                  <span class="timeline-date">{{ message.createdAt | date:'MMM d, y h:mm a' }}</span>
+
+              <div *ngIf="selectedCase.status === 'pending'" class="status-message">
+                <div class="status-icon">⏳</div>
+                <div class="status-text">
+                  <strong>Waiting for doctor response</strong>
+                  <p>Your consultation request is pending. Dr. {{ selectedCase.doctorId.name }} will review and respond
+                    soon.</p>
                 </div>
-                <p class="timeline-message">{{ message.content }}</p>
               </div>
-            </div>
-            
-            <div class="timeline-event" *ngIf="selectedCase.treatedAt">
-              <div class="timeline-marker status-treated"></div>
-              <div class="timeline-content">
-                <div class="timeline-header">
-                  <strong>Treatment Completed</strong>
-                  <span class="timeline-date">{{ selectedCase.treatedAt | date:'MMM d, y h:mm a' }}</span>
+
+              <div *ngIf="selectedCase.status === 'rejected'" class="status-message rejected">
+                <div class="status-icon">❌</div>
+                <div class="status-text">
+                  <strong>Case not accepted</strong>
+                  <p>This consultation request was not accepted by the doctor. All case data has been preserved for your
+                    records.</p>
+                  <p class="read-only-notice">🔒 This case is now read-only. All your medical data and case information
+                    remain accessible for future reference.</p>
                 </div>
-                <p class="timeline-description">Dr. {{ selectedCase.doctorId.name }} marked this case as treated</p>
               </div>
-            </div>
-            
-            <div class="timeline-event" *ngIf="selectedCase.feedback">
-              <div class="timeline-marker status-feedback"></div>
-              <div class="timeline-content">
-                <div class="timeline-header">
-                  <strong>Feedback Submitted</strong>
-                  <span class="timeline-date">{{ selectedCase.feedback.submittedAt | date:'MMM d, y h:mm a' }}</span>
+
+              <div *ngIf="selectedCase.status === 'treated'" class="status-message treated">
+                <div class="status-icon">✅</div>
+                <div class="status-text">
+                  <strong>This case has been completed</strong>
+                  <p>This consultation has been marked as treated. All case data has been preserved for your records.
+                    You can view the complete history above.</p>
+                  <p class="read-only-notice">🔒 This case is now read-only. No further messages can be sent, but all
+                    medical data, messages, and history remain accessible.</p>
                 </div>
-                <p class="timeline-description">You rated this consultation {{ selectedCase.feedback.rating }}/5 stars</p>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Messages Section -->
-        <div class="messages-section">
-          <h3>Messages</h3>
-          
-          <div class="messages-container">
-            <div *ngIf="loadingMessages" class="loading-messages">
-              <p>Loading messages...</p>
-            </div>
+          <!-- Timeline Tab -->
+          <div *ngIf="activeTab === 'timeline'" class="tab-pane">
+            <div class="consultation-timeline-section">
+              <div class="section-header">
+                <h3>📅 Consultation Timeline</h3>
+                <button class="btn-print" (click)="printTimeline()" title="Print timeline">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                    <rect x="6" y="14" width="12" height="8"></rect>
+                  </svg>
+                  Print
+                </button>
+              </div>
 
-            <div *ngIf="!loadingMessages && messages.length === 0" class="no-messages">
-              <p>No messages yet. Start the conversation!</p>
-            </div>
+              <div class="timeline-container">
+                <div class="timeline-event">
+                  <div class="timeline-marker status-created"></div>
+                  <div class="timeline-content">
+                    <div class="timeline-header">
+                      <strong>Case Created</strong>
+                      <span class="timeline-date">{{ selectedCase.createdAt | date:'MMM d, y h:mm a' }}</span>
+                    </div>
+                    <p class="timeline-description">You requested a consultation with Dr. {{ selectedCase.doctorId.name
+                      }}</p>
+                  </div>
+                </div>
 
-            <div class="message-list">
-              <div 
-                *ngFor="let message of messages"
-                [class.message-sent]="message.senderType === 'patient'"
-                [class.message-received]="message.senderType === 'doctor'"
-                class="message-item"
-              >
-                <div class="message-bubble">
-                  <p class="message-content">{{ message.content }}</p>
-                  <div class="message-footer">
-                    <span class="message-time">{{ message.createdAt | date:'MMM d, h:mm a' }}</span>
-                    <span 
-                      *ngIf="message.senderType === 'patient'" 
-                      class="message-status"
-                      [class.read]="message.isRead"
-                      [title]="message.isRead ? 'Read' : 'Sent'"
-                    >
-                      <svg *ngIf="!message.isRead" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                      <svg *ngIf="message.isRead" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                        <polyline points="23 6 12 17 7 12"></polyline>
-                      </svg>
-                    </span>
+                <div class="timeline-event" *ngIf="selectedCase.acceptedAt">
+                  <div class="timeline-marker status-accepted"></div>
+                  <div class="timeline-content">
+                    <div class="timeline-header">
+                      <strong>Case Accepted</strong>
+                      <span class="timeline-date">{{ selectedCase.acceptedAt | date:'MMM d, y h:mm a' }}</span>
+                    </div>
+                    <p class="timeline-description">Dr. {{ selectedCase.doctorId.name }} accepted your consultation
+                      request</p>
+                  </div>
+                </div>
+
+                <div class="timeline-event" *ngIf="selectedCase.rejectedAt">
+                  <div class="timeline-marker status-rejected"></div>
+                  <div class="timeline-content">
+                    <div class="timeline-header">
+                      <strong>Case Rejected</strong>
+                      <span class="timeline-date">{{ selectedCase.rejectedAt | date:'MMM d, y h:mm a' }}</span>
+                    </div>
+                    <p class="timeline-description">Dr. {{ selectedCase.doctorId.name }} was unable to accept your
+                      consultation request</p>
+                  </div>
+                </div>
+
+                <div class="timeline-event" *ngFor="let message of messages">
+                  <div class="timeline-marker" [class.message-sent]="message.senderType === 'patient'"
+                    [class.message-received]="message.senderType === 'doctor'"></div>
+                  <div class="timeline-content">
+                    <div class="timeline-header">
+                      <strong>{{ message.senderType === 'patient' ? 'You' : 'Dr. ' + selectedCase.doctorId.name
+                        }}</strong>
+                      <span class="timeline-date">{{ message.createdAt | date:'MMM d, y h:mm a' }}</span>
+                    </div>
+                    <p class="timeline-message">{{ message.content }}</p>
+                  </div>
+                </div>
+
+                <div class="timeline-event" *ngIf="selectedCase.treatedAt">
+                  <div class="timeline-marker status-treated"></div>
+                  <div class="timeline-content">
+                    <div class="timeline-header">
+                      <strong>Treatment Completed</strong>
+                      <span class="timeline-date">{{ selectedCase.treatedAt | date:'MMM d, y h:mm a' }}</span>
+                    </div>
+                    <p class="timeline-description">Dr. {{ selectedCase.doctorId.name }} marked this case as treated</p>
+                  </div>
+                </div>
+
+                <div class="timeline-event" *ngIf="selectedCase.feedback">
+                  <div class="timeline-marker status-feedback"></div>
+                  <div class="timeline-content">
+                    <div class="timeline-header">
+                      <strong>Feedback Submitted</strong>
+                      <span class="timeline-date">{{ selectedCase.feedback.submittedAt | date:'MMM d, y h:mm a'
+                        }}</span>
+                    </div>
+                    <p class="timeline-description">You rated this consultation {{ selectedCase.feedback.rating }}/5
+                      stars</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Typing Indicator -->
-          <div *ngIf="isOtherUserTyping" class="typing-indicator">
-            <span class="typing-dots">
-              <span></span>
-              <span></span>
-              <span></span>
-            </span>
-            <span class="typing-text">Doctor is typing...</span>
-          </div>
+          <!-- Feedback Tab -->
+          <div *ngIf="activeTab === 'feedback' && selectedCase.status === 'treated'" class="tab-pane">
+            <div class="feedback-section">
+              <div *ngIf="!selectedCase.feedback && !showFeedbackForm" class="feedback-prompt">
+                <h3>How was your experience?</h3>
+                <p>Please rate your consultation with Dr. {{ selectedCase.doctorId.name }}</p>
+                <button (click)="openFeedbackForm()" class="btn-primary">
+                  Provide Feedback
+                </button>
+              </div>
 
-          <!-- Message Input -->
-          <div *ngIf="selectedCase.status === 'ongoing'" class="message-input-container">
-            <textarea
-              [(ngModel)]="messageText"
-              (input)="onMessageInput()"
-              (keydown.enter)="$event.preventDefault(); sendMessage()"
-              placeholder="Type your message..."
-              rows="3"
-              [disabled]="sendingMessage"
-            ></textarea>
-            <button 
-              (click)="sendMessage()"
-              [disabled]="!messageText.trim() || sendingMessage"
-              class="btn-send"
-            >
-              {{ sendingMessage ? 'Sending...' : 'Send' }}
-            </button>
-          </div>
+              <div *ngIf="showFeedbackForm" class="feedback-form">
+                <h3>Rate Your Experience</h3>
+                <div class="rating-stars">
+                  <span *ngFor="let star of [1, 2, 3, 4, 5]" (click)="setRating(star)"
+                    [class.filled]="star <= feedbackRating" class="star">
+                    ★
+                  </span>
+                </div>
+                <textarea [(ngModel)]="feedbackComment" placeholder="Share your experience (optional)..."
+                  rows="4"></textarea>
+                <div class="feedback-actions">
+                  <button (click)="showFeedbackForm = false" class="btn-secondary">
+                    Cancel
+                  </button>
+                  <button (click)="submitFeedback()" [disabled]="feedbackRating === 0 || submittingFeedback"
+                    class="btn-primary">
+                    {{ submittingFeedback ? 'Submitting...' : 'Submit Feedback' }}
+                  </button>
+                </div>
+              </div>
 
-          <div *ngIf="selectedCase.status === 'pending'" class="status-message">
-            <div class="status-icon">⏳</div>
-            <div class="status-text">
-              <strong>Waiting for doctor response</strong>
-              <p>Your consultation request is pending. Dr. {{ selectedCase.doctorId.name }} will review and respond soon.</p>
+              <div *ngIf="selectedCase.feedback" class="feedback-display">
+                <h3>Your Feedback</h3>
+                <div class="rating-display">
+                  <span *ngFor="let star of [1, 2, 3, 4, 5]" [class.filled]="star <= selectedCase.feedback.rating"
+                    class="star">
+                    ★
+                  </span>
+                </div>
+                <p class="feedback-comment" *ngIf="selectedCase.feedback.comment">
+                  "{{ selectedCase.feedback.comment }}"
+                </p>
+                <p class="feedback-date">
+                  Submitted on {{ selectedCase.feedback.submittedAt | date:'MMM d, y' }}
+                </p>
+              </div>
             </div>
-          </div>
-
-          <div *ngIf="selectedCase.status === 'rejected'" class="status-message rejected">
-            <div class="status-icon">❌</div>
-            <div class="status-text">
-              <strong>Case not accepted</strong>
-              <p>This consultation request was not accepted by the doctor. All case data has been preserved for your records.</p>
-              <p class="read-only-notice">🔒 This case is now read-only. All your medical data and case information remain accessible for future reference.</p>
-            </div>
-          </div>
-
-          <div *ngIf="selectedCase.status === 'treated'" class="status-message treated">
-            <div class="status-icon">✅</div>
-            <div class="status-text">
-              <strong>This case has been completed</strong>
-              <p>This consultation has been marked as treated. All case data has been preserved for your records. You can view the complete history above.</p>
-              <p class="read-only-notice">🔒 This case is now read-only. No further messages can be sent, but all medical data, messages, and history remain accessible.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Feedback Section -->
-        <div *ngIf="selectedCase.status === 'treated'" class="feedback-section">
-          <div *ngIf="!selectedCase.feedback && !showFeedbackForm" class="feedback-prompt">
-            <h3>How was your experience?</h3>
-            <p>Please rate your consultation with Dr. {{ selectedCase.doctorId.name }}</p>
-            <button (click)="openFeedbackForm()" class="btn-primary">
-              Provide Feedback
-            </button>
-          </div>
-
-          <div *ngIf="showFeedbackForm" class="feedback-form">
-            <h3>Rate Your Experience</h3>
-            <div class="rating-stars">
-              <span 
-                *ngFor="let star of [1, 2, 3, 4, 5]"
-                (click)="setRating(star)"
-                [class.filled]="star <= feedbackRating"
-                class="star"
-              >
-                ★
-              </span>
-            </div>
-            <textarea
-              [(ngModel)]="feedbackComment"
-              placeholder="Share your experience (optional)..."
-              rows="4"
-            ></textarea>
-            <div class="feedback-actions">
-              <button 
-                (click)="showFeedbackForm = false"
-                class="btn-secondary"
-              >
-                Cancel
-              </button>
-              <button 
-                (click)="submitFeedback()"
-                [disabled]="feedbackRating === 0 || submittingFeedback"
-                class="btn-primary"
-              >
-                {{ submittingFeedback ? 'Submitting...' : 'Submit Feedback' }}
-              </button>
-            </div>
-          </div>
-
-          <div *ngIf="selectedCase.feedback" class="feedback-display">
-            <h3>Your Feedback</h3>
-            <div class="rating-display">
-              <span *ngFor="let star of [1, 2, 3, 4, 5]" [class.filled]="star <= selectedCase.feedback.rating" class="star">
-                ★
-              </span>
-            </div>
-            <p class="feedback-comment" *ngIf="selectedCase.feedback.comment">
-              "{{ selectedCase.feedback.comment }}"
-            </p>
-            <p class="feedback-date">
-              Submitted on {{ selectedCase.feedback.submittedAt | date:'MMM d, y' }}
-            </p>
           </div>
         </div>
       </div>

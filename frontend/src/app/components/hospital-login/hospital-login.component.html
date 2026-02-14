@@ -78,7 +78,11 @@
       </div>
 
       <!-- Submit Button -->
-      <button type="submit" class="btn-primary" [disabled]="loading || loginForm.invalid">
+      <button 
+        type="submit" 
+        class="btn-primary" 
+        [disabled]="loading || loginForm.invalid"
+        [class.loading]="loading">
         <span *ngIf="!loading">Login</span>
         <span *ngIf="loading" class="loading-spinner">
           <svg class="spinner" viewBox="0 0 24 24">

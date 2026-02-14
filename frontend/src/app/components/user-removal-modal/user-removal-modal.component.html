@@ -1,0 +1,240 @@
+<div class="modal-overlay" *ngIf="isVisible" (click)="cancel()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <h2 class="modal-title">
+        <i class="fas fa-exclamation-triangle warning-icon"></i>
+        {{ isBulkRemoval ? 'Remove Multiple Users' : 'Remove User' }}
+      </h2>
+      <button class="close-button" (click)="cancel()" [disabled]="loading">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Step 1: Warning and Impact Assessment -->
+    <div class="modal-body" *ngIf="currentStep === 1">
+      <div class="warning-section">
+        <div class="user-info-card">
+          <div class="user-details">
+            <h3>{{ getUserDisplayName() }}</h3>
+            <p class="user-email">{{ getUserDisplayEmail() }}</p>
+            <div class="user-meta" *ngIf="!isBulkRemoval && user">
+              <span class="role-badge" [class]="getUserRoleBadgeClass(user.role)">
+                {{ user.role | titlecase }}
+              </span>
+              <span class="created-date">
+                Created: {{ formatDate(user.createdAt) }}
+              </span>
+              <span class="last-login" *ngIf="user.lastLogin">
+                Last Login: {{ formatDateTime(user.lastLogin) }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Impact Assessment -->
+        <div class="impact-assessment">
+          <div class="impact-header">
+            <h4>
+              <i class="fas fa-chart-line"></i>
+              Impact Assessment
+            </h4>
+            <span class="impact-badge" [class]="getRemovalImpactClass()">
+              {{ getRemovalImpactText() }}
+            </span>
+          </div>
+
+          <!-- Active Processes Warning -->
+          <div class="active-processes" *ngIf="hasActiveProcesses">
+            <div class="processes-header">
+              <i class="fas fa-exclamation-circle"></i>
+              <span>Active Processes Detected</span>
+            </div>
+            <div class="processes-list">
+              <div 
+                class="process-item" 
+                *ngFor="let process of activeProcesses"
+                [class]="getProcessSeverityClass(process.severity)">
+                <div class="process-icon">
+                  <i [class]="getProcessIcon(process.type)"></i>
+                </div>
+                <div class="process-details">
+                  <span class="process-count">{{ process.count }}</span>
+                  <span class="process-description">{{ process.description }}</span>
+                </div>
+                <div class="process-severity">
+                  <span class="severity-badge" [class]="getProcessSeverityClass(process.severity)">
+                    {{ process.severity | titlecase }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- No Active Processes -->
+          <div class="no-processes" *ngIf="!hasActiveProcesses">
+            <i class="fas fa-check-circle success-icon"></i>
+            <span>No active processes detected. Safe to remove.</span>
+          </div>
+        </div>
+
+        <!-- Critical Warning -->
+        <div class="critical-warning" *ngIf="hasCriticalProcesses">
+          <div class="warning-content">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div class="warning-text">
+              <h4>Critical Impact Warning</h4>
+              <p>
+                Removing {{ isBulkRemoval ? 'these users' : 'this user' }} will affect critical system operations. 
+                This action may disrupt ongoing consultations, payments, or other essential processes.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Preservation Notice -->
+        <div class="data-preservation-notice">
+          <div class="notice-content">
+            <i class="fas fa-shield-alt"></i>
+            <div class="notice-text">
+              <h4>Data Preservation</h4>
+              <p>
+                User data will be preserved for 90 days and can be restored by a root administrator if needed. 
+                The user account will be deactivated immediately.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Confirmation -->
+    <div class="modal-body" *ngIf="currentStep === 2">
+      <div class="confirmation-section">
+        <div class="confirmation-header">
+          <h3>Confirm User Removal</h3>
+          <p>Please provide a reason and type "CONFIRM" to proceed with the removal.</p>
+        </div>
+
+        <!-- Reason Input -->
+        <div class="form-group">
+          <label for="reason" class="form-label">
+            Reason for Removal <span class="required">*</span>
+          </label>
+          <textarea
+            id="reason"
+            class="form-textarea"
+            [(ngModel)]="reason"
+            placeholder="Please provide a detailed reason for removing this user..."
+            rows="4"
+            maxlength="500"
+            required>
+          </textarea>
+          <div class="character-count">
+            {{ reason.length }}/500 characters
+          </div>
+        </div>
+
+        <!-- Confirmation Input -->
+        <div class="form-group">
+          <label for="confirmation" class="form-label">
+            Type "CONFIRM" to proceed <span class="required">*</span>
+          </label>
+          <input
+            id="confirmation"
+            type="text"
+            class="form-input"
+            [(ngModel)]="confirmationText"
+            placeholder="Type CONFIRM here"
+            autocomplete="off"
+            required>
+          <div class="confirmation-status">
+            <span 
+              class="status-indicator"
+              [class.valid]="isConfirmationValid()"
+              [class.invalid]="confirmationText && !isConfirmationValid()">
+              <i class="fas" [class.fa-check]="isConfirmationValid()" [class.fa-times]="confirmationText && !isConfirmationValid()"></i>
+              {{ isConfirmationValid() ? 'Confirmation valid' : 'Type "CONFIRM" exactly' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Final Warning -->
+        <div class="final-warning">
+          <div class="warning-box">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div class="warning-content">
+              <strong>This action cannot be undone by regular administrators.</strong>
+              <br>
+              Only root administrators can restore removed users within 90 days.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Processing -->
+    <div class="modal-body" *ngIf="currentStep === 3">
+      <div class="processing-section">
+        <div class="processing-content">
+          <div class="processing-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+          </div>
+          <h3>Processing Removal...</h3>
+          <p>Please wait while we safely remove the user{{ isBulkRemoval ? 's' : '' }} from the system.</p>
+          
+          <!-- Error Display -->
+          <div class="error-message" *ngIf="error">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>{{ error }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer" *ngIf="currentStep !== 3">
+      <div class="footer-actions">
+        <!-- Step 1 Actions -->
+        <ng-container *ngIf="currentStep === 1">
+          <button class="btn btn-secondary" (click)="cancel()">
+            <i class="fas fa-times"></i>
+            Cancel
+          </button>
+          <button class="btn btn-warning" (click)="nextStep()">
+            <i class="fas fa-arrow-right"></i>
+            Continue
+          </button>
+        </ng-container>
+
+        <!-- Step 2 Actions -->
+        <ng-container *ngIf="currentStep === 2">
+          <button class="btn btn-secondary" (click)="previousStep()">
+            <i class="fas fa-arrow-left"></i>
+            Back
+          </button>
+          <button class="btn btn-secondary" (click)="cancel()">
+            <i class="fas fa-times"></i>
+            Cancel
+          </button>
+          <button 
+            class="btn btn-danger"
+            [disabled]="!canProceed()"
+            (click)="confirmRemoval()">
+            <i class="fas fa-trash"></i>
+            Remove {{ isBulkRemoval ? 'Users' : 'User' }}
+          </button>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- Processing Footer -->
+    <div class="modal-footer processing-footer" *ngIf="currentStep === 3">
+      <div class="processing-info">
+        <span>This may take a few moments...</span>
+      </div>
+    </div>
+
+  </div>
+</div>

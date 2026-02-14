@@ -2,11 +2,19 @@
   <!-- Header -->
   <div class="docs-header">
     <div class="header-content">
-      <div class="header-logo">
-        <app-logo [size]="'small'" [variant]="'default'" [clickable]="true"></app-logo>
+      <div class="header-left">
+        <button class="back-button" (click)="goBackToDashboard()" title="Back to Dashboard">
+          <span class="back-icon">←</span>
+          <span class="back-text">Back to Dashboard</span>
+        </button>
+        <div class="header-logo">
+          <app-logo [size]="'small'" [variant]="'default'" [clickable]="true"></app-logo>
+        </div>
       </div>
-      <h1>Hospital API Documentation</h1>
-      <p class="subtitle">Comprehensive guide to accessing patient medical data via API</p>
+      <div class="header-center">
+        <h1>Hospital API Documentation</h1>
+        <p class="subtitle">Comprehensive guide to accessing patient medical data via API</p>
+      </div>
     </div>
   </div>
 

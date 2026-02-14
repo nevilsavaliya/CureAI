@@ -1,6 +1,12 @@
 <div class="hospitals-container">
   <div class="hospitals-header">
-    <h1>Hospital Management</h1>
+    <div class="header-navigation">
+      <button (click)="goBackToDashboard()" class="btn-back">
+        <span class="back-icon">←</span>
+        Back to Dashboard
+      </button>
+      <h1>Hospital Management</h1>
+    </div>
     <div class="status-summary">
       <div class="summary-item pending">
         <span class="count">{{ getPendingCount() }}</span>

@@ -1,5 +1,7 @@
 const Hospital = require('../models/Hospital');
 const emailService = require('../services/emailService');
+const logger = require('../services/logger');
+const errorTracker = require('../services/errorTracker');
 
 /**
  * Get hospital statistics (for admin)
@@ -50,11 +52,30 @@ exports.getHospitalStatistics = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Get hospital statistics error:', error);
+    // Track the error
+    const errorId = errorTracker.trackError({
+      category: errorTracker.errorCategories.HOSPITAL_VERIFICATION,
+      severity: errorTracker.errorSeverity.MEDIUM,
+      error,
+      context: { operation: 'get_hospital_statistics' },
+      userId: req.user?.id,
+      req
+    });
+
+    logger.error('Get hospital statistics error', {
+      type: 'HOSPITAL_STATISTICS_ERROR',
+      errorId: errorId,
+      adminId: req.user?.id,
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+
     res.status(500).json({
       success: false,
       message: 'Failed to fetch hospital statistics',
-      error: error.message
+      error: error.message,
+      errorId: errorId
     });
   }
 };
@@ -83,7 +104,14 @@ exports.getAllHospitals = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Get hospitals error:', error);
+    logger.error('Get hospitals error', {
+      type: 'GET_HOSPITALS_ERROR',
+      adminId: req.user?.id,
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+
     res.status(500).json({
       success: false,
       message: 'Failed to fetch hospitals',
@@ -116,7 +144,15 @@ exports.getHospitalById = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Get hospital by ID error:', error);
+    logger.error('Get hospital by ID error', {
+      type: 'GET_HOSPITAL_BY_ID_ERROR',
+      hospitalId: req.params.id,
+      adminId: req.user?.id,
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+
     res.status(500).json({
       success: false,
       message: 'Failed to fetch hospital',
@@ -158,6 +194,24 @@ exports.verifyHospital = async (req, res) => {
     
     await hospital.save();
     
+    // Log hospital verification
+    logger.hospital.verification({
+      hospitalId: hospital._id,
+      hospitalName: hospital.hospitalName,
+      action: 'verified',
+      adminId: adminId,
+      adminEmail: req.user.email,
+      ip: logger.getClientIP(req)
+    });
+
+    // Log credentials generation
+    logger.hospital.credentialsGenerated({
+      hospitalId: hospital._id,
+      hospitalName: hospital.hospitalName,
+      apiKey: credentials.apiKey,
+      adminId: adminId
+    });
+    
     // Send email with API credentials
     try {
       await emailService.sendHospitalVerificationEmail(
@@ -169,10 +223,14 @@ exports.verifyHospital = async (req, res) => {
         }
       );
     } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
+      logger.error('Failed to send hospital verification email', {
+        type: 'EMAIL_ERROR',
+        hospitalId: hospital._id,
+        hospitalName: hospital.hospitalName,
+        error: emailError.message,
+        timestamp: new Date().toISOString()
+      });
     }
-    
-    console.log(`✅ Hospital verified: ${hospital.hospitalName}`);
     
     res.status(200).json({
       success: true,
@@ -186,7 +244,15 @@ exports.verifyHospital = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Verify hospital error:', error);
+    logger.error('Verify hospital error', {
+      type: 'VERIFY_HOSPITAL_ERROR',
+      hospitalId: req.params.id,
+      adminId: req.user?.id,
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+
     res.status(500).json({
       success: false,
       message: 'Failed to verify hospital',
@@ -218,7 +284,16 @@ exports.rejectHospital = async (req, res) => {
     
     await hospital.save();
     
-    console.log(`❌ Hospital rejected: ${hospital.hospitalName}`);
+    // Log hospital rejection
+    logger.hospital.verification({
+      hospitalId: hospital._id,
+      hospitalName: hospital.hospitalName,
+      action: 'rejected',
+      adminId: req.user.id,
+      adminEmail: req.user.email,
+      reason: reason,
+      ip: logger.getClientIP(req)
+    });
     
     res.status(200).json({
       success: true,
@@ -231,7 +306,15 @@ exports.rejectHospital = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Reject hospital error:', error);
+    logger.error('Reject hospital error', {
+      type: 'REJECT_HOSPITAL_ERROR',
+      hospitalId: req.params.id,
+      adminId: req.user?.id,
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+
     res.status(500).json({
       success: false,
       message: 'Failed to reject hospital',
@@ -263,7 +346,16 @@ exports.revokeHospitalAccess = async (req, res) => {
     
     await hospital.save();
     
-    console.log(`🚫 Hospital access revoked: ${hospital.hospitalName}`);
+    // Log hospital access revocation
+    logger.hospital.verification({
+      hospitalId: hospital._id,
+      hospitalName: hospital.hospitalName,
+      action: 'revoked',
+      adminId: req.user.id,
+      adminEmail: req.user.email,
+      reason: reason,
+      ip: logger.getClientIP(req)
+    });
     
     res.status(200).json({
       success: true,
@@ -271,10 +363,93 @@ exports.revokeHospitalAccess = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Revoke hospital access error:', error);
+    logger.error('Revoke hospital access error', {
+      type: 'REVOKE_HOSPITAL_ACCESS_ERROR',
+      hospitalId: req.params.id,
+      adminId: req.user?.id,
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+
     res.status(500).json({
       success: false,
       message: 'Failed to revoke hospital access',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Restore Hospital Access (Admin only)
+ * PUT /api/admin/hospitals/:id/restore
+ */
+exports.restoreHospitalAccess = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const hospital = await Hospital.findById(id);
+    
+    if (!hospital) {
+      return res.status(404).json({
+        success: false,
+        message: 'Hospital not found'
+      });
+    }
+    
+    if (hospital.verificationStatus !== 'verified') {
+      return res.status(400).json({
+        success: false,
+        message: 'Hospital must be verified before access can be restored'
+      });
+    }
+    
+    if (hospital.isActive) {
+      return res.status(400).json({
+        success: false,
+        message: 'Hospital access is already active'
+      });
+    }
+    
+    hospital.isActive = true;
+    hospital.rejectionReason = null; // Clear any previous rejection reason
+    
+    await hospital.save();
+    
+    // Log hospital access restoration
+    logger.hospital.verification({
+      hospitalId: hospital._id,
+      hospitalName: hospital.hospitalName,
+      action: 'restored',
+      adminId: req.user.id,
+      adminEmail: req.user.email,
+      ip: logger.getClientIP(req)
+    });
+    
+    res.status(200).json({
+      success: true,
+      message: 'Hospital access restored successfully',
+      hospital: {
+        _id: hospital._id,
+        hospitalName: hospital.hospitalName,
+        isActive: hospital.isActive,
+        verificationStatus: hospital.verificationStatus
+      }
+    });
+    
+  } catch (error) {
+    logger.error('Restore hospital access error', {
+      type: 'RESTORE_HOSPITAL_ACCESS_ERROR',
+      hospitalId: req.params.id,
+      adminId: req.user?.id,
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to restore hospital access',
       error: error.message
     });
   }

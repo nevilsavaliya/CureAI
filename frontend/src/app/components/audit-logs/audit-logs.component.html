@@ -1,0 +1,630 @@
+<div class="audit-logs-container">
+  <!-- Header -->
+  <div class="audit-logs-header">
+    <div class="header-content">
+      <h2 class="page-title">
+        <i class="fas fa-clipboard-list"></i>
+        Audit Logs
+      </h2>
+      <p class="page-description">
+        Comprehensive audit trail of all administrative actions and system events
+      </p>
+    </div>
+    
+    <div class="header-actions">
+      <button 
+        class="btn btn-outline-primary"
+        (click)="toggleFilters()"
+        [class.active]="showFilters">
+        <i class="fas fa-filter"></i>
+        Filters
+      </button>
+      
+      <button 
+        class="btn btn-outline-info"
+        (click)="toggleStatistics()"
+        [class.active]="showStatistics">
+        <i class="fas fa-chart-bar"></i>
+        Statistics
+      </button>
+      
+      <div class="dropdown">
+        <button 
+          class="btn btn-success dropdown-toggle"
+          type="button"
+          data-bs-toggle="dropdown"
+          [disabled]="exportLoading">
+          <i class="fas fa-download" *ngIf="!exportLoading"></i>
+          <i class="fas fa-spinner fa-spin" *ngIf="exportLoading"></i>
+          Export
+        </button>
+        <ul class="dropdown-menu">
+          <li>
+            <h6 class="dropdown-header">Current View</h6>
+          </li>
+          <li>
+            <a class="dropdown-item" href="#" (click)="exportFilteredLogs('csv'); $event.preventDefault()">
+              <i class="fas fa-file-csv"></i>
+              Export Filtered as CSV
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item" href="#" (click)="exportFilteredLogs('json'); $event.preventDefault()">
+              <i class="fas fa-file-code"></i>
+              Export Filtered as JSON
+            </a>
+          </li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <h6 class="dropdown-header">All Data</h6>
+          </li>
+          <li>
+            <a class="dropdown-item" href="#" (click)="exportLogs('csv'); $event.preventDefault()">
+              <i class="fas fa-file-csv"></i>
+              Export All as CSV
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item" href="#" (click)="exportLogs('json'); $event.preventDefault()">
+              <i class="fas fa-file-code"></i>
+              Export All as JSON
+            </a>
+          </li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <a class="dropdown-item" href="#" (click)="generateSummaryReport(); $event.preventDefault()">
+              <i class="fas fa-chart-pie"></i>
+              Generate Summary Report
+            </a>
+          </li>
+        </ul>
+      </div>
+      
+      <button 
+        class="btn btn-outline-secondary"
+        (click)="refreshData()"
+        [disabled]="loading">
+        <i class="fas fa-sync-alt" [class.fa-spin]="loading"></i>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div class="alert alert-danger" *ngIf="error">
+    <i class="fas fa-exclamation-triangle"></i>
+    {{ error }}
+  </div>
+
+  <!-- Access Denied for Non-Root Admins -->
+  <div class="access-denied" *ngIf="!isRootAdmin && !error">
+    <div class="access-denied-content">
+      <i class="fas fa-shield-alt"></i>
+      <h3>Access Restricted</h3>
+      <p>Only the root administrator can access audit logs.</p>
+    </div>
+  </div>
+
+  <!-- Main Content (Only for Root Admin) -->
+  <div *ngIf="isRootAdmin && !error">
+    
+    <!-- Statistics Panel -->
+    <div class="statistics-panel" *ngIf="showStatistics">
+      <div class="statistics-header">
+        <h4>
+          <i class="fas fa-chart-line"></i>
+          Audit Statistics
+        </h4>
+        <small class="text-muted">
+          {{ getStartDate() | date:'mediumDate' }} - {{ getEndDate() | date:'mediumDate' }}
+        </small>
+      </div>
+      
+      <div class="statistics-loading" *ngIf="statisticsLoading">
+        <i class="fas fa-spinner fa-spin"></i>
+        Loading statistics...
+      </div>
+      
+      <div class="statistics-content" *ngIf="!statisticsLoading && statistics">
+        <!-- Summary Cards -->
+        <div class="stats-cards">
+          <div class="stat-card">
+            <div class="stat-value">{{ statistics.summary.totalActions | number }}</div>
+            <div class="stat-label">Total Actions</div>
+          </div>
+          <div class="stat-card success">
+            <div class="stat-value">{{ statistics.summary.successfulActions | number }}</div>
+            <div class="stat-label">Successful</div>
+          </div>
+          <div class="stat-card danger">
+            <div class="stat-value">{{ statistics.summary.failedActions | number }}</div>
+            <div class="stat-label">Failed</div>
+          </div>
+          <div class="stat-card info">
+            <div class="stat-value">{{ getSuccessRate() | number:'1.1-1' }}%</div>
+            <div class="stat-label">Success Rate</div>
+          </div>
+          <div class="stat-card warning">
+            <div class="stat-value">{{ statistics.summary.uniqueAdminCount | number }}</div>
+            <div class="stat-label">Active Admins</div>
+          </div>
+          <div class="stat-card secondary">
+            <div class="stat-value">{{ statistics.summary.uniqueIPCount | number }}</div>
+            <div class="stat-label">Unique IPs</div>
+          </div>
+        </div>
+
+        <!-- Top Actions -->
+        <div class="stats-section">
+          <h5>Top Actions</h5>
+          <div class="action-breakdown">
+            <div class="action-item" *ngFor="let action of getTopActions()">
+              <span class="action-name">{{ action._id }}</span>
+              <span class="action-count">{{ action.count }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity Peak -->
+        <div class="stats-section">
+          <h5>Peak Activity</h5>
+          <p class="peak-info">
+            Most active hour: <strong>{{ formatHour(getActivityPeakHour()) }}</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters Panel -->
+    <div class="filters-panel" *ngIf="showFilters">
+      <div class="filters-header">
+        <h4>
+          <i class="fas fa-filter"></i>
+          Filter Options
+        </h4>
+        <button class="btn btn-sm btn-outline-secondary" (click)="clearFilters()">
+          <i class="fas fa-times"></i>
+          Clear All
+        </button>
+      </div>
+      
+      <div class="filters-content">
+        <div class="row">
+          <!-- Date Range -->
+          <div class="col-md-6">
+            <div class="filter-group">
+              <label>Date Range</label>
+              <div class="date-range">
+                <input 
+                  type="date" 
+                  class="form-control"
+                  [(ngModel)]="filters.startDate"
+                  (change)="onFilterChange()">
+                <span class="date-separator">to</span>
+                <input 
+                  type="date" 
+                  class="form-control"
+                  [(ngModel)]="filters.endDate"
+                  (change)="onFilterChange()">
+              </div>
+              <div class="date-presets">
+                <button class="btn btn-sm btn-outline-primary" (click)="setDateRange(7)">Last 7 days</button>
+                <button class="btn btn-sm btn-outline-primary" (click)="setDateRange(30)">Last 30 days</button>
+                <button class="btn btn-sm btn-outline-primary" (click)="setDateRange(90)">Last 90 days</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Search -->
+          <div class="col-md-6">
+            <div class="filter-group">
+              <label>Search</label>
+              <input 
+                type="text" 
+                class="form-control"
+                placeholder="Search admin email, target email, reason..."
+                [(ngModel)]="filters.searchTerm"
+                (input)="onSearchChange()">
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <!-- Admin Email -->
+          <div class="col-md-4">
+            <div class="filter-group">
+              <label>Admin Email</label>
+              <input 
+                type="text" 
+                class="form-control"
+                placeholder="Filter by admin email"
+                [(ngModel)]="filters.adminEmail"
+                (change)="onFilterChange()">
+            </div>
+          </div>
+
+          <!-- Target User Type -->
+          <div class="col-md-4">
+            <div class="filter-group">
+              <label>Target User Type</label>
+              <select 
+                class="form-control"
+                [(ngModel)]="filters.targetUserType"
+                (change)="onFilterChange()">
+                <option value="">All Types</option>
+                <option *ngFor="let type of availableUserTypes" [value]="type">
+                  {{ type | titlecase }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Status -->
+          <div class="col-md-4">
+            <div class="filter-group">
+              <label>Status</label>
+              <select 
+                class="form-control"
+                [(ngModel)]="filters.status"
+                (change)="onFilterChange()">
+                <option value="">All Statuses</option>
+                <option *ngFor="let status of availableStatuses" [value]="status">
+                  {{ status | titlecase }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions Filter -->
+        <div class="filter-group">
+          <label>Actions</label>
+          <div class="actions-filter">
+            <div class="action-checkbox" *ngFor="let action of availableActions">
+              <label class="checkbox-label">
+                <input 
+                  type="checkbox"
+                  [checked]="isActionSelected(action)"
+                  (change)="toggleActionFilter(action)">
+                <span class="checkmark"></span>
+                {{ action.replace('_', ' ') | titlecase }}
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audit Logs Table -->
+    <div class="audit-logs-table-container">
+      <!-- Table Controls -->
+      <div class="table-controls">
+        <div class="table-info">
+          <span class="results-count">
+            Showing {{ (pagination.page - 1) * pagination.limit + 1 }} - 
+            {{ Math.min(pagination.page * pagination.limit, pagination.total) }} 
+            of {{ pagination.total }} results
+          </span>
+          <span class="selected-count" *ngIf="getSelectedCount() > 0">
+            ({{ getSelectedCount() }} selected)
+          </span>
+        </div>
+        
+        <div class="table-actions">
+          <select 
+            class="form-control form-control-sm"
+            [value]="pagination.limit"
+            (change)="changePageSize($event)">
+            <option value="25">25 per page</option>
+            <option value="50">50 per page</option>
+            <option value="100">100 per page</option>
+            <option value="200">200 per page</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div class="loading-state" *ngIf="loading">
+        <i class="fas fa-spinner fa-spin"></i>
+        Loading audit logs...
+      </div>
+
+      <!-- Audit Logs Table -->
+      <div class="table-responsive" *ngIf="!loading">
+        <table class="table table-striped audit-logs-table">
+          <thead>
+            <tr>
+              <th class="select-column">
+                <input 
+                  type="checkbox"
+                  [checked]="isAllSelected()"
+                  [indeterminate]="isPartiallySelected()"
+                  (change)="toggleAllSelection()">
+              </th>
+              <th class="sortable" (click)="onSortChange('timestamp')">
+                Timestamp
+                <i [class]="getSortIcon('timestamp')"></i>
+              </th>
+              <th class="sortable" (click)="onSortChange('adminEmail')">
+                Admin
+                <i [class]="getSortIcon('adminEmail')"></i>
+              </th>
+              <th class="sortable" (click)="onSortChange('action')">
+                Action
+                <i [class]="getSortIcon('action')"></i>
+              </th>
+              <th>Target</th>
+              <th class="sortable" (click)="onSortChange('status')">
+                Status
+                <i [class]="getSortIcon('status')"></i>
+              </th>
+              <th>Details</th>
+              <th>IP Address</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let log of auditLogs" [class.selected]="isLogSelected(log._id)">
+              <td class="select-column">
+                <input 
+                  type="checkbox"
+                  [checked]="isLogSelected(log._id)"
+                  (change)="toggleLogSelection(log._id)">
+              </td>
+              
+              <td class="timestamp-column">
+                <div class="timestamp">{{ formatDate(log.timestamp) }}</div>
+              </td>
+              
+              <td class="admin-column">
+                <div class="admin-info">
+                  <div class="admin-name">{{ getAdminDisplayName(log) }}</div>
+                  <div class="admin-email" *ngIf="!isSystemAction(log)">{{ log.adminEmail }}</div>
+                  <div class="system-badge" *ngIf="isSystemAction(log)">
+                    <i class="fas fa-cog"></i>
+                    System
+                  </div>
+                </div>
+              </td>
+              
+              <td class="action-column">
+                <span class="badge action-badge" [class]="getActionBadgeClass(log.action)">
+                  {{ log.action.replace('_', ' ') }}
+                </span>
+                <div class="action-description">{{ getActionDescription(log) }}</div>
+              </td>
+              
+              <td class="target-column">
+                <div class="target-info" *ngIf="log.targetUserEmail">
+                  <div class="target-email">{{ log.targetUserEmail }}</div>
+                  <span class="badge user-type-badge" [class]="getUserTypeBadgeClass(log.targetUserType || '')">
+                    {{ log.targetUserType }}
+                  </span>
+                </div>
+                <span class="no-target" *ngIf="!log.targetUserEmail">-</span>
+              </td>
+              
+              <td class="status-column">
+                <span class="badge status-badge" [class]="getStatusBadgeClass(log.status)">
+                  {{ log.status }}
+                </span>
+                <div class="error-message" *ngIf="log.errorMessage">
+                  <small class="text-danger">{{ log.errorMessage }}</small>
+                </div>
+              </td>
+              
+              <td class="details-column">
+                <div class="details-info">
+                  <div class="reason" *ngIf="log.details.reason">
+                    <strong>Reason:</strong> {{ log.details.reason }}
+                  </div>
+                  <div class="affected-records" *ngIf="log.details.affectedRecords && log.details.affectedRecords > 1">
+                    <strong>Records:</strong> {{ log.details.affectedRecords }}
+                  </div>
+                  <div class="duration" *ngIf="log.details.operationDuration">
+                    <strong>Duration:</strong> {{ formatDuration(log.details.operationDuration) }}
+                  </div>
+                </div>
+              </td>
+              
+              <td class="ip-column">
+                <div class="ip-address">{{ log.details.ipAddress }}</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="!loading && auditLogs.length === 0">
+        <i class="fas fa-search"></i>
+        <h4>No audit logs found</h4>
+        <p>Try adjusting your filters or date range to see more results.</p>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination-container" *ngIf="!loading && auditLogs.length > 0">
+        <nav aria-label="Audit logs pagination">
+          <ul class="pagination">
+            <li class="page-item" [class.disabled]="pagination.page === 1">
+              <a class="page-link" href="#" (click)="changePage(pagination.page - 1); $event.preventDefault()">
+                <i class="fas fa-chevron-left"></i>
+                Previous
+              </a>
+            </li>
+            
+            <li class="page-item" 
+                *ngFor="let page of getPaginationPages()" 
+                [class.active]="page === pagination.page">
+              <a class="page-link" href="#" (click)="changePage(page); $event.preventDefault()">
+                {{ page }}
+              </a>
+            </li>
+            
+            <li class="page-item" [class.disabled]="pagination.page === pagination.pages">
+              <a class="page-link" href="#" (click)="changePage(pagination.page + 1); $event.preventDefault()">
+                Next
+                <i class="fas fa-chevron-right"></i>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Retention Policy Info -->
+    <div class="retention-info">
+      <div class="info-card">
+        <i class="fas fa-info-circle"></i>
+        <div class="info-content">
+          <strong>Data Retention Policy:</strong>
+          {{ getRetentionInfo() }}
+        </div>
+      </div>
+      
+      <!-- Detailed Retention Info -->
+      <div class="retention-details">
+        <h5>Retention Policy Details</h5>
+        <div class="retention-grid">
+          <div class="retention-item">
+            <strong>Retention Period:</strong>
+            <span>{{ getRetentionDetails().retentionPeriod }}</span>
+          </div>
+          <div class="retention-item">
+            <strong>Archive Period:</strong>
+            <span>{{ getRetentionDetails().archivePeriod }}</span>
+          </div>
+          <div class="retention-item">
+            <strong>Cleanup Frequency:</strong>
+            <span>{{ getRetentionDetails().cleanupFrequency }}</span>
+          </div>
+          <div class="retention-item">
+            <strong>Critical Logs:</strong>
+            <span>{{ getRetentionDetails().criticalLogsArchived }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Report Modal -->
+<div class="modal fade" [class.show]="showSummaryReport" [style.display]="showSummaryReport ? 'block' : 'none'" 
+     tabindex="-1" role="dialog" aria-labelledby="summaryReportModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="summaryReportModalLabel">
+          <i class="fas fa-chart-pie"></i>
+          Audit Log Summary Report
+        </h5>
+        <button type="button" class="btn-close" (click)="closeSummaryReport()" aria-label="Close"></button>
+      </div>
+      
+      <div class="modal-body" *ngIf="statistics">
+        <!-- Report Header -->
+        <div class="report-header">
+          <div class="report-info">
+            <strong>Report Period:</strong> 
+            {{ getStartDate() | date:'mediumDate' }} - {{ getEndDate() | date:'mediumDate' }}
+          </div>
+          <div class="report-info">
+            <strong>Generated:</strong> 
+            {{ getCurrentDate() | date:'medium' }}
+          </div>
+        </div>
+
+        <!-- Executive Summary -->
+        <div class="report-section">
+          <h6>Executive Summary</h6>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <div class="summary-value">{{ statistics.summary.totalActions | number }}</div>
+              <div class="summary-label">Total Actions</div>
+            </div>
+            <div class="summary-item success">
+              <div class="summary-value">{{ getSuccessRate() | number:'1.1-1' }}%</div>
+              <div class="summary-label">Success Rate</div>
+            </div>
+            <div class="summary-item info">
+              <div class="summary-value">{{ statistics.summary.uniqueAdminCount | number }}</div>
+              <div class="summary-label">Active Admins</div>
+            </div>
+            <div class="summary-item warning">
+              <div class="summary-value">{{ statistics.summary.uniqueIPCount | number }}</div>
+              <div class="summary-label">Unique IPs</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Analysis -->
+        <div class="report-section">
+          <h6>Action Analysis</h6>
+          <div class="action-analysis">
+            <div class="top-actions">
+              <strong>Most Frequent Actions:</strong>
+              <ol>
+                <li *ngFor="let action of getTopActions()">
+                  {{ action._id.replace('_', ' ') | titlecase }} ({{ action.count }} times)
+                </li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <!-- Security Insights -->
+        <div class="report-section">
+          <h6>Security Insights</h6>
+          <div class="security-insights">
+            <div class="insight-item">
+              <strong>Failed Actions:</strong> 
+              {{ statistics.summary.failedActions | number }} 
+              ({{ ((statistics.summary.failedActions / statistics.summary.totalActions) * 100) | number:'1.1-1' }}%)
+            </div>
+            <div class="insight-item">
+              <strong>Peak Activity Hour:</strong> 
+              {{ formatHour(getActivityPeakHour()) }}
+            </div>
+            <div class="insight-item" *ngIf="statistics.ipDistribution.length > 0">
+              <strong>Most Active IP:</strong> 
+              {{ statistics.ipDistribution[0].ipAddress }} 
+              ({{ statistics.ipDistribution[0].count }} actions)
+            </div>
+          </div>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="report-section">
+          <h6>Recommendations</h6>
+          <div class="recommendations">
+            <div class="recommendation" *ngIf="statistics.summary.failedActions > 0">
+              <i class="fas fa-exclamation-triangle text-warning"></i>
+              Review failed actions to identify potential security issues or system problems.
+            </div>
+            <div class="recommendation" *ngIf="statistics.summary.uniqueIPCount > 10">
+              <i class="fas fa-shield-alt text-info"></i>
+              Consider implementing IP-based access restrictions for enhanced security.
+            </div>
+            <div class="recommendation">
+              <i class="fas fa-clock text-success"></i>
+              Regular audit log reviews help maintain system security and compliance.
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" (click)="exportSummaryReport()">
+          <i class="fas fa-download"></i>
+          Export Report
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="closeSummaryReport()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div class="modal-backdrop fade" [class.show]="showSummaryReport" *ngIf="showSummaryReport" 
+     (click)="closeSummaryReport()"></div>

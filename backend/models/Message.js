@@ -39,8 +39,22 @@ const messageSchema = new mongoose.Schema({
   content: {
     type: String,
     required: true,
-    trim: true,
-    maxlength: [5000, 'Message content cannot exceed 5000 characters']
+    trim: true
+    // Removed maxlength as encrypted content will be longer
+  },
+  // Store original content hash for search/indexing (without exposing content)
+  contentHash: {
+    type: String,
+    index: true
+  },
+  // Encryption metadata
+  isEncrypted: {
+    type: Boolean,
+    default: true
+  },
+  encryptionVersion: {
+    type: String,
+    default: '1.0'
   },
   messageType: {
     type: String,
@@ -72,6 +86,60 @@ messageSchema.methods.markAsRead = async function() {
   this.isRead = true;
   this.readAt = new Date();
   return await this.save();
+};
+
+// Method to decrypt message content
+messageSchema.methods.getDecryptedContent = function() {
+  if (!this.isEncrypted) {
+    return this.content;
+  }
+  
+  const encryption = require('../utils/encryption');
+  try {
+    // Handle both populated and non-populated documents
+    const senderId = this.senderId._id || this.senderId;
+    const recipientId = this.recipientId._id || this.recipientId;
+    
+    return encryption.decryptMessage(this.content, senderId, recipientId);
+  } catch (error) {
+    console.error('Failed to decrypt message:', error);
+    // If decryption fails and ENCRYPTION_MASTER_KEY is not set, show a helpful message
+    if (!process.env.ENCRYPTION_MASTER_KEY) {
+      return '[Message encrypted with different key - Please set ENCRYPTION_MASTER_KEY]';
+    }
+    return '[Encrypted Message - Decryption Failed]';
+  }
+};
+
+// Static method to create encrypted message
+messageSchema.statics.createEncrypted = async function(messageData) {
+  const encryption = require('../utils/encryption');
+  
+  try {
+    // Encrypt the content
+    const encryptedContent = encryption.encryptMessage(
+      messageData.content,
+      messageData.senderId,
+      messageData.recipientId
+    );
+    
+    // Create content hash for indexing
+    const contentHash = encryption.hashForIndex(messageData.content);
+    
+    // Create the message with encrypted content
+    const message = new this({
+      ...messageData,
+      content: encryptedContent,
+      contentHash: contentHash,
+      isEncrypted: true,
+      encryptionVersion: '1.0'
+    });
+    
+    return await message.save();
+  } catch (error) {
+    console.error('Failed to create encrypted message:', error);
+    throw new Error('Failed to create encrypted message');
+  }
 };
 
 // Pre-save hook to set senderType and receiverType based on senderModel and recipientModel

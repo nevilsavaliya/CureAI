@@ -69,13 +69,19 @@ describe('Hospital Controller', () => {
   const mockRequest = (body = {}, files = [], user = null) => ({
     body,
     files,
-    user
+    user,
+    connection: { remoteAddress: '127.0.0.1' },
+    socket: { remoteAddress: '127.0.0.1' },
+    headers: { 'x-forwarded-for': '127.0.0.1' },
+    ip: '127.0.0.1',
+    query: {}
   });
 
   const mockResponse = () => {
     const res = {};
     res.status = jest.fn().mockReturnValue(res);
     res.json = jest.fn().mockReturnValue(res);
+    res.on = jest.fn(); // Add event listener support
     return res;
   };
 
@@ -611,8 +617,10 @@ describe('Hospital Controller', () => {
       expect(response.hospital.password).toBeUndefined();
     });
 
-    test('should not include apiSecret in profile', async () => {
+    test('should not include apiSecret in profile after 24 hours', async () => {
       hospital.generateApiCredentials();
+      // Set API key generation time to more than 24 hours ago
+      hospital.apiKeyGeneratedAt = new Date(Date.now() - (25 * 60 * 60 * 1000));
       await hospital.save();
 
       const req = mockRequest({}, [], { id: hospital._id });
@@ -622,6 +630,21 @@ describe('Hospital Controller', () => {
 
       const response = res.json.mock.calls[0][0];
       expect(response.hospital.apiSecret).toBeUndefined();
+    });
+
+    test('should include apiSecret in profile within 24 hours of generation', async () => {
+      hospital.generateApiCredentials();
+      await hospital.save();
+
+      const req = mockRequest({}, [], { id: hospital._id });
+      const res = mockResponse();
+
+      await hospitalController.getProfile(req, res);
+
+      const response = res.json.mock.calls[0][0];
+      expect(response.hospital.apiSecret).toBeDefined();
+      expect(response.hospital.showApiSecret).toBe(true);
+      expect(response.hospital.apiSecretExpiresAt).toBeDefined();
     });
 
     test('should return 404 if hospital not found', async () => {
@@ -783,6 +806,183 @@ describe('Hospital Controller', () => {
 
       const response = res.json.mock.calls[0][0];
       expect(response.hospital.registrationNumber).toBe('REG123456');
+    });
+  });
+
+  describe('getApiUsageStats', () => {
+    let hospital;
+
+    beforeEach(async () => {
+      hospital = new Hospital({
+        name: 'Dr. John Smith',
+        email: 'stats@hospital.com',
+        password: 'SecurePass123',
+        hospitalName: 'Stats Hospital',
+        registrationNumber: 'REG123456',
+        address: {
+          street: '123 Main St',
+          city: 'New York',
+          state: 'NY',
+          zipCode: '10001',
+          country: 'USA'
+        },
+        contactNumber: '+1234567890',
+        verificationStatus: 'verified',
+        apiAccessCount: 150
+      });
+      await hospital.save();
+    });
+
+    test('should retrieve API usage statistics', async () => {
+      const req = mockRequest({}, [], { id: hospital._id });
+      const res = mockResponse();
+
+      await hospitalController.getApiUsageStats(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          message: expect.stringContaining('statistics retrieved'),
+          stats: expect.objectContaining({
+            totalRequests: expect.any(Number),
+            requestsToday: expect.any(Number),
+            requestsThisWeek: expect.any(Number),
+            requestsThisMonth: expect.any(Number),
+            averageResponseTime: expect.any(Number),
+            successRate: expect.any(Number),
+            remainingRequests: expect.any(Number),
+            rateLimit: expect.any(Number),
+            lastUpdated: expect.any(Date)
+          })
+        })
+      );
+    });
+
+    test('should return default stats when no logs available', async () => {
+      const req = mockRequest({}, [], { id: hospital._id });
+      const res = mockResponse();
+
+      await hospitalController.getApiUsageStats(req, res);
+
+      const response = res.json.mock.calls[0][0];
+      expect(response.stats.totalRequests).toBe(150); // From hospital.apiAccessCount
+      expect(response.stats.successRate).toBe(100); // Default when no logs
+      expect(response.stats.rateLimit).toBe(1000); // Default rate limit
+    });
+
+    test('should return 404 if hospital not found', async () => {
+      const fakeId = new mongoose.Types.ObjectId();
+      const req = mockRequest({}, [], { id: fakeId });
+      const res = mockResponse();
+
+      await hospitalController.getApiUsageStats(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: expect.stringContaining('not found')
+        })
+      );
+    });
+  });
+
+  describe('getRecentApiRequests', () => {
+    let hospital;
+
+    beforeEach(async () => {
+      hospital = new Hospital({
+        name: 'Dr. John Smith',
+        email: 'requests@hospital.com',
+        password: 'SecurePass123',
+        hospitalName: 'Requests Hospital',
+        registrationNumber: 'REG123456',
+        address: {
+          street: '123 Main St',
+          city: 'New York',
+          state: 'NY',
+          zipCode: '10001',
+          country: 'USA'
+        },
+        contactNumber: '+1234567890',
+        verificationStatus: 'verified'
+      });
+      await hospital.save();
+    });
+
+    test('should retrieve recent API requests with default pagination', async () => {
+      const req = mockRequest({}, [], { id: hospital._id });
+      const res = mockResponse();
+
+      await hospitalController.getRecentApiRequests(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          message: expect.stringContaining('retrieved successfully'),
+          requests: expect.any(Array),
+          pagination: expect.objectContaining({
+            currentPage: 1,
+            totalRequests: expect.any(Number),
+            requestsPerPage: 10,
+            totalPages: expect.any(Number),
+            hasNextPage: expect.any(Boolean),
+            hasPreviousPage: false
+          })
+        })
+      );
+    });
+
+    test('should handle pagination parameters', async () => {
+      const req = mockRequest({}, [], { id: hospital._id });
+      req.query = { page: '2', limit: '5' };
+      const res = mockResponse();
+
+      await hospitalController.getRecentApiRequests(req, res);
+
+      const response = res.json.mock.calls[0][0];
+      expect(response.pagination.currentPage).toBe(2);
+      expect(response.pagination.requestsPerPage).toBe(5);
+    });
+
+    test('should limit maximum requests per page', async () => {
+      const req = mockRequest({}, [], { id: hospital._id });
+      req.query = { limit: '100' }; // Exceeds max limit of 50
+      const res = mockResponse();
+
+      await hospitalController.getRecentApiRequests(req, res);
+
+      const response = res.json.mock.calls[0][0];
+      expect(response.pagination.requestsPerPage).toBe(50); // Should be capped at 50
+    });
+
+    test('should return 404 if hospital not found', async () => {
+      const fakeId = new mongoose.Types.ObjectId();
+      const req = mockRequest({}, [], { id: fakeId });
+      const res = mockResponse();
+
+      await hospitalController.getRecentApiRequests(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: expect.stringContaining('not found')
+        })
+      );
+    });
+
+    test('should return empty results when no logs available', async () => {
+      const req = mockRequest({}, [], { id: hospital._id });
+      const res = mockResponse();
+
+      await hospitalController.getRecentApiRequests(req, res);
+
+      const response = res.json.mock.calls[0][0];
+      expect(response.requests).toEqual([]);
+      expect(response.pagination.totalRequests).toBe(0);
     });
   });
 });

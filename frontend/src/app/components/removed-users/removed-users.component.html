@@ -1,0 +1,599 @@
+<div class="removed-users-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h2 class="page-title">
+        <i class="fas fa-trash-restore"></i>
+        Removed Users
+      </h2>
+      <p class="page-description">
+        View and restore users that have been removed from the system
+      </p>
+    </div>
+    <div class="header-actions">
+      <button 
+        class="btn btn-outline-primary"
+        (click)="refreshData()"
+        [disabled]="loading">
+        <i class="fas fa-sync-alt" [class.fa-spin]="loading"></i>
+        Refresh
+      </button>
+      <button 
+        class="btn btn-outline-secondary"
+        (click)="exportData()"
+        [disabled]="loading">
+        <i class="fas fa-download"></i>
+        Export
+      </button>
+    </div>
+  </div>
+
+  <!-- Access Denied Message -->
+  <div *ngIf="!isRootAdmin" class="alert alert-danger">
+    <i class="fas fa-exclamation-triangle"></i>
+    Access denied. Only root admin can view removed users.
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="isRootAdmin" class="main-content">
+    <!-- Filters Section -->
+    <div class="filters-section">
+      <div class="filters-row">
+        <!-- Search -->
+        <div class="filter-group">
+          <label for="search">Search by Email</label>
+          <div class="search-input-group">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              id="search"
+              type="text"
+              class="form-control"
+              placeholder="Search by email..."
+              [(ngModel)]="searchTerm"
+              (input)="onSearchChange()">
+          </div>
+        </div>
+
+        <!-- User Type Filter -->
+        <div class="filter-group">
+          <label for="userType">User Type</label>
+          <select
+            id="userType"
+            class="form-control"
+            [(ngModel)]="userTypeFilter"
+            (change)="onFilterChange()">
+            <option *ngFor="let option of userTypeOptions" [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Restoration Status Filter -->
+        <div class="filter-group">
+          <label for="restorationStatus">Status</label>
+          <select
+            id="restorationStatus"
+            class="form-control"
+            [(ngModel)]="restorationStatusFilter"
+            (change)="onFilterChange()">
+            <option value="all">All</option>
+            <option value="not_restored">Not Restored</option>
+            <option value="restored">Restored</option>
+          </select>
+        </div>
+
+        <!-- Date Range -->
+        <div class="filter-group">
+          <label for="dateStart">Removed Date Range</label>
+          <div class="date-range-group">
+            <input
+              id="dateStart"
+              type="date"
+              class="form-control"
+              [(ngModel)]="dateRangeStart"
+              (change)="onFilterChange()">
+            <span class="date-separator">to</span>
+            <input
+              type="date"
+              class="form-control"
+              [(ngModel)]="dateRangeEnd"
+              (change)="onFilterChange()">
+          </div>
+        </div>
+
+        <!-- Reset Filters -->
+        <div class="filter-group">
+          <label>&nbsp;</label>
+          <button
+            class="btn btn-outline-secondary btn-reset"
+            (click)="resetFilters()"
+            [disabled]="loading">
+            <i class="fas fa-undo"></i>
+            Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div *ngIf="success" class="alert alert-success alert-dismissible">
+      <i class="fas fa-check-circle"></i>
+      {{ success }}
+      <button type="button" class="btn-close" (click)="success = ''"></button>
+    </div>
+
+    <div *ngIf="error" class="alert alert-danger alert-dismissible">
+      <i class="fas fa-exclamation-triangle"></i>
+      {{ error }}
+      <button type="button" class="btn-close" (click)="error = ''"></button>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-container">
+      <div class="loading-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>Loading removed users...</span>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div *ngIf="!loading" class="table-container">
+      <!-- Table Info -->
+      <div class="table-info">
+        <div class="results-info">
+          <span *ngIf="pagination.total > 0">
+            Showing {{ getStartItemNumber() }} to {{ getEndItemNumber() }} of {{ pagination.total }} removed users
+          </span>
+          <span *ngIf="pagination.total === 0">
+            No removed users found
+          </span>
+        </div>
+        <div class="page-size-selector">
+          <label for="pageSize">Show:</label>
+          <select
+            id="pageSize"
+            class="form-control form-control-sm"
+            [value]="pagination.limit"
+            (change)="changePageSize($event)">
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          <span>per page</span>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead>
+            <tr>
+              <th (click)="onSortChange('userData.name')" class="sortable">
+                Name
+                <i [class]="getSortIcon('userData.name')"></i>
+              </th>
+              <th (click)="onSortChange('userData.email')" class="sortable">
+                Email
+                <i [class]="getSortIcon('userData.email')"></i>
+              </th>
+              <th (click)="onSortChange('userType')" class="sortable">
+                Type
+                <i [class]="getSortIcon('userType')"></i>
+              </th>
+              <th (click)="onSortChange('removedAt')" class="sortable">
+                Removed Date
+                <i [class]="getSortIcon('removedAt')"></i>
+              </th>
+              <th>Removed By</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th>Deletion</th>
+              <th>Data Integrity</th>
+              <th class="actions-column">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of filteredUsers" [class.table-row-restored]="user.isRestored">
+              <!-- Name -->
+              <td>
+                <div class="user-name">
+                  {{ user.userData.name }}
+                </div>
+              </td>
+
+              <!-- Email -->
+              <td>
+                <div class="user-email">
+                  {{ user.userData.email }}
+                </div>
+              </td>
+
+              <!-- Type -->
+              <td>
+                <span [class]="getUserTypeBadgeClass(user.userType)">
+                  {{ user.userType | titlecase }}
+                </span>
+              </td>
+
+              <!-- Removed Date -->
+              <td>
+                <div class="date-info">
+                  <div class="date">{{ formatDate(user.removedAt) }}</div>
+                  <div class="time-ago">{{ formatTimeAgo(user.removedAt) }}</div>
+                </div>
+              </td>
+
+              <!-- Removed By -->
+              <td>
+                <div class="admin-info">
+                  <div class="admin-name">{{ user.removedBy.name || 'Unknown' }}</div>
+                  <div class="admin-email">{{ user.removedByEmail }}</div>
+                </div>
+              </td>
+
+              <!-- Reason -->
+              <td>
+                <div class="removal-reason" [title]="user.reason">
+                  {{ user.reason || 'No reason provided' }}
+                </div>
+              </td>
+
+              <!-- Status -->
+              <td>
+                <span [class]="'status-badge ' + getRestorationStatusClass(user)">
+                  {{ getRestorationStatusText(user) }}
+                </span>
+                <div *ngIf="user.isRestored" class="restoration-info">
+                  <small>{{ formatDate(user.restoredAt) }}</small>
+                </div>
+              </td>
+
+              <!-- Deletion -->
+              <td>
+                <span [class]="'deletion-badge ' + getDeletionUrgencyClass(user)">
+                  {{ getDeletionStatusText(user) }}
+                </span>
+              </td>
+
+              <!-- Data Integrity -->
+              <td>
+                <span [class]="'integrity-badge ' + getDataIntegrityClass(user)">
+                  <i class="fas" 
+                     [class.fa-check-circle]="user.dataIntegrityValid === true"
+                     [class.fa-exclamation-triangle]="user.dataIntegrityValid === false"
+                     [class.fa-question-circle]="user.dataIntegrityValid === undefined"></i>
+                  {{ getDataIntegrityText(user) }}
+                </span>
+              </td>
+
+              <!-- Actions -->
+              <td class="actions-column">
+                <div class="action-buttons">
+                  <button
+                    class="btn btn-sm btn-outline-info"
+                    (click)="openDetailsModal(user)"
+                    title="View Details">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button
+                    *ngIf="canRestoreUser(user)"
+                    class="btn btn-sm btn-outline-success"
+                    (click)="openRestorationModal(user)"
+                    title="Restore User">
+                    <i class="fas fa-undo"></i>
+                  </button>
+                  <span
+                    *ngIf="!canRestoreUser(user) && !user.isRestored"
+                    class="btn btn-sm btn-outline-secondary disabled"
+                    title="Cannot be restored">
+                    <i class="fas fa-ban"></i>
+                  </span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Empty State -->
+        <div *ngIf="filteredUsers.length === 0" class="empty-state">
+          <div class="empty-icon">
+            <i class="fas fa-inbox"></i>
+          </div>
+          <h3>No Removed Users Found</h3>
+          <p>There are no removed users matching your current filters.</p>
+          <button class="btn btn-outline-primary" (click)="resetFilters()">
+            Clear Filters
+          </button>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div *ngIf="pagination.pages > 1" class="pagination-container">
+        <nav aria-label="Removed users pagination">
+          <ul class="pagination">
+            <li class="page-item" [class.disabled]="pagination.page === 1">
+              <button class="page-link" (click)="changePage(pagination.page - 1)">
+                <i class="fas fa-chevron-left"></i>
+                Previous
+              </button>
+            </li>
+            
+            <li *ngFor="let page of getPaginationPages()" 
+                class="page-item" 
+                [class.active]="page === pagination.page">
+              <button class="page-link" (click)="changePage(page)">
+                {{ page }}
+              </button>
+            </li>
+            
+            <li class="page-item" [class.disabled]="pagination.page === pagination.pages">
+              <button class="page-link" (click)="changePage(pagination.page + 1)">
+                Next
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- User Restoration Modal -->
+<div *ngIf="showRestorationModal" class="modal-overlay" (click)="closeRestorationModal()">
+  <div class="modal-dialog modal-dialog-centered" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-undo text-success"></i>
+          Restore User
+        </h5>
+        <button type="button" class="btn-close" (click)="closeRestorationModal()"></button>
+      </div>
+      
+      <div class="modal-body">
+        <div *ngIf="selectedUser" class="restoration-details">
+          <div class="user-summary">
+            <h6>User Information</h6>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Name:</label>
+                <span>{{ selectedUser.userData.name }}</span>
+              </div>
+              <div class="info-item">
+                <label>Email:</label>
+                <span>{{ selectedUser.userData.email }}</span>
+              </div>
+              <div class="info-item">
+                <label>Type:</label>
+                <span [class]="getUserTypeBadgeClass(selectedUser.userType)">
+                  {{ selectedUser.userType | titlecase }}
+                </span>
+              </div>
+              <div class="info-item">
+                <label>Removed:</label>
+                <span>{{ formatDateTime(selectedUser.removedAt) }}</span>
+              </div>
+              <div class="info-item">
+                <label>Removed By:</label>
+                <span>{{ selectedUser.removedByEmail }}</span>
+              </div>
+              <div class="info-item">
+                <label>Reason:</label>
+                <span>{{ selectedUser.reason || 'No reason provided' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="restoration-form">
+            <div class="form-group">
+              <label for="restorationNotes">Restoration Notes</label>
+              <textarea
+                id="restorationNotes"
+                class="form-control"
+                rows="3"
+                placeholder="Enter notes about why this user is being restored..."
+                [(ngModel)]="restorationNotes">
+              </textarea>
+              <small class="form-text text-muted">
+                These notes will be logged for audit purposes.
+              </small>
+            </div>
+          </div>
+
+          <div class="restoration-warning">
+            <div class="alert alert-warning">
+              <i class="fas fa-exclamation-triangle"></i>
+              <strong>Important:</strong> Restoring this user will reactivate their account and 
+              allow them to log in again. Make sure this action is authorized.
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button 
+          type="button" 
+          class="btn btn-secondary" 
+          (click)="closeRestorationModal()"
+          [disabled]="restorationLoading">
+          Cancel
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-success" 
+          (click)="confirmRestoration()"
+          [disabled]="restorationLoading">
+          <i class="fas fa-spinner fa-spin" *ngIf="restorationLoading"></i>
+          <i class="fas fa-undo" *ngIf="!restorationLoading"></i>
+          {{ restorationLoading ? 'Restoring...' : 'Restore User' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- User Details Modal -->
+<div *ngIf="showDetailsModal" class="modal-overlay" (click)="closeDetailsModal()">
+  <div class="modal-dialog modal-lg modal-dialog-centered" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-info-circle text-info"></i>
+          User Details
+        </h5>
+        <button type="button" class="btn-close" (click)="closeDetailsModal()"></button>
+      </div>
+      
+      <div class="modal-body">
+        <div *ngIf="selectedUser" class="user-details">
+          <!-- Basic Information -->
+          <div class="details-section">
+            <h6 class="section-title">Basic Information</h6>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Name:</label>
+                <span>{{ selectedUser.userData.name }}</span>
+              </div>
+              <div class="info-item">
+                <label>Email:</label>
+                <span>{{ selectedUser.userData.email }}</span>
+              </div>
+              <div class="info-item">
+                <label>User Type:</label>
+                <span [class]="getUserTypeBadgeClass(selectedUser.userType)">
+                  {{ selectedUser.userType | titlecase }}
+                </span>
+              </div>
+              <div class="info-item">
+                <label>Original ID:</label>
+                <span class="monospace">{{ selectedUser.originalId }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Removal Information -->
+          <div class="details-section">
+            <h6 class="section-title">Removal Information</h6>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Removed Date:</label>
+                <span>{{ formatDateTime(selectedUser.removedAt) }}</span>
+              </div>
+              <div class="info-item">
+                <label>Removed By:</label>
+                <span>
+                  {{ selectedUser.removedBy.name || 'Unknown' }}
+                  ({{ selectedUser.removedByEmail }})
+                </span>
+              </div>
+              <div class="info-item full-width">
+                <label>Reason:</label>
+                <span>{{ selectedUser.reason || 'No reason provided' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Restoration Information -->
+          <div *ngIf="selectedUser.isRestored" class="details-section">
+            <h6 class="section-title">Restoration Information</h6>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Restored Date:</label>
+                <span>{{ formatDateTime(selectedUser.restoredAt) }}</span>
+              </div>
+              <div class="info-item">
+                <label>Restored By:</label>
+                <span>
+                  {{ selectedUser.restoredBy?.name || 'Unknown' }}
+                  ({{ selectedUser.restoredByEmail }})
+                </span>
+              </div>
+              <div class="info-item full-width">
+                <label>Restoration Notes:</label>
+                <span>{{ selectedUser.restorationNotes || 'No notes provided' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Context Information -->
+          <div class="details-section">
+            <h6 class="section-title">Removal Context</h6>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Active Cases:</label>
+                <span [class]="selectedUser.removalContext.hasActiveCases ? 'text-warning' : 'text-muted'">
+                  {{ selectedUser.removalContext.hasActiveCases ? 'Yes' : 'No' }}
+                </span>
+              </div>
+              <div class="info-item">
+                <label>Active Consultations:</label>
+                <span [class]="selectedUser.removalContext.hasActiveConsultations ? 'text-warning' : 'text-muted'">
+                  {{ selectedUser.removalContext.hasActiveConsultations ? 'Yes' : 'No' }}
+                </span>
+              </div>
+              <div class="info-item">
+                <label>Active Subscriptions:</label>
+                <span [class]="selectedUser.removalContext.hasActiveSubscriptions ? 'text-warning' : 'text-muted'">
+                  {{ selectedUser.removalContext.hasActiveSubscriptions ? 'Yes' : 'No' }}
+                </span>
+              </div>
+              <div class="info-item">
+                <label>Related Records:</label>
+                <span>{{ selectedUser.removalContext.relatedRecordsCount }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- System Information -->
+          <div class="details-section">
+            <h6 class="section-title">System Information</h6>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Scheduled Deletion:</label>
+                <span [class]="getDeletionUrgencyClass(selectedUser)">
+                  {{ formatDateTime(selectedUser.scheduledDeletion) }}
+                  ({{ getDeletionStatusText(selectedUser) }})
+                </span>
+              </div>
+              <div class="info-item">
+                <label>Data Integrity:</label>
+                <span [class]="'integrity-status ' + getDataIntegrityClass(selectedUser)">
+                  <i class="fas" 
+                     [class.fa-check-circle]="selectedUser.dataIntegrityValid === true"
+                     [class.fa-exclamation-triangle]="selectedUser.dataIntegrityValid === false"
+                     [class.fa-question-circle]="selectedUser.dataIntegrityValid === undefined"></i>
+                  {{ getDataIntegrityText(selectedUser) }}
+                </span>
+              </div>
+              <div class="info-item">
+                <label>Can Be Restored:</label>
+                <span [class]="canRestoreUser(selectedUser) ? 'text-success' : 'text-danger'">
+                  {{ canRestoreUser(selectedUser) ? 'Yes' : 'No' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button 
+          type="button" 
+          class="btn btn-secondary" 
+          (click)="closeDetailsModal()">
+          Close
+        </button>
+        <button 
+          *ngIf="selectedUser && canRestoreUser(selectedUser)"
+          type="button" 
+          class="btn btn-success" 
+          (click)="closeDetailsModal(); openRestorationModal(selectedUser)">
+          <i class="fas fa-undo"></i>
+          Restore User
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

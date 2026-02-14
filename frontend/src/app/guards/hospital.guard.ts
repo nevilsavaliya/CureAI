@@ -12,48 +12,70 @@ export class HospitalGuard implements CanActivate {
   ) {}
 
   canActivate(_route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
-    const currentUser = this.authService.currentUserValue;
+    // Check for hospital authentication (separate from regular auth)
+    const hospitalToken = localStorage.getItem('hospitalToken') || sessionStorage.getItem('hospitalToken');
+    const hospitalDataStr = localStorage.getItem('hospitalData') || sessionStorage.getItem('hospitalData');
     
-    // Check if user is authenticated
-    if (!currentUser) {
+    console.log('🔍 HospitalGuard checking authentication:', {
+      hasToken: !!hospitalToken,
+      hasData: !!hospitalDataStr,
+      route: state.url
+    });
+    
+    // Check if hospital is authenticated
+    if (!hospitalToken || !hospitalDataStr) {
+      console.log('❌ No hospital token or data found, redirecting to login');
       // Not logged in, redirect to hospital login
       this.router.navigate(['/hospital/login'], { queryParams: { returnUrl: state.url } });
       return false;
     }
 
-    // Check if user is a hospital
-    if (currentUser.role !== 'hospital') {
-      // Not a hospital, redirect to appropriate dashboard based on role
-      this.redirectToDashboard(currentUser.role);
-      return false;
-    }
-
-    // Check if hospital is verified
-    // The verification status is stored in localStorage along with user data
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
+    try {
+      const hospitalData = JSON.parse(hospitalDataStr);
+      console.log('✅ Hospital data found:', {
+        name: hospitalData.hospitalName || hospitalData.name,
+        email: hospitalData.email,
+        status: hospitalData.verificationStatus || hospitalData.status
+      });
+      
+      // Debug: Log the entire hospital data object to see all fields
+      console.log('🔍 Full hospital data object:', hospitalData);
+      console.log('🔍 Available fields:', Object.keys(hospitalData));
+      console.log('🔍 verificationStatus field:', hospitalData.verificationStatus);
+      console.log('🔍 status field:', hospitalData.status);
+      
+      // Get verification status from either field (for backward compatibility)
+      const verificationStatus = hospitalData.verificationStatus || hospitalData.status;
       
       // Check verification status
-      if (userData.verificationStatus === 'pending') {
+      if (verificationStatus === 'pending') {
+        console.log('❌ Hospital pending verification');
         // Hospital is pending verification
         this.router.navigate(['/hospital/pending-verification']);
         return false;
       }
       
-      if (userData.verificationStatus === 'rejected') {
+      if (verificationStatus === 'rejected') {
+        console.log('❌ Hospital rejected');
         // Hospital was rejected
         this.router.navigate(['/hospital/rejected']);
         return false;
       }
       
       // Hospital is verified, allow access
-      if (userData.verificationStatus === 'verified') {
+      if (verificationStatus === 'verified') {
+        console.log('✅ Hospital verified, allowing access');
         return true;
       }
+      
+      console.log('❌ Unknown verification status:', verificationStatus);
+      
+    } catch (error) {
+      console.log('❌ Error parsing hospital data:', error);
     }
 
     // If verification status is not found or invalid, redirect to login
+    console.log('❌ Redirecting to hospital login');
     this.router.navigate(['/hospital/login']);
     return false;
   }

@@ -273,10 +273,25 @@
           <div class="medical-section" *ngIf="selectedCase.predictedConditions && selectedCase.predictedConditions.length > 0">
             <h4>🔍 AI-Predicted Conditions</h4>
             <p class="section-description">Conditions predicted by diagnostic chatbot based on patient symptoms</p>
-            <div class="conditions-list">
-              <span *ngFor="let condition of selectedCase.predictedConditions" class="condition-tag">
-                {{ condition }}
-              </span>
+            <div class="conditions-list-with-confidence">
+              <div 
+                *ngFor="let condition of selectedCase.predictedConditions; let i = index" 
+                class="condition-item-with-confidence"
+              >
+                <div class="condition-name">{{ condition }}</div>
+                <div class="condition-confidence" *ngIf="selectedCase.predictionConfidence && selectedCase.predictionConfidence[i]">
+                  <span class="confidence-badge-small" [ngClass]="getConfidenceClass(selectedCase.predictionConfidence[i].confidence)">
+                    {{ selectedCase.predictionConfidence[i].confidence }}%
+                  </span>
+                  <div class="confidence-bar-small">
+                    <div 
+                      class="confidence-fill-small" 
+                      [ngClass]="getConfidenceClass(selectedCase.predictionConfidence[i].confidence)"
+                      [style.width.%]="selectedCase.predictionConfidence[i].confidence"
+                    ></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           

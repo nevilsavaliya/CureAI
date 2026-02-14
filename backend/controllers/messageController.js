@@ -53,14 +53,14 @@ exports.sendMessage = async (req, res) => {
       });
     }
 
-    const message = new Message({
+    // Create encrypted message
+    const message = await Message.createEncrypted({
       senderId,
       senderModel,
       recipientId,
       recipientModel,
       content
     });
-    await message.save();
 
     res.status(201).json({
       success: true,
@@ -97,9 +97,16 @@ exports.getMessages = async (req, res) => {
       .populate('recipientId', 'name email')
       .sort({ sentAt: 1 });
 
+    // Decrypt messages for response
+    const decryptedMessages = messages.map(message => {
+      const messageObj = message.toObject();
+      messageObj.content = message.getDecryptedContent();
+      return messageObj;
+    });
+
     res.status(200).json({
       success: true,
-      messages
+      messages: decryptedMessages
     });
   } catch (error) {
     res.status(400).json({
@@ -168,7 +175,7 @@ exports.getDoctorConversations = async (req, res) => {
       if (!conversationsMap.has(patientId)) {
         conversationsMap.set(patientId, {
           patient: message.senderId,
-          lastMessage: message.content,
+          lastMessage: message.getDecryptedContent(),
           lastMessageTime: message.sentAt,
           unreadCount: message.isRead ? 0 : 1
         });
@@ -281,8 +288,8 @@ exports.sendCaseMessage = async (req, res) => {
       receiverModel = 'Patient';
     }
 
-    // Create message
-    const message = new Message({
+    // Create encrypted message
+    const message = await Message.createEncrypted({
       caseId,
       senderId,
       senderModel,
@@ -291,8 +298,6 @@ exports.sendCaseMessage = async (req, res) => {
       content: content.trim(),
       messageType: 'text'
     });
-
-    await message.save();
 
     // Update case's lastMessageAt timestamp
     await caseData.updateLastMessage();
@@ -312,9 +317,13 @@ exports.sendCaseMessage = async (req, res) => {
       .populate('senderId', 'name email')
       .populate('recipientId', 'name email');
 
+    // Prepare decrypted message for response and WebSocket
+    const decryptedMessageData = populatedMessage.toObject();
+    decryptedMessageData.content = populatedMessage.getDecryptedContent();
+
     // Broadcast message via WebSocket
     try {
-      socketService.emitNewMessage(caseId, populatedMessage);
+      socketService.emitNewMessage(caseId, decryptedMessageData);
     } catch (socketError) {
       console.error('Failed to broadcast message via WebSocket:', socketError);
       // Continue even if WebSocket fails - message is saved in DB
@@ -323,7 +332,7 @@ exports.sendCaseMessage = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Message sent successfully',
-      data: populatedMessage
+      data: decryptedMessageData
     });
   } catch (error) {
     console.error('Error sending case message:', error);
@@ -373,16 +382,23 @@ exports.getCaseMessages = async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit));
 
+    // Decrypt messages for response
+    const decryptedMessages = messages.map(message => {
+      const messageObj = message.toObject();
+      messageObj.content = message.getDecryptedContent();
+      return messageObj;
+    });
+
     // Get total count for pagination
     const totalMessages = await Message.countDocuments({ caseId });
 
     res.status(200).json({
       success: true,
-      count: messages.length,
+      count: decryptedMessages.length,
       totalMessages,
       currentPage: parseInt(page),
       totalPages: Math.ceil(totalMessages / parseInt(limit)),
-      messages
+      messages: decryptedMessages
     });
   } catch (error) {
     console.error('Error fetching case messages:', error);

@@ -1,0 +1,170 @@
+<div class="modal-overlay" *ngIf="isVisible" (click)="closeModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <h2 class="modal-title">
+        <i class="fas fa-user-plus"></i>
+        Add New Admin
+      </h2>
+      <button class="close-button" (click)="closeModal()" type="button">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="modal-body">
+      <!-- Success Message -->
+      <div class="alert alert-success" *ngIf="success">
+        <i class="fas fa-check-circle"></i>
+        {{ success }}
+      </div>
+
+      <!-- Error Message -->
+      <div class="alert alert-error" *ngIf="error">
+        <i class="fas fa-exclamation-triangle"></i>
+        {{ error }}
+      </div>
+
+      <!-- Form -->
+      <form [formGroup]="adminForm" (ngSubmit)="onSubmit()" novalidate>
+        <!-- Name Field -->
+        <div class="form-group">
+          <label for="adminName" class="form-label">
+            Full Name <span class="required">*</span>
+          </label>
+          <input
+            id="adminName"
+            type="text"
+            class="form-input"
+            [class.invalid]="isFieldInvalid('name')"
+            formControlName="name"
+            placeholder="Enter admin's full name"
+            autocomplete="name">
+          <div class="field-error" *ngIf="isFieldInvalid('name')">
+            <i class="fas fa-exclamation-circle"></i>
+            {{ getFieldError('name') }}
+          </div>
+        </div>
+
+        <!-- Email Field -->
+        <div class="form-group">
+          <label for="adminEmail" class="form-label">
+            Email Address <span class="required">*</span>
+          </label>
+          <input
+            id="adminEmail"
+            type="email"
+            class="form-input"
+            [class.invalid]="isFieldInvalid('email')"
+            formControlName="email"
+            placeholder="Enter admin's email address"
+            autocomplete="email"
+            (blur)="onEmailBlur()">
+          <div class="field-error" *ngIf="isFieldInvalid('email')">
+            <i class="fas fa-exclamation-circle"></i>
+            {{ getFieldError('email') }}
+          </div>
+          <div class="field-hint">
+            This email will be used for admin login and notifications.
+          </div>
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-group">
+          <label for="adminPassword" class="form-label">
+            Password <span class="required">*</span>
+          </label>
+          <div class="password-input-wrapper">
+            <input
+              id="adminPassword"
+              type="password"
+              class="form-input"
+              [class.invalid]="isFieldInvalid('password')"
+              formControlName="password"
+              placeholder="Create a strong password"
+              autocomplete="new-password">
+          </div>
+          
+          <!-- Password Strength Indicator -->
+          <div class="password-strength" *ngIf="adminForm.get('password')?.value">
+            <div class="strength-bar">
+              <div class="strength-fill" [class]="getPasswordStrengthClass()"></div>
+            </div>
+            <span class="strength-text" [class]="getPasswordStrengthClass()">
+              {{ getPasswordStrength() | titlecase }} Password
+            </span>
+          </div>
+          
+          <div class="field-error" *ngIf="isFieldInvalid('password')">
+            <i class="fas fa-exclamation-circle"></i>
+            {{ getFieldError('password') }}
+          </div>
+          <div class="field-hint">
+            Password must contain at least 8 characters with uppercase, lowercase, number, and special character.
+          </div>
+        </div>
+
+        <!-- Confirm Password Field -->
+        <div class="form-group">
+          <label for="confirmPassword" class="form-label">
+            Confirm Password <span class="required">*</span>
+          </label>
+          <input
+            id="confirmPassword"
+            type="password"
+            class="form-input"
+            [class.invalid]="isFieldInvalid('confirmPassword')"
+            formControlName="confirmPassword"
+            placeholder="Confirm the password"
+            autocomplete="new-password">
+          <div class="field-error" *ngIf="isFieldInvalid('confirmPassword')">
+            <i class="fas fa-exclamation-circle"></i>
+            {{ getFieldError('confirmPassword') }}
+          </div>
+        </div>
+
+        <!-- Admin Permissions Info -->
+        <div class="info-box">
+          <div class="info-header">
+            <i class="fas fa-info-circle"></i>
+            Admin Permissions
+          </div>
+          <div class="info-content">
+            <p>The new admin will have the following permissions:</p>
+            <ul>
+              <li><i class="fas fa-check"></i> Manage patients, doctors, and hospitals</li>
+              <li><i class="fas fa-check"></i> View user management dashboard</li>
+              <li><i class="fas fa-check"></i> Remove and restore users (except other admins)</li>
+              <li><i class="fas fa-times"></i> Cannot manage other admin users</li>
+              <li><i class="fas fa-times"></i> Cannot access audit logs</li>
+            </ul>
+            <p class="note">
+              <strong>Note:</strong> Only the root admin (admin@gmail.com) can manage other admins.
+            </p>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="closeModal()"
+        [disabled]="loading">
+        <i class="fas fa-times"></i>
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="btn btn-primary"
+        (click)="onSubmit()"
+        [disabled]="!isFormValid() || loading">
+        <i class="fas fa-spinner fa-spin" *ngIf="loading"></i>
+        <i class="fas fa-user-plus" *ngIf="!loading"></i>
+        {{ loading ? 'Creating Admin...' : 'Create Admin' }}
+      </button>
+    </div>
+  </div>
+</div>

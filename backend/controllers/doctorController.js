@@ -2,66 +2,37 @@ const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient');
 const Prediction = require('../models/Prediction');
 const { getAllSpecializations } = require('../services/diseaseSpecializationMapping');
+const { getRecommendedDoctors } = require('../services/universalDoctorMatcher');
 
 // Get doctors by specialization with ML-based matching
+// Integrates Universal Doctor Matcher service to ensure General Medicine doctors are always included
 exports.matchDoctors = async (req, res) => {
   try {
-    const { specializations, patientId } = req.query;
+    const { specializations, patientId, location, limit } = req.query;
 
-    // Query doctors collection directly with active subscription filter
-    let query = { 
-      subscriptionStatus: 'active',
-      isActive: true
-    };
-    
-    // If specializations provided (from disease prediction), match doctors
+    // Parse specializations from query params
+    let specializationArray = [];
     if (specializations) {
-      const specializationArray = Array.isArray(specializations) 
+      specializationArray = Array.isArray(specializations) 
         ? specializations 
         : specializations.split(',').map(s => s.trim());
-      
-      query.specializations = { $in: specializationArray };
     }
 
-    // Query only registered doctors from doctors collection
-    const doctors = await Doctor.find(query)
-      .select('name email degree specializations experienceYears contactNumber rating totalReviews')
-      .sort({ rating: -1, experienceYears: -1 })
-      .limit(20);
+    // Use Universal Doctor Matcher service
+    // This automatically includes General Medicine doctors and adds relevance scoring
+    const options = {
+      location: location || null,
+      limit: limit ? parseInt(limit) : 20
+    };
 
-    // Calculate match score for each doctor based on specializations
-    const doctorsWithScore = doctors.map(doctor => {
-      let matchScore = 0;
-      if (specializations) {
-        const specializationArray = Array.isArray(specializations) 
-          ? specializations 
-          : specializations.split(',').map(s => s.trim());
-        
-        // Calculate how many specializations match
-        const matchCount = doctor.specializations.filter(spec => 
-          specializationArray.includes(spec)
-        ).length;
-        
-        // Score based on match count, experience, and rating
-        matchScore = (matchCount * 40) + (doctor.experienceYears * 2) + (doctor.rating * 10);
-      } else {
-        // Default scoring without specialization match
-        matchScore = (doctor.experienceYears * 2) + (doctor.rating * 10);
-      }
-      
-      return {
-        ...doctor.toObject(),
-        matchScore
-      };
-    });
+    const doctors = await getRecommendedDoctors(specializationArray, options);
 
-    // Sort by match score
-    doctorsWithScore.sort((a, b) => b.matchScore - a.matchScore);
-
+    // Return top matches (limit already applied in service)
     res.status(200).json({
       success: true,
-      doctors: doctorsWithScore.slice(0, 10), // Return top 10 matches
-      matchedSpecializations: specializations
+      doctors: doctors,
+      matchedSpecializations: specializationArray,
+      includesGeneralMedicine: true // Indicator that General Medicine doctors are included
     });
   } catch (error) {
     res.status(400).json({
@@ -149,6 +120,45 @@ exports.getAllSpecializations = async (req, res) => {
     res.status(200).json({
       success: true,
       specializations
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Get recommended doctors with specialization filtering
+// Always includes General Medicine doctors in all responses
+// Accepts specialization array in query params
+exports.getRecommendedDoctors = async (req, res) => {
+  try {
+    const { specializations, location, limit } = req.query;
+
+    // Parse specializations from query params
+    let specializationArray = [];
+    if (specializations) {
+      specializationArray = Array.isArray(specializations) 
+        ? specializations 
+        : specializations.split(',').map(s => s.trim());
+    }
+
+    // Use Universal Doctor Matcher service
+    // This automatically appends General Medicine to the filter
+    const options = {
+      location: location || null,
+      limit: limit ? parseInt(limit) : 20
+    };
+
+    const doctors = await getRecommendedDoctors(specializationArray, options);
+
+    res.status(200).json({
+      success: true,
+      doctors: doctors,
+      requestedSpecializations: specializationArray,
+      includesGeneralMedicine: true,
+      message: 'General Medicine doctors are always included in recommendations'
     });
   } catch (error) {
     res.status(400).json({

@@ -9,10 +9,36 @@ class EmailService {
     if (this.isConfigured) {
       // Create transporter (using Gmail for demo - configure with your SMTP)
       this.transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false, // Use STARTTLS
         auth: {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASSWORD
+        },
+        tls: {
+          // Do not fail on invalid certificates
+          rejectUnauthorized: false,
+          // Minimum TLS version
+          minVersion: 'TLSv1.2',
+          // Cipher configuration
+          ciphers: 'SSLv3'
+        },
+        // Connection timeout
+        connectionTimeout: 10000,
+        // Socket timeout
+        socketTimeout: 10000,
+        // Enable debug output
+        debug: process.env.NODE_ENV === 'development',
+        logger: process.env.NODE_ENV === 'development'
+      });
+
+      // Verify connection configuration
+      this.transporter.verify((error, success) => {
+        if (error) {
+          console.error('❌ Email transporter verification failed:', error.message);
+        } else {
+          console.log('✅ Email server is ready to send messages');
         }
       });
     } else {

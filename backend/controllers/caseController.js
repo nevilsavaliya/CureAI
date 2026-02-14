@@ -7,7 +7,7 @@ const socketService = require('../services/socketService');
 // Create new case (patient requests consultation)
 exports.createCase = async (req, res) => {
   try {
-    const { doctorId, symptoms, predictedConditions, chatbotHistory } = req.body;
+    const { doctorId, symptoms, predictedConditions, chatbotHistory, conversationId } = req.body;
     const patientId = req.user.id;
 
     // Validate required fields
@@ -58,16 +58,74 @@ exports.createCase = async (req, res) => {
       });
     }
 
-    // Create new case
-    const newCase = new Case({
+    // Initialize case data
+    let caseData = {
       patientId,
       doctorId,
       symptoms: symptoms || [],
       predictedConditions: predictedConditions || [],
       chatbotHistory: chatbotHistory || [],
       status: 'pending'
-    });
+    };
 
+    // If conversationId is provided, populate case with conversation data
+    if (conversationId) {
+      const SymptomConversation = require('../models/SymptomConversation');
+      const conversation = await SymptomConversation.findById(conversationId);
+      
+      if (!conversation) {
+        return res.status(404).json({
+          success: false,
+          message: 'Symptom conversation not found'
+        });
+      }
+
+      // Verify conversation belongs to the patient
+      if (conversation.patientId.toString() !== patientId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. Conversation does not belong to this patient'
+        });
+      }
+
+      // Populate case with conversation data
+      caseData.symptomConversationId = conversationId;
+      
+      // Extract symptoms from conversation
+      const conversationSymptoms = [conversation.initialSymptom, ...conversation.extractedSymptoms];
+      caseData.symptoms = [...new Set([...caseData.symptoms, ...conversationSymptoms])];
+      
+      // Extract predicted conditions from conversation predictions
+      if (conversation.predictions && conversation.predictions.length > 0) {
+        const conversationConditions = conversation.predictions.map(p => p.disease);
+        caseData.predictedConditions = [...new Set([...caseData.predictedConditions, ...conversationConditions])];
+        
+        // Store confidence scores
+        caseData.predictionConfidence = conversation.predictions.map(p => ({
+          condition: p.disease,
+          confidence: p.confidence
+        }));
+      }
+      
+      // Convert conversation history to chatbot history format
+      const conversationHistory = conversation.questions.map(question => {
+        const answer = conversation.answers.find(a => a.questionId === question.questionId);
+        return {
+          question: question.questionText,
+          answer: answer ? answer.answer : 'Not answered',
+          timestamp: answer ? answer.answeredAt : question.askedAt
+        };
+      });
+      
+      // Merge with existing chatbot history
+      caseData.chatbotHistory = [...caseData.chatbotHistory, ...conversationHistory];
+      
+      // Mark conversation as completed
+      await conversation.complete();
+    }
+
+    // Create new case
+    const newCase = new Case(caseData);
     await newCase.save();
 
     // Create notification for doctor
@@ -164,7 +222,8 @@ exports.getCaseById = async (req, res) => {
     // Fetch case with populated data
     const caseData = await Case.findById(id)
       .populate('patientId', 'name email bloodGroup dateOfBirth gender contactNumber medicalHistory allergies')
-      .populate('doctorId', 'name email degree specializations rating experienceYears clinicAddress contactNumber');
+      .populate('doctorId', 'name email degree specializations rating experienceYears clinicAddress contactNumber')
+      .populate('symptomConversationId');
 
     if (!caseData) {
       return res.status(404).json({
@@ -184,9 +243,47 @@ exports.getCaseById = async (req, res) => {
       });
     }
 
+    // Format conversation data for doctor view if conversation exists
+    let formattedCase = caseData.toObject();
+    
+    if (caseData.symptomConversationId) {
+      const conversation = caseData.symptomConversationId;
+      
+      // Format conversation history in chronological order
+      const conversationHistory = conversation.questions.map(question => {
+        const answer = conversation.answers.find(a => a.questionId === question.questionId);
+        return {
+          questionId: question.questionId,
+          questionText: question.questionText,
+          questionType: question.questionType,
+          options: question.options,
+          askedAt: question.askedAt,
+          answer: answer ? answer.answer : null,
+          answeredAt: answer ? answer.answeredAt : null
+        };
+      }).sort((a, b) => new Date(a.askedAt) - new Date(b.askedAt));
+      
+      // Add formatted conversation data
+      formattedCase.symptomConversation = {
+        conversationId: conversation._id,
+        initialSymptom: conversation.initialSymptom,
+        symptomCategory: conversation.symptomCategory,
+        conversationHistory,
+        extractedSymptoms: conversation.extractedSymptoms,
+        predictions: conversation.predictions,
+        recommendedDoctors: conversation.recommendedDoctors,
+        status: conversation.status,
+        createdAt: conversation.createdAt,
+        completedAt: conversation.completedAt
+      };
+      
+      // Remove the raw populated data
+      delete formattedCase.symptomConversationId;
+    }
+
     res.status(200).json({
       success: true,
-      case: caseData
+      case: formattedCase
     });
   } catch (error) {
     console.error('Error fetching case:', error);

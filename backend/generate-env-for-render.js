@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * Generate Environment Variables for Render
+ * Generate Environment Variables for Render Deployment
  * 
  * This script helps you prepare environment variables for Render deployment
+ * with comprehensive configuration and validation.
  */
 
 const crypto = require('crypto');
@@ -18,51 +19,172 @@ function question(query) {
   return new Promise(resolve => rl.question(query, resolve));
 }
 
+function generateSecureKey(length = 32) {
+  return crypto.randomBytes(length).toString('hex');
+}
+
+function validateUrl(url) {
+  try {
+    new URL(url);
+    return url.startsWith('https://');
+  } catch {
+    return false;
+  }
+}
+
 async function generateEnvForRender() {
-  console.log('\n🚀 Generate Environment Variables for Render\n');
-  console.log('This will help you create the environment variables needed for deployment.\n');
+  console.log('\n🚀 Generate Environment Variables for Render Deployment\n');
+  console.log('This script will help you create all necessary environment variables');
+  console.log('for deploying the healthcare platform backend to Render.\n');
 
-  // Generate JWT Secret
-  const jwtSecret = crypto.randomBytes(32).toString('hex');
-  console.log('✅ Generated JWT_SECRET:', jwtSecret);
-  console.log('');
+  // Generate secure keys
+  const jwtSecret = generateSecureKey(32);
+  const encryptionKey = generateSecureKey(32);
+  
+  console.log('✅ Generated secure keys:');
+  console.log(`   JWT_SECRET: ${jwtSecret}`);
+  console.log(`   ENCRYPTION_MASTER_KEY: ${encryptionKey}\n`);
 
-  // Ask for MongoDB URI
-  const mongoUri = await question('Enter your MongoDB Atlas connection string\n(or press Enter to use placeholder): ');
-  const finalMongoUri = mongoUri.trim() || 'mongodb+srv://USER:PASS@CLUSTER.mongodb.net/healthcare-platform';
+  // Get Render service name
+  const serviceName = await question('Enter your Render service name\n(e.g., healthcare-backend): ');
+  const renderServiceName = serviceName.trim() || 'healthcare-backend';
+  
+  // Generate Render URLs
+  const apiBaseUrl = `https://${renderServiceName}.onrender.com`;
+  const apiUrl = `${apiBaseUrl}/api`;
+  const socketUrl = apiBaseUrl;
+  const healthCheckUrl = `${apiBaseUrl}/api/health`;
 
-  // Ask for Frontend URL
-  const frontendUrl = await question('\nEnter your frontend URL\n(or press Enter to use placeholder): ');
-  const finalFrontendUrl = frontendUrl.trim() || 'https://your-frontend.vercel.app';
+  console.log(`\n✅ Generated Render URLs for service "${renderServiceName}":`);
+  console.log(`   API_BASE_URL: ${apiBaseUrl}`);
+  console.log(`   API_URL: ${apiUrl}`);
+  console.log(`   SOCKET_URL: ${socketUrl}`);
+  console.log(`   HEALTH_CHECK_URL: ${healthCheckUrl}\n`);
 
-  // Generate output
-  console.log('\n\n📋 Copy these environment variables to Render:\n');
-  console.log('═'.repeat(60));
+  // Get MongoDB URI
+  let mongoUri;
+  do {
+    mongoUri = await question('Enter your MongoDB Atlas connection string\n(mongodb+srv://...): ');
+    if (!mongoUri.trim()) {
+      console.log('❌ MongoDB URI is required for production deployment.');
+    } else if (!mongoUri.startsWith('mongodb')) {
+      console.log('❌ Invalid MongoDB URI format. Should start with mongodb:// or mongodb+srv://');
+      mongoUri = '';
+    }
+  } while (!mongoUri.trim());
+
+  // Get Frontend URL
+  let frontendUrl;
+  do {
+    frontendUrl = await question('\nEnter your frontend URL\n(e.g., https://your-app.vercel.app): ');
+    if (!frontendUrl.trim()) {
+      console.log('❌ Frontend URL is required for CORS configuration.');
+    } else if (!validateUrl(frontendUrl)) {
+      console.log('❌ Invalid URL format. Must be a valid HTTPS URL.');
+      frontendUrl = '';
+    }
+  } while (!frontendUrl.trim());
+
+  // Optional: Email configuration
+  const emailUser = await question('\nEnter email for notifications (optional, press Enter to skip): ');
+  const emailPassword = emailUser.trim() ? 
+    await question('Enter email app password (for Gmail use App Password): ') : '';
+
+  // Optional: Payment configuration
+  const useRazorpay = await question('\nDo you want to configure Razorpay payments? (y/N): ');
+  let razorpayKeyId = '', razorpayKeySecret = '', upiId = '';
+  
+  if (useRazorpay.toLowerCase() === 'y' || useRazorpay.toLowerCase() === 'yes') {
+    razorpayKeyId = await question('Enter Razorpay Key ID: ');
+    razorpayKeySecret = await question('Enter Razorpay Key Secret: ');
+    upiId = await question('Enter UPI ID (e.g., 9909232769@superyes): ');
+  }
+
+  // Generate comprehensive output
+  console.log('\n\n📋 RENDER ENVIRONMENT VARIABLES\n');
+  console.log('═'.repeat(80));
+  console.log('\n🔥 CRITICAL VARIABLES (Required for deployment):');
   console.log('');
   console.log(`NODE_ENV=production`);
-  console.log(`PORT=3000`);
-  console.log(`MONGODB_URI=${finalMongoUri}`);
+  console.log(`PORT=10000`);
+  console.log(`MONGODB_URI=${mongoUri.trim()}`);
   console.log(`JWT_SECRET=${jwtSecret}`);
   console.log(`JWT_EXPIRES_IN=24h`);
-  console.log(`FRONTEND_URL=${finalFrontendUrl}`);
+  console.log(`ENCRYPTION_MASTER_KEY=${encryptionKey}`);
   console.log('');
-  console.log('═'.repeat(60));
+  console.log('🌐 URL CONFIGURATION:');
   console.log('');
-  console.log('✅ These are the MINIMUM required variables.');
+  console.log(`API_BASE_URL=${apiBaseUrl}`);
+  console.log(`API_URL=${apiUrl}`);
+  console.log(`SOCKET_URL=${socketUrl}`);
+  console.log(`HEALTH_CHECK_URL=${healthCheckUrl}`);
+  console.log(`FRONTEND_URL=${frontendUrl.trim()}`);
+  console.log(`CORS_ORIGINS=${frontendUrl.trim()}`);
+
+  if (emailUser.trim()) {
+    console.log('\n📧 EMAIL CONFIGURATION:');
+    console.log('');
+    console.log(`EMAIL_USER=${emailUser.trim()}`);
+    console.log(`EMAIL_PASSWORD=${emailPassword.trim()}`);
+  }
+
+  if (razorpayKeyId.trim()) {
+    console.log('\n💳 PAYMENT CONFIGURATION:');
+    console.log('');
+    console.log(`RAZORPAY_KEY_ID=${razorpayKeyId.trim()}`);
+    console.log(`RAZORPAY_KEY_SECRET=${razorpayKeySecret.trim()}`);
+    console.log(`UPI_ID=${upiId.trim()}`);
+  }
+
+  console.log('\n🏥 HOSPITAL FEATURE CONFIGURATION (Optional):');
   console.log('');
-  console.log('📝 Optional variables (add later if needed):');
-  console.log('   - EMAIL_USER and EMAIL_PASSWORD (for email notifications)');
-  console.log('   - RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET (for payments)');
-  console.log('   - KOTAK_* variables (for Kotak UPI payments)');
+  console.log(`API_RATE_LIMIT=100`);
+  console.log(`HOSPITAL_API_KEY_PREFIX=HK_`);
+  console.log(`HOSPITAL_API_SECRET_LENGTH=64`);
+
+  console.log('\n⏱️ PAYMENT TIMEOUT CONFIGURATION (Optional):');
   console.log('');
-  console.log('🎯 Next steps:');
-  console.log('   1. Go to Render → Your Web Service → Environment');
-  console.log('   2. Click "Add Environment Variable"');
-  console.log('   3. Add each variable above');
-  console.log('   4. Click "Deploy"');
+  console.log(`PAYMENT_TIMEOUT_MINUTES=10`);
+  console.log(`PAYMENT_POLL_INTERVAL_SECONDS=5`);
+  console.log(`PAYMENT_MAX_RETRIES=3`);
+
+  console.log('\n');
+  console.log('═'.repeat(80));
+  console.log('\n🎯 DEPLOYMENT STEPS:\n');
+  console.log('1. Go to Render Dashboard → Your Web Service → Environment');
+  console.log('2. Click "Add Environment Variable" for each variable above');
+  console.log('3. Copy and paste each KEY=VALUE pair');
+  console.log('4. Click "Deploy" to trigger deployment');
+  console.log('5. Monitor build logs for any configuration errors');
+  console.log('6. Test your API endpoints after deployment');
+  console.log('');
+  console.log('🔗 Your API will be available at:');
+  console.log(`   ${apiUrl}`);
+  console.log('');
+  console.log('🏥 Health check endpoint:');
+  console.log(`   ${healthCheckUrl}`);
+  console.log('');
+  console.log('⚠️  SECURITY REMINDERS:');
+  console.log('   • Never commit these secrets to version control');
+  console.log('   • Use strong, unique passwords for production');
+  console.log('   • Regularly rotate API keys and secrets');
+  console.log('   • Monitor access logs for suspicious activity');
+  console.log('');
+  console.log('📚 Additional Resources:');
+  console.log('   • Render Docs: https://render.com/docs');
+  console.log('   • Node.js on Render: https://render.com/docs/node-express-app');
+  console.log('   • Environment Variables: https://render.com/docs/environment-variables');
   console.log('');
 
   rl.close();
 }
 
-generateEnvForRender().catch(console.error);
+// Handle script execution
+if (require.main === module) {
+  generateEnvForRender().catch(error => {
+    console.error('\n❌ Error generating environment variables:', error.message);
+    process.exit(1);
+  });
+}
+
+module.exports = { generateEnvForRender, generateSecureKey, validateUrl };

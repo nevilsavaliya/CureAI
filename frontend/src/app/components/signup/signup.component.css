@@ -350,19 +350,85 @@
   box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
 }
 
-/* Select specific styling */
-select.form-control {
+/* Custom Select Wrapper */
+.custom-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select {
+  width: 100%;
   cursor: pointer;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  background: transparent !important;
+  background-image: none !important;
+  padding-right: 3rem !important;
+}
+
+/* Completely remove all native dropdown styling */
+.custom-select::-ms-expand {
+  display: none;
+}
+
+.custom-select::-webkit-outer-spin-button,
+.custom-select::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Custom arrow */
+.custom-select-arrow {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #9ca3af;
+  transition: color 0.2s ease;
+  z-index: 1;
+}
+
+.custom-select-arrow svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Change arrow color on focus */
+.input-wrapper:focus-within .custom-select-arrow {
+  color: #667eea;
+}
+
+/* Regular select styling (for other selects) */
+select.form-control:not(.custom-select) {
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   appearance: none;
+  background-color: #f9fafb;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 1rem center;
-  background-size: 20px;
+  background-size: 20px 20px;
   padding-right: 3rem;
 }
 
-select.form-control:focus {
+select.form-control:not(.custom-select)::-ms-expand {
+  display: none;
+}
+
+select.form-control:not(.custom-select):focus {
+  background-color: #ffffff;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23667eea'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+}
+
+/* Firefox specific */
+@-moz-document url-prefix() {
+  select.form-control {
+    text-indent: 0.01px;
+    text-overflow: '';
+  }
 }
 
 /* Form Error Message */
@@ -739,9 +805,19 @@ select.form-control:focus {
     height: 18px;
   }
 
-  select.form-control {
+  select.form-control:not(.custom-select) {
     background-position: right 0.875rem center;
-    background-size: 18px;
+    background-size: 18px 18px;
+    padding-right: 2.75rem;
+  }
+
+  .custom-select-arrow {
+    right: 0.875rem;
+  }
+
+  .custom-select-arrow svg {
+    width: 18px;
+    height: 18px;
   }
 
   .btn-back,

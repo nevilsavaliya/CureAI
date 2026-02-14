@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/home/nevil_savaliya/CureAI/backend/logs/.b04e370e6ba0e1d8e46663607f03e3e3f0c60d17-audit.json",
+    "files": [
+        {
+            "date": 1770785493278,
+            "name": "/home/nevil_savaliya/CureAI/backend/logs/application-2026-02-11.log",
+            "hash": "41363bb7dee10f2821af3419ce64feba4eee1a8526eb8393b39fbed6b5531887"
+        },
+        {
+            "date": 1771058998133,
+            "name": "/home/nevil_savaliya/CureAI/backend/logs/application-2026-02-14.log",
+            "hash": "f39bb5cc739eb2ad87586c3f67b7ac10aa7f2ae53b5b2febc46077ae18a98fd7"
+        }
+    ],
+    "hashType": "sha256"
+}

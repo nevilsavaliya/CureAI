@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { HospitalService } from '../../services/hospital.service';
 import { ToastService } from '../../services/toast.service';
 
@@ -29,12 +30,17 @@ export class AdminHospitalsComponent implements OnInit {
   revokingId: string | null = null;
 
   constructor(
+    private router: Router,
     private hospitalService: HospitalService,
     private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
     this.loadHospitals();
+  }
+
+  goBackToDashboard(): void {
+    this.router.navigate(['/admin/dashboard']);
   }
 
   loadHospitals(): void {

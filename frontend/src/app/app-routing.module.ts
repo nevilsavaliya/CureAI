@@ -15,6 +15,7 @@ import { HospitalRegisterComponent } from './components/hospital-register/hospit
 import { HospitalLoginComponent } from './components/hospital-login/hospital-login.component';
 import { HospitalDashboardComponent } from './components/hospital-dashboard/hospital-dashboard.component';
 import { HospitalApiDocsComponent } from './components/hospital-api-docs/hospital-api-docs.component';
+import { AdminUserManagementComponent } from './components/admin-user-management/admin-user-management.component';
 import { AuthGuard } from './guards/auth.guard';
 import { RoleGuard } from './guards/role.guard';
 import { SubscriptionGuard } from './guards/subscription.guard';
@@ -84,6 +85,12 @@ const routes: Routes = [
   { 
     path: 'admin/hospitals', 
     component: AdminHospitalsComponent,
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['admin'] }
+  },
+  { 
+    path: 'admin/users', 
+    component: AdminUserManagementComponent,
     canActivate: [AuthGuard, RoleGuard],
     data: { roles: ['admin'] }
   }

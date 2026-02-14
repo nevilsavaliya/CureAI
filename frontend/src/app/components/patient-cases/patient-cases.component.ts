@@ -55,6 +55,9 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
   // Connection status
   connectionStatus: 'connected' | 'polling' | 'disconnected' = 'disconnected';
   
+  // Active tab
+  activeTab: 'overview' | 'messages' | 'timeline' | 'feedback' = 'overview';
+  
   // Debounced reload subject
   private reloadCasesSubject = new Subject<void>();
 
@@ -258,6 +261,7 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
     
     this.selectedCase = caseItem;
     this.showFeedbackForm = false;
+    this.activeTab = 'overview'; // Reset to overview tab
     this.loadMessages();
     
     // Join case room via WebSocket
@@ -828,5 +832,11 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  getConfidenceClass(confidence: number): string {
+    if (confidence >= 70) return 'confidence-high';
+    if (confidence >= 50) return 'confidence-medium';
+    return 'confidence-low';
   }
 }

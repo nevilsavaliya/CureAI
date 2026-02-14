@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 
@@ -179,7 +180,8 @@ export class HospitalApiDocsComponent implements OnInit {
 
   constructor(
     public authService: AuthService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -333,5 +335,12 @@ getPatientData();`;
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+  }
+
+  /**
+   * Navigate back to hospital dashboard
+   */
+  goBackToDashboard(): void {
+    this.router.navigate(['/hospital/dashboard']);
   }
 }

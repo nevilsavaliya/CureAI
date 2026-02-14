@@ -50,6 +50,59 @@ const seedData = async () => {
       contactNumber: '+1234567891'
     });
 
+    // Create test patient for API testing
+    await Patient.create({
+      name: 'Nevil Savaliya',
+      email: 'savaliyanevil9@gmail.com',
+      password: 'patient123',
+      dateOfBirth: new Date('1990-01-01'),
+      bloodGroup: 'B+',
+      contactNumber: '+1234567892',
+      emergencyContact: {
+        name: 'Emergency Contact',
+        relationship: 'Family',
+        phone: '+1234567893'
+      },
+      allergies: ['Penicillin', 'Peanuts'],
+      chronicConditions: [
+        {
+          condition: 'Hypertension',
+          diagnosedDate: new Date('2020-01-01'),
+          notes: 'Well controlled with medication'
+        }
+      ],
+      currentMedications: [
+        {
+          name: 'Lisinopril',
+          dosage: '10mg',
+          frequency: 'Once daily',
+          startDate: new Date('2020-01-01'),
+          prescribedBy: 'Dr. Test'
+        }
+      ],
+      extractedSymptoms: [
+        {
+          symptom: 'headache',
+          extractedFrom: 'consultation',
+          extractedAt: new Date(),
+          caseId: null
+        }
+      ],
+      vitalSigns: [
+        {
+          recordedAt: new Date(),
+          bloodPressure: {
+            systolic: 120,
+            diastolic: 80
+          },
+          heartRate: 72,
+          temperature: 98.6,
+          weight: 70,
+          height: 175
+        }
+      ]
+    });
+
     console.log('Created sample patients');
 
     // Create registered doctors with active subscriptions

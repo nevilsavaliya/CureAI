@@ -45,6 +45,24 @@ const caseSchema = new mongoose.Schema({
     }
   }],
   
+  // Symptom Conversation Reference
+  symptomConversationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'SymptomConversation',
+    index: true
+  },
+  predictionConfidence: [{
+    condition: {
+      type: String,
+      trim: true
+    },
+    confidence: {
+      type: Number,
+      min: 0,
+      max: 100
+    }
+  }],
+  
   // Case Metadata
   createdAt: {
     type: Date,
@@ -134,6 +152,7 @@ caseSchema.index({ patientId: 1, status: 1 });
 caseSchema.index({ doctorId: 1, status: 1 });
 caseSchema.index({ createdAt: -1 });
 caseSchema.index({ patientId: 1, doctorId: 1, status: 1 });
+caseSchema.index({ symptomConversationId: 1 });
 
 // Update the updatedAt timestamp before saving
 caseSchema.pre('save', function(next) {

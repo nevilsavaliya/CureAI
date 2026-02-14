@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { SymptomService } from '../../services/symptom.service';
+import { SymptomService, FollowUpQuestion, PredictionWithConfidence, DoctorRecommendation } from '../../services/symptom.service';
 import { DoctorService } from '../../services/doctor.service';
 import { CaseService } from '../../services/case.service';
 import { SocketService } from '../../services/socket.service';
@@ -25,11 +25,13 @@ interface Doctor {
   name: string;
   email: string;
   degree: string;
-  speciality: string;
+  speciality?: string; // backward compatibility
+  specializations?: string[]; // main field
   experienceYears: number;
   contactNumber: string;
   rating: number;
   totalReviews: number;
+  isGeneralMedicine?: boolean;
 }
 
 @Component({
@@ -43,6 +45,7 @@ export class PatientDashboardComponent implements OnInit, OnDestroy {
   chatMessages: ChatMessage[] = [];
   predictedDiseases: Disease[] = [];
   matchingDoctors: Doctor[] = [];
+  matchedDoctors: Doctor[] = [];
   loading: boolean = false;
   showResults: boolean = false;
 
@@ -53,6 +56,21 @@ export class PatientDashboardComponent implements OnInit, OnDestroy {
   existingCaseId: string = '';
   currentSymptoms: string[] = [];
   requestedDoctorIds: Set<string> = new Set();
+
+  // New conversation-based properties
+  conversationId: string | null = null;
+  followUpQuestions: FollowUpQuestion[] = [];
+  currentQuestionIndex: number = 0;
+  answeredQuestions: number = 0;
+  canProceedToPrediction: boolean = false;
+  showingFollowUpQuestions: boolean = false;
+  currentAnswer: string = '';
+  selectedOption: string = '';
+  scaleValue: number = 5;
+
+  // Predictions with confidence
+  predictionsWithConfidence: PredictionWithConfidence[] = [];
+  recommendedDoctors: DoctorRecommendation[] = [];
 
   constructor(
     private authService: AuthService,
@@ -119,51 +137,211 @@ export class PatientDashboardComponent implements OnInit, OnDestroy {
 
     this.addBotMessage('Analyzing your symptoms...');
 
-    this.symptomService.submitSymptom(userSymptom).subscribe({
+    // Start conversation with new API
+    this.symptomService.startConversation(userSymptom).subscribe({
       next: (response) => {
         this.loading = false;
         
-        if (response.success && response.prediction) {
-          this.predictedDiseases = response.prediction.diseases;
-          this.showResults = true;
-
-          // Bot response
-          this.addBotMessage(`Based on your symptoms, here are the possible conditions:`);
+        if (response.success) {
+          this.conversationId = response.conversationId;
+          this.followUpQuestions = response.questions || [];
+          this.answeredQuestions = 0;
+          this.currentQuestionIndex = 0;
+          this.canProceedToPrediction = response.canProceedToPrediction || false;
           
-          // Get matching doctors
-          if (this.predictedDiseases.length > 0) {
-            const topDisease = this.predictedDiseases[0];
-            const specialization = topDisease.specialization[0];
-            
-            this.doctorService.getMatchingDoctors(specialization).subscribe({
-              next: (doctorResponse) => {
-                if (doctorResponse.success) {
-                  this.matchingDoctors = doctorResponse.doctors;
-                  this.addBotMessage(`I found ${this.matchingDoctors.length} doctors who can help you.`);
-                }
-              },
-              error: (error) => {
-                console.error('Error fetching doctors:', error);
-              }
-            });
+          if (this.followUpQuestions.length > 0) {
+            this.showingFollowUpQuestions = true;
+            this.addBotMessage('I have a few follow-up questions to better understand your condition:');
+            this.displayCurrentQuestion();
+          } else {
+            this.addBotMessage('Thank you. Let me analyze your symptoms...');
+            this.getPredictions();
           }
         }
       },
       error: (error) => {
         this.loading = false;
-        this.addBotMessage('Sorry, I encountered an error. Please try again or make sure you have created your patient profile first.');
+        console.error('Error:', error);
+        this.addBotMessage('Sorry, I encountered an error. Please try again later.');
+      }
+    });
+  }
+
+  displayCurrentQuestion(): void {
+    if (this.currentQuestionIndex < this.followUpQuestions.length) {
+      const question = this.followUpQuestions[this.currentQuestionIndex];
+      this.addBotMessage(question.questionText);
+      
+      // Reset answer fields
+      this.currentAnswer = '';
+      this.selectedOption = '';
+      this.scaleValue = question.min && question.max ? Math.floor((question.min + question.max) / 2) : 5;
+    }
+  }
+
+  submitFollowUpAnswer(): void {
+    if (!this.conversationId) return;
+
+    const question = this.followUpQuestions[this.currentQuestionIndex];
+    let answer = '';
+
+    // Get answer based on question type
+    switch (question.questionType) {
+      case 'multiple_choice':
+        answer = this.selectedOption;
+        break;
+      case 'yes_no':
+        answer = this.selectedOption;
+        break;
+      case 'scale':
+        answer = this.scaleValue.toString();
+        break;
+      case 'text':
+        answer = this.currentAnswer;
+        break;
+    }
+
+    if (!answer.trim()) {
+      return;
+    }
+
+    // Display user's answer
+    this.addUserMessage(answer);
+    this.loading = true;
+
+    // Submit answer to backend
+    this.symptomService.submitAnswer(this.conversationId, question.questionId, answer).subscribe({
+      next: (response) => {
+        this.loading = false;
+        
+        if (response.success) {
+          this.answeredQuestions++;
+          this.canProceedToPrediction = response.canProceedToPrediction || false;
+          
+          // Move to next question or finish
+          this.currentQuestionIndex++;
+          
+          if (this.currentQuestionIndex < this.followUpQuestions.length) {
+            this.displayCurrentQuestion();
+          } else {
+            this.showingFollowUpQuestions = false;
+            if (this.canProceedToPrediction) {
+              this.addBotMessage('Thank you for answering the questions. Let me analyze your symptoms...');
+              this.getPredictions();
+            } else {
+              this.addBotMessage('Please answer a few more questions to get accurate predictions.');
+            }
+          }
+        }
+      },
+      error: (error) => {
+        this.loading = false;
+        this.addBotMessage('Sorry, I encountered an error. Please try again.');
         console.error('Error:', error);
       }
     });
+  }
+
+  skipQuestion(): void {
+    this.currentQuestionIndex++;
+    
+    if (this.currentQuestionIndex < this.followUpQuestions.length) {
+      this.addBotMessage('Okay, let\'s move to the next question.');
+      this.displayCurrentQuestion();
+    } else {
+      this.showingFollowUpQuestions = false;
+      if (this.canProceedToPrediction) {
+        this.addBotMessage('Thank you. Let me analyze your symptoms...');
+        this.getPredictions();
+      } else {
+        this.addBotMessage('I need more information to provide accurate predictions. Please start a new consultation.');
+      }
+    }
+  }
+
+  getPredictions(): void {
+    if (!this.conversationId) return;
+
+    this.loading = true;
+
+    this.symptomService.getPrediction(this.conversationId).subscribe({
+      next: (response) => {
+        this.loading = false;
+        
+        if (response.success) {
+          this.predictionsWithConfidence = response.predictions || [];
+          this.recommendedDoctors = response.recommendedDoctors || [];
+          this.showResults = true;
+
+          // Convert to old format for compatibility
+          this.predictedDiseases = this.predictionsWithConfidence.map(p => ({
+            name: p.disease,
+            confidence: p.confidence,
+            description: '',
+            specialization: p.specializations
+          }));
+
+          this.matchingDoctors = this.recommendedDoctors.map(d => ({
+            _id: d._id,
+            name: d.name,
+            email: d.email,
+            degree: d.degree,
+            specializations: d.specializations,
+            experienceYears: d.experienceYears,
+            contactNumber: '',
+            rating: d.rating,
+            totalReviews: d.totalReviews,
+            isGeneralMedicine: d.isGeneralMedicine
+          }));
+
+          // Bot response
+          if (this.predictionsWithConfidence.length > 0) {
+            this.addBotMessage(`Based on your symptoms, here are the possible conditions:`);
+            this.addBotMessage(`I found ${this.matchingDoctors.length} doctors who can help you.`);
+          } else {
+            this.addBotMessage('I couldn\'t determine specific conditions. I recommend consulting with a General Medicine doctor.');
+          }
+        }
+      },
+      error: (error) => {
+        this.loading = false;
+        this.addBotMessage('Sorry, I encountered an error analyzing your symptoms.');
+        console.error('Error:', error);
+      }
+    });
+  }
+
+  getCurrentQuestion(): FollowUpQuestion | null {
+    if (this.currentQuestionIndex < this.followUpQuestions.length) {
+      return this.followUpQuestions[this.currentQuestionIndex];
+    }
+    return null;
+  }
+
+  getProgressPercentage(): number {
+    if (this.followUpQuestions.length === 0) return 0;
+    return (this.answeredQuestions / this.followUpQuestions.length) * 100;
   }
 
   startNewConsultation(): void {
     this.chatMessages = [];
     this.predictedDiseases = [];
     this.matchingDoctors = [];
+    this.matchedDoctors = [];
     this.showResults = false;
     this.currentSymptoms = [];
     this.requestedDoctorIds.clear();
+    
+    // Reset conversation state
+    this.conversationId = null;
+    this.followUpQuestions = [];
+    this.currentQuestionIndex = 0;
+    this.answeredQuestions = 0;
+    this.canProceedToPrediction = false;
+    this.showingFollowUpQuestions = false;
+    this.predictionsWithConfidence = [];
+    this.recommendedDoctors = [];
+    
     this.addBotMessage('Hello! I\'m your healthcare assistant. Please describe your symptoms and I\'ll help you find the right doctor.');
   }
 
@@ -271,5 +449,25 @@ export class PatientDashboardComponent implements OnInit, OnDestroy {
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  getSpecialization(doctor: Doctor | null): string {
+    if (!doctor) return '';
+    if (doctor.speciality) return doctor.speciality;
+    if (doctor.specializations && doctor.specializations.length > 0) {
+      return doctor.specializations[0];
+    }
+    return '';
+  }
+
+  getConfidenceClass(confidence: number): string {
+    if (confidence >= 70) return 'confidence-high';
+    if (confidence >= 50) return 'confidence-medium';
+    return 'confidence-low';
+  }
+
+  hasLowConfidencePredictions(): boolean {
+    return this.predictionsWithConfidence.length > 0 && 
+           this.predictionsWithConfidence.every(p => p.confidence < 50);
   }
 }

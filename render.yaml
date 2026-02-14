@@ -1,0 +1,92 @@
+services:
+  - type: web
+    name: healthcare-platform-backend
+    env: node
+    region: oregon  # Options: oregon, frankfurt, singapore
+    plan: starter   # Options: free, starter, standard, pro
+    
+    # Build Configuration
+    buildCommand: npm install
+    startCommand: npm start
+    
+    # Health Check Configuration
+    healthCheckPath: /api/health
+    
+    # Auto-deploy Configuration
+    autoDeploy: true
+    branch: main  # Change to your production branch
+    
+    # Build Filter (optional - only rebuild when backend changes)
+    buildFilter:
+      paths:
+      - backend/**
+      ignoredPaths:
+      - frontend/**
+      - docs/**
+      - README.md
+    
+    # Environment Variables
+    # SECURITY NOTE: Add sensitive variables manually in Render dashboard
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      
+      # URL Configuration - UPDATE THESE WITH YOUR ACTUAL URLS
+      - key: API_BASE_URL
+        value: https://your-backend.onrender.com
+      - key: API_URL
+        value: https://your-backend.onrender.com/api
+      - key: SOCKET_URL
+        value: https://your-backend.onrender.com
+      - key: HEALTH_CHECK_URL
+        value: https://your-backend.onrender.com/api/health
+      - key: FRONTEND_URL
+        value: https://your-frontend.vercel.app
+      - key: CORS_ORIGINS
+        value: https://your-frontend.vercel.app
+      
+      # JWT Configuration
+      - key: JWT_EXPIRES_IN
+        value: 24h
+      
+      # Hospital Feature Configuration
+      - key: API_RATE_LIMIT
+        value: 100
+      - key: HOSPITAL_API_KEY_PREFIX
+        value: HK_
+      - key: HOSPITAL_API_SECRET_LENGTH
+        value: 64
+      
+      # Payment Configuration
+      - key: PAYMENT_TIMEOUT_MINUTES
+        value: 10
+      - key: PAYMENT_POLL_INTERVAL_SECONDS
+        value: 5
+      - key: PAYMENT_MAX_RETRIES
+        value: 3
+      - key: UPI_ID
+        value: 9909232769@superyes
+      
+      # Kotak UPI Configuration
+      - key: KOTAK_API_BASE_URL
+        value: https://apigwuat.kotak.com:8443
+      - key: KOTAK_AGGREGATOR_ID
+        value: AC001
+      - key: KOTAK_MERCHANT_ID
+        value: MC001
+      
+      # IMPORTANT: Add these sensitive variables manually in Render dashboard:
+      # - MONGODB_URI (your MongoDB Atlas connection string)
+      # - JWT_SECRET (generate a secure 64-character string)
+      # - ENCRYPTION_MASTER_KEY (64-character hex encryption key)
+      # - EMAIL_USER (your email for notifications)
+      # - EMAIL_PASSWORD (your email app password)
+      # - RAZORPAY_KEY_ID (your Razorpay key)
+      # - RAZORPAY_KEY_SECRET (your Razorpay secret)
+      # - KOTAK_CLIENT_ID (your Kotak client ID)
+      # - KOTAK_CLIENT_SECRET (your Kotak client secret)
+      # - KOTAK_MERCHANT_VPA (your Kotak merchant VPA)
+      # - KOTAK_MERCHANT_MOBILE (your Kotak merchant mobile)
+      # - KOTAK_SECRET_KEY (your Kotak secret key)

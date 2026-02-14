@@ -1,0 +1,51 @@
+# Healthcare Platform Frontend - SSL-enabled Docker Configuration
+# Multi-stage build for optimized production image with SSL support
+
+# Stage 1: Build the Angular application
+FROM node:18-alpine AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy source code
+COPY . .
+
+# Build the application for production
+RUN npm run build --configuration=production
+
+# Stage 2: Serve the application with Nginx and SSL
+FROM nginx:alpine AS production
+
+# Install OpenSSL for certificate operations
+RUN apk add --no-cache openssl curl
+
+# Copy SSL-enabled nginx configuration
+COPY nginx-ssl.conf /etc/nginx/nginx.conf.template
+
+# Copy built application from builder stage
+COPY --from=builder /app/dist/healthcare-platform-frontend /usr/share/nginx/html
+
+# Copy SSL setup script
+COPY docker-ssl-entrypoint.sh /docker-ssl-entrypoint.sh
+RUN chmod +x /docker-ssl-entrypoint.sh
+
+# Create directories for SSL certificates and Let's Encrypt
+RUN mkdir -p /etc/nginx/ssl /var/www/certbot
+
+# Expose ports 80 and 443
+EXPOSE 80 443
+
+# Health check with configurable URL supporting both HTTP and HTTPS
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f -k "${FRONTEND_HEALTH_CHECK_URL:-https://localhost:${HTTPS_PORT:-443}/}" || \
+      curl -f "${FRONTEND_HEALTH_CHECK_URL_FALLBACK:-http://localhost:${HTTP_PORT:-80}/}" || exit 1
+
+# Start nginx with SSL entrypoint
+ENTRYPOINT ["/docker-ssl-entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]

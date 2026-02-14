@@ -27,6 +27,11 @@ import { HospitalLoginComponent } from './components/hospital-login/hospital-log
 import { HospitalDashboardComponent } from './components/hospital-dashboard/hospital-dashboard.component';
 import { HospitalApiDocsComponent } from './components/hospital-api-docs/hospital-api-docs.component';
 import { LogoComponent } from './components/logo/logo.component';
+import { AdminUserManagementComponent } from './components/admin-user-management/admin-user-management.component';
+import { UserRemovalModalComponent } from './components/user-removal-modal/user-removal-modal.component';
+import { AddAdminModalComponent } from './components/add-admin-modal/add-admin-modal.component';
+import { RemovedUsersComponent } from './components/removed-users/removed-users.component';
+import { AuditLogsComponent } from './components/audit-logs/audit-logs.component';
 
 @NgModule({
   declarations: [
@@ -49,7 +54,12 @@ import { LogoComponent } from './components/logo/logo.component';
     HospitalLoginComponent,
     HospitalDashboardComponent,
     HospitalApiDocsComponent,
-    LogoComponent
+    LogoComponent,
+    AdminUserManagementComponent,
+    UserRemovalModalComponent,
+    AddAdminModalComponent,
+    RemovedUsersComponent,
+    AuditLogsComponent
   ],
   imports: [
     BrowserModule,

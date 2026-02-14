@@ -22,13 +22,29 @@
       class="tab-button" 
       [class.active]="activeView === 'users'"
       (click)="switchView('users')">
-      User Management
+      Basic User View
     </button>
     <button 
       class="tab-button" 
-      (click)="navigateToHospitals()">
+      [class.active]="activeView === 'add-admin'"
+      (click)="switchView('add-admin')"
+      *ngIf="isRootAdmin"
+      title="Add new administrator accounts">
+      <i class="fas fa-user-plus"></i>
+      Add Admin
+    </button>
+    <button 
+      class="tab-button" 
+      [class.active]="activeView === 'hospitals'"
+      (click)="switchView('hospitals')">
       Hospital Management
       <span class="badge-count" *ngIf="pendingHospitalsCount > 0">{{ pendingHospitalsCount }}</span>
+    </button>
+    <button 
+      class="tab-button" 
+      [class.active]="activeView === 'performance'"
+      (click)="switchView('performance')">
+      Performance Monitor
     </button>
   </div>
 
@@ -69,6 +85,11 @@
           <div class="metric-icon">🔐</div>
           <div class="metric-value">{{ metrics.totalAdmins }}</div>
           <div class="metric-label">Total Admins</div>
+          <div class="metric-action" *ngIf="canAccessUserManagement()">
+            <button class="btn-metric-action" (click)="navigateToUserManagement()" title="Manage administrators">
+              <i class="fas fa-cog"></i>
+            </button>
+          </div>
         </div>
 
         <div class="metric-card">
@@ -87,6 +108,30 @@
           <div class="metric-icon">🔬</div>
           <div class="metric-value">{{ metrics.totalPredictions }}</div>
           <div class="metric-label">Disease Predictions</div>
+        </div>
+      </div>
+
+      <!-- User Management Quick Access -->
+      <div class="quick-access-section" *ngIf="canAccessUserManagement()">
+        <h3>User Management</h3>
+        <div class="quick-access-cards">
+          <div class="quick-access-card" (click)="navigateToUserManagement()">
+            <div class="access-icon">
+              <i class="fas fa-users-cog"></i>
+            </div>
+            <div class="access-content">
+              <h4>Advanced User Management</h4>
+              <p>Comprehensive user management with role-based permissions</p>
+              <div class="access-features">
+                <span class="feature-tag">User Removal</span>
+                <span class="feature-tag" *ngIf="isRootAdmin">Admin Management</span>
+                <span class="feature-tag" *ngIf="isRootAdmin">Audit Logs</span>
+              </div>
+            </div>
+            <div class="access-arrow">
+              <i class="fas fa-arrow-right"></i>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -199,6 +244,7 @@
               <th>Last Login</th>
               <th>Status</th>
               <th>Details</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -236,6 +282,34 @@
                   <div>Admin User</div>
                 </div>
               </td>
+              <td>
+                <div class="action-buttons">
+                  <button 
+                    *ngIf="!user.isRemoved && canRemoveUser(user)"
+                    (click)="removeUser(user._id, user.role)" 
+                    class="btn-remove-small"
+                    [disabled]="removingUserId === user._id"
+                    title="Remove user">
+                    {{ removingUserId === user._id ? 'Removing...' : 'Remove' }}
+                  </button>
+                  
+                  <button 
+                    *ngIf="user.isRemoved && isRootAdmin"
+                    (click)="restoreUser(user._id)" 
+                    class="btn-restore-small"
+                    [disabled]="restoringUserId === user._id"
+                    title="Restore user">
+                    {{ restoringUserId === user._id ? 'Restoring...' : 'Restore' }}
+                  </button>
+                  
+                  <button 
+                    (click)="viewUserDetails(user)" 
+                    class="btn-view-small"
+                    title="View details">
+                    View
+                  </button>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -244,6 +318,780 @@
           No users found matching the criteria.
         </div>
       </div>
+    </div>
+
+    <!-- Hospital Management View -->
+    <div *ngIf="activeView === 'hospitals'" class="hospitals-view">
+      <h2>Hospital Management</h2>
+
+      <!-- Status Summary -->
+      <div class="status-summary">
+        <div class="summary-item pending">
+          <span class="count">{{ getPendingHospitalsCount() }}</span>
+          <span class="label">Pending</span>
+        </div>
+        <div class="summary-item verified">
+          <span class="count">{{ getVerifiedHospitalsCount() }}</span>
+          <span class="label">Verified</span>
+        </div>
+        <div class="summary-item rejected">
+          <span class="count">{{ getRejectedHospitalsCount() }}</span>
+          <span class="label">Rejected</span>
+        </div>
+      </div>
+
+      <!-- Filters Section -->
+      <div class="filters-section">
+        <div class="filter-group">
+          <label for="hospitalStatusFilter">Filter by Status:</label>
+          <select id="hospitalStatusFilter" [(ngModel)]="selectedHospitalStatus" (change)="filterHospitals()">
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="verified">Verified</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="hospitalSearchInput">Search:</label>
+          <input 
+            id="hospitalSearchInput"
+            type="text" 
+            [(ngModel)]="hospitalSearchTerm" 
+            placeholder="Search by name or email"
+            (keyup.enter)="filterHospitals()">
+        </div>
+
+        <button (click)="filterHospitals()" class="btn-filter">Apply Filters</button>
+        <button (click)="clearHospitalFilters()" class="btn-clear">Clear</button>
+      </div>
+
+      <div *ngIf="loadingHospitals" class="loading">
+        Loading hospitals...
+      </div>
+
+      <div *ngIf="hospitalsError" class="error-message">
+        {{ hospitalsError }}
+        <button (click)="loadHospitals()" class="btn-retry">Retry</button>
+      </div>
+
+      <!-- Hospitals Table -->
+      <div *ngIf="!loadingHospitals && !hospitalsError" class="hospitals-table-container">
+        <table class="hospitals-table" *ngIf="filteredHospitals.length > 0">
+          <thead>
+            <tr>
+              <th>Hospital Name</th>
+              <th>Contact Person</th>
+              <th>Email</th>
+              <th>Registration No.</th>
+              <th>Location</th>
+              <th>Status</th>
+              <th>Registration Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let hospital of filteredHospitals">
+              <td>{{ hospital.hospitalName }}</td>
+              <td>{{ hospital.name }}</td>
+              <td>{{ hospital.email }}</td>
+              <td>{{ hospital.registrationNumber }}</td>
+              <td>{{ getHospitalLocation(hospital) }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="getHospitalStatusBadgeClass(hospital.verificationStatus)">
+                  {{ hospital.verificationStatus | titlecase }}
+                </span>
+                <span *ngIf="hospital.verificationStatus === 'verified' && !hospital.isActive" class="status-badge badge-inactive">
+                  (Inactive)
+                </span>
+              </td>
+              <td>{{ formatDate(hospital.createdAt) }}</td>
+              <td>
+                <div class="action-buttons">
+                  <button (click)="viewHospitalDetails(hospital)" class="btn-view-small">
+                    View
+                  </button>
+                  
+                  <button 
+                    *ngIf="hospital.verificationStatus === 'pending'"
+                    (click)="verifyHospital(hospital._id)" 
+                    class="btn-verify-small"
+                    [disabled]="verifyingHospitalId === hospital._id">
+                    {{ verifyingHospitalId === hospital._id ? 'Verifying...' : 'Verify' }}
+                  </button>
+                  
+                  <button 
+                    *ngIf="hospital.verificationStatus === 'pending'"
+                    (click)="openHospitalRejectModal(hospital)" 
+                    class="btn-reject-small"
+                    [disabled]="rejectingHospitalId === hospital._id">
+                    {{ rejectingHospitalId === hospital._id ? 'Rejecting...' : 'Reject' }}
+                  </button>
+                  
+                  <button 
+                    *ngIf="hospital.verificationStatus === 'verified' && hospital.isActive"
+                    (click)="revokeHospitalAccess(hospital._id)" 
+                    class="btn-revoke-small"
+                    [disabled]="revokingHospitalId === hospital._id">
+                    {{ revokingHospitalId === hospital._id ? 'Revoking...' : 'Revoke' }}
+                  </button>
+                  
+                  <button 
+                    *ngIf="hospital.verificationStatus === 'verified' && !hospital.isActive"
+                    (click)="restoreHospitalAccess(hospital._id)" 
+                    class="btn-restore-small"
+                    [disabled]="revokingHospitalId === hospital._id">
+                    {{ revokingHospitalId === hospital._id ? 'Restoring...' : 'Restore Access' }}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div *ngIf="filteredHospitals.length === 0" class="no-hospitals">
+          No hospitals found matching the criteria.
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Admin View -->
+    <div *ngIf="activeView === 'add-admin'" class="add-admin-view">
+      <h2>Add Administrator</h2>
+      
+      <div class="add-admin-content">
+        <!-- Admin Form -->
+        <div class="admin-form-section">
+          <h3>Create New Administrator Account</h3>
+          
+          <form (ngSubmit)="addAdmin()" #adminForm="ngForm" class="admin-form">
+            <div class="form-group">
+              <label for="adminName">Full Name *</label>
+              <input 
+                type="text" 
+                id="adminName"
+                name="adminName"
+                [(ngModel)]="newAdmin.name" 
+                required
+                placeholder="Enter administrator's full name"
+                class="form-control">
+            </div>
+
+            <div class="form-group">
+              <label for="adminEmail">Email Address *</label>
+              <input 
+                type="email" 
+                id="adminEmail"
+                name="adminEmail"
+                [(ngModel)]="newAdmin.email" 
+                required
+                placeholder="Enter administrator's email"
+                class="form-control">
+            </div>
+
+            <div class="form-group">
+              <label for="adminPassword">Password *</label>
+              <input 
+                type="password" 
+                id="adminPassword"
+                name="adminPassword"
+                [(ngModel)]="newAdmin.password" 
+                required
+                minlength="8"
+                placeholder="Enter secure password (min 8 characters)"
+                class="form-control">
+            </div>
+
+            <div class="form-group">
+              <label for="adminRole">Administrator Type *</label>
+              <select 
+                id="adminRole"
+                name="adminRole"
+                [(ngModel)]="newAdmin.role" 
+                required
+                class="form-control">
+                <option value="admin">Administrator</option>
+              </select>
+              <small class="form-help">All administrators have full access to manage users and hospitals</small>
+            </div>
+
+            <div class="form-actions">
+              <button 
+                type="submit" 
+                class="btn-create-admin"
+                [disabled]="!adminForm.valid || creatingAdmin">
+                {{ creatingAdmin ? 'Creating Administrator...' : 'Create Administrator' }}
+              </button>
+              <button 
+                type="button" 
+                (click)="resetAdminForm()"
+                class="btn-reset">
+                Reset Form
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Current Admins List -->
+        <div class="current-admins-section">
+          <h3>Current Administrators</h3>
+          
+          <div *ngIf="loadingAdmins" class="loading">
+            Loading administrators...
+          </div>
+
+          <div *ngIf="adminsError" class="error-message">
+            {{ adminsError }}
+            <button (click)="loadAdmins()" class="btn-retry">Retry</button>
+          </div>
+
+          <div *ngIf="!loadingAdmins && !adminsError" class="admins-list">
+            <div *ngFor="let admin of admins" class="admin-card">
+              <div class="admin-info">
+                <div class="admin-avatar">
+                  <i class="fas fa-crown" *ngIf="admin.role === 'root_admin'"></i>
+                  <i class="fas fa-user-shield" *ngIf="admin.role === 'admin'"></i>
+                </div>
+                <div class="admin-details">
+                  <h4>{{ admin.name }}</h4>
+                  <p class="admin-email">{{ admin.email }}</p>
+                  <div class="admin-role-badge" [class.root-admin]="admin.role === 'root_admin'">
+                    {{ admin.role === 'root_admin' ? 'Root Administrator' : 'Administrator' }}
+                  </div>
+                  <div class="admin-created">
+                    Created: {{ formatDate(admin.createdAt) }}
+                  </div>
+                </div>
+              </div>
+              <div class="admin-actions" *ngIf="isRootAdmin && admin._id !== currentAdminId">
+                <button 
+                  (click)="removeAdmin(admin._id)"
+                  class="btn-remove-admin"
+                  [disabled]="removingAdminId === admin._id">
+                  {{ removingAdminId === admin._id ? 'Removing...' : 'Remove' }}
+                </button>
+              </div>
+            </div>
+
+            <div *ngIf="admins.length === 0" class="no-admins">
+              No administrators found.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Performance Monitor View -->
+    <div *ngIf="activeView === 'performance'" class="performance-view">
+      <h2>Performance Monitor</h2>
+
+      <!-- Real-time Status -->
+      <div class="status-bar">
+        <div class="status-item" [class.healthy]="systemStatus.overall === 'healthy'" [class.warning]="systemStatus.overall === 'warning'" [class.critical]="systemStatus.overall === 'critical'">
+          <span class="status-indicator"></span>
+          <span class="status-text">System Status: {{ systemStatus.overall | titlecase }}</span>
+        </div>
+        <div class="last-updated">
+          Last Updated: {{ formatDateTime(performanceData.lastUpdated) }}
+        </div>
+      </div>
+
+      <!-- Performance Metrics Grid -->
+      <div class="performance-grid">
+        <!-- API Performance -->
+        <div class="performance-card">
+          <div class="card-header">
+            <h3>API Performance</h3>
+            <div class="refresh-btn" (click)="loadPerformanceData()">🔄</div>
+          </div>
+          <div class="metrics-row">
+            <div class="metric-item">
+              <div class="metric-value">{{ performanceData.api.totalRequests | number }}</div>
+              <div class="metric-label">Total Requests</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-value">{{ performanceData.api.requestsPerSecond | number:'1.2-2' }}</div>
+              <div class="metric-label">Requests/sec</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-value">{{ performanceData.api.avgResponseTime | number:'1.0-0' }}ms</div>
+              <div class="metric-label">Avg Response Time</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-value">{{ performanceData.api.errorRate | number:'1.2-2' }}%</div>
+              <div class="metric-label">Error Rate</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Resources -->
+        <div class="performance-card">
+          <div class="card-header">
+            <h3>System Resources</h3>
+          </div>
+          <div class="resource-meters">
+            <div class="resource-meter">
+              <div class="meter-label">CPU Usage</div>
+              <div class="meter-bar">
+                <div class="meter-fill" [style.width.%]="performanceData.system.cpuUsage" [class.high]="performanceData.system.cpuUsage > 80"></div>
+              </div>
+              <div class="meter-value">{{ performanceData.system.cpuUsage | number:'1.1-1' }}%</div>
+            </div>
+            <div class="resource-meter">
+              <div class="meter-label">Memory Usage</div>
+              <div class="meter-bar">
+                <div class="meter-fill" [style.width.%]="performanceData.system.memoryUsage" [class.high]="performanceData.system.memoryUsage > 80"></div>
+              </div>
+              <div class="meter-value">{{ performanceData.system.memoryUsage | number:'1.1-1' }}%</div>
+            </div>
+            <div class="resource-meter">
+              <div class="meter-label">Disk Usage</div>
+              <div class="meter-bar">
+                <div class="meter-fill" [style.width.%]="performanceData.system.diskUsage" [class.high]="performanceData.system.diskUsage > 90"></div>
+              </div>
+              <div class="meter-value">{{ performanceData.system.diskUsage | number:'1.1-1' }}%</div>
+            </div>
+          </div>
+          <div class="system-info">
+            <div class="info-item">
+              <span class="label">Total Memory:</span>
+              <span class="value">{{ formatBytes(performanceData.system.totalMemory) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Free Memory:</span>
+              <span class="value">{{ formatBytes(performanceData.system.freeMemory) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Uptime:</span>
+              <span class="value">{{ formatUptime(performanceData.system.uptime) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Database Performance -->
+        <div class="performance-card">
+          <div class="card-header">
+            <h3>Database Performance</h3>
+          </div>
+          <div class="metrics-row">
+            <div class="metric-item">
+              <div class="metric-value">{{ performanceData.database.connections | number }}</div>
+              <div class="metric-label">Active Connections</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-value">{{ performanceData.database.avgQueryTime | number:'1.0-0' }}ms</div>
+              <div class="metric-label">Avg Query Time</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-value">{{ performanceData.database.queriesPerSecond | number:'1.2-2' }}</div>
+              <div class="metric-label">Queries/sec</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-value">{{ formatBytes(performanceData.database.size) }}</div>
+              <div class="metric-label">Database Size</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Network & Traffic -->
+        <div class="performance-card">
+          <div class="card-header">
+            <h3>Network & Traffic</h3>
+          </div>
+          <div class="metrics-row">
+            <div class="metric-item">
+              <div class="metric-value">{{ performanceData.network.activeUsers | number }}</div>
+              <div class="metric-label">Active Users</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-value">{{ formatBytes(performanceData.network.bandwidth) }}/s</div>
+              <div class="metric-label">Bandwidth Usage</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-value">{{ performanceData.network.avgPayloadSize | number:'1.0-0' }}KB</div>
+              <div class="metric-label">Avg Payload Size</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-value">{{ performanceData.network.totalDataTransfer | number:'1.2-2' }}GB</div>
+              <div class="metric-label">Data Transfer (24h)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Response Time Chart -->
+      <div class="chart-section">
+        <div class="chart-card">
+          <div class="card-header">
+            <h3>Response Time Trends (Last 24 Hours)</h3>
+            <div class="chart-controls">
+              <select [(ngModel)]="selectedTimeRange" (change)="updateChartData()">
+                <option value="1h">Last Hour</option>
+                <option value="6h">Last 6 Hours</option>
+                <option value="24h">Last 24 Hours</option>
+                <option value="7d">Last 7 Days</option>
+              </select>
+            </div>
+          </div>
+          <div class="chart-container">
+            <div class="chart-placeholder">
+              <div class="chart-line" *ngFor="let point of chartData.responseTime; let i = index" 
+                   [style.left.%]="(i / (chartData.responseTime.length - 1)) * 100"
+                   [style.bottom.%]="(point.value / chartData.maxResponseTime) * 100">
+                <div class="chart-point" [title]="point.timestamp + ': ' + point.value + 'ms'"></div>
+              </div>
+            </div>
+            <div class="chart-legend">
+              <div class="legend-item">
+                <span class="legend-color response-time"></span>
+                <span>Response Time (ms)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error Logs & Alerts -->
+      <div class="logs-section">
+        <div class="logs-card">
+          <div class="card-header">
+            <h3>Recent Errors & Alerts</h3>
+            <div class="log-controls">
+              <select [(ngModel)]="selectedLogLevel" (change)="filterLogs()">
+                <option value="all">All Levels</option>
+                <option value="error">Errors Only</option>
+                <option value="warning">Warnings Only</option>
+                <option value="info">Info Only</option>
+              </select>
+            </div>
+          </div>
+          <div class="logs-container">
+            <div *ngIf="loadingLogs" class="loading">Loading logs...</div>
+            <div *ngIf="!loadingLogs && filteredLogs.length === 0" class="no-logs">No logs found</div>
+            <div *ngFor="let log of filteredLogs" class="log-entry" [class]="log.level">
+              <div class="log-timestamp">{{ formatDateTime(log.timestamp) }}</div>
+              <div class="log-level">{{ log.level | uppercase }}</div>
+              <div class="log-message">{{ log.message }}</div>
+              <div class="log-details" *ngIf="log.details">{{ log.details }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance Alerts -->
+      <div class="alerts-section" *ngIf="performanceAlerts.length > 0">
+        <h3>Performance Alerts</h3>
+        <div class="alerts-container">
+          <div *ngFor="let alert of performanceAlerts" class="alert-item" [class]="alert.severity">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-content">
+              <div class="alert-title">{{ alert.title }}</div>
+              <div class="alert-message">{{ alert.message }}</div>
+              <div class="alert-time">{{ formatDateTime(alert.timestamp) }}</div>
+            </div>
+            <button class="alert-dismiss" (click)="dismissAlert(alert.id)">×</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hospital Details Modal -->
+<div *ngIf="showHospitalDetailsModal" class="modal-overlay" (click)="closeHospitalDetailsModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Hospital Details</h2>
+      <button class="btn-close" (click)="closeHospitalDetailsModal()">&times;</button>
+    </div>
+    
+    <div class="modal-body" *ngIf="selectedHospital">
+      <div class="details-section">
+        <h3>Basic Information</h3>
+        <div class="detail-row">
+          <span class="label">Hospital Name:</span>
+          <span class="value">{{ selectedHospital.hospitalName }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Contact Person:</span>
+          <span class="value">{{ selectedHospital.name }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Email:</span>
+          <span class="value">{{ selectedHospital.email }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Registration Number:</span>
+          <span class="value">{{ selectedHospital.registrationNumber }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Status:</span>
+          <span class="status-badge" [ngClass]="getHospitalStatusBadgeClass(selectedHospital.verificationStatus)">
+            {{ selectedHospital.verificationStatus | titlecase }}
+          </span>
+        </div>
+      </div>
+
+      <div class="details-section">
+        <h3>Contact Information</h3>
+        <div class="detail-row">
+          <span class="label">Phone:</span>
+          <span class="value">{{ selectedHospital.contactNumber }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Emergency Contact:</span>
+          <span class="value">{{ selectedHospital.emergencyContact || 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Website:</span>
+          <span class="value">{{ selectedHospital.website || 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Address:</span>
+          <span class="value">{{ getHospitalAddress(selectedHospital!) }}</span>
+        </div>
+      </div>
+
+      <div class="details-section">
+        <h3>Hospital Details</h3>
+        <div class="detail-row">
+          <span class="label">Number of Beds:</span>
+          <span class="value">{{ selectedHospital.numberOfBeds }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Specializations:</span>
+          <span class="value">
+            <span *ngFor="let spec of selectedHospital.specializations" class="tag">{{ spec }}</span>
+          </span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Facilities:</span>
+          <span class="value">
+            <span *ngFor="let facility of selectedHospital.facilities" class="tag">{{ facility }}</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="details-section" *ngIf="selectedHospital.verificationStatus === 'verified'">
+        <h3>API Information</h3>
+        <div class="detail-row">
+          <span class="label">API Key:</span>
+          <span class="value monospace">{{ selectedHospital.apiKey || 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Generated At:</span>
+          <span class="value">{{ formatDateTime(selectedHospital.apiKeyGeneratedAt) }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Last API Access:</span>
+          <span class="value">{{ formatDateTime(selectedHospital.lastApiAccess) }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">API Access Count:</span>
+          <span class="value">{{ selectedHospital.apiAccessCount || 0 }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Active:</span>
+          <span class="value">{{ selectedHospital.isActive ? 'Yes' : 'No' }}</span>
+        </div>
+      </div>
+
+      <div class="details-section" *ngIf="selectedHospital.verificationStatus === 'rejected'">
+        <h3>Rejection Information</h3>
+        <div class="detail-row">
+          <span class="label">Rejection Reason:</span>
+          <span class="value">{{ selectedHospital.rejectionReason || 'N/A' }}</span>
+        </div>
+      </div>
+
+      <div class="details-section">
+        <h3>Timestamps</h3>
+        <div class="detail-row">
+          <span class="label">Registered:</span>
+          <span class="value">{{ formatDateTime(selectedHospital.createdAt) }}</span>
+        </div>
+        <div class="detail-row" *ngIf="selectedHospital.verifiedAt">
+          <span class="label">Verified:</span>
+          <span class="value">{{ formatDateTime(selectedHospital.verifiedAt) }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Last Updated:</span>
+          <span class="value">{{ formatDateTime(selectedHospital.updatedAt) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button 
+        *ngIf="selectedHospital?.verificationStatus === 'pending'"
+        (click)="verifyHospital(selectedHospital!._id)" 
+        class="btn-verify"
+        [disabled]="verifyingHospitalId === selectedHospital!._id">
+        {{ verifyingHospitalId === selectedHospital!._id ? 'Verifying...' : 'Verify Hospital' }}
+      </button>
+      
+      <button 
+        *ngIf="selectedHospital?.verificationStatus === 'pending'"
+        (click)="closeHospitalDetailsModal(); openHospitalRejectModal(selectedHospital!)" 
+        class="btn-reject"
+        [disabled]="rejectingHospitalId === selectedHospital!._id">
+        {{ rejectingHospitalId === selectedHospital!._id ? 'Rejecting...' : 'Reject Hospital' }}
+      </button>
+      
+      <button 
+        *ngIf="selectedHospital?.verificationStatus === 'verified' && selectedHospital?.isActive"
+        (click)="revokeHospitalAccess(selectedHospital!._id)" 
+        class="btn-revoke"
+        [disabled]="revokingHospitalId === selectedHospital!._id">
+        {{ revokingHospitalId === selectedHospital!._id ? 'Revoking...' : 'Revoke Access' }}
+      </button>
+      
+      <button 
+        *ngIf="selectedHospital?.verificationStatus === 'verified' && !selectedHospital?.isActive"
+        (click)="restoreHospitalAccess(selectedHospital!._id)" 
+        class="btn-restore"
+        [disabled]="revokingHospitalId === selectedHospital!._id">
+        {{ revokingHospitalId === selectedHospital!._id ? 'Restoring...' : 'Restore Access' }}
+      </button>
+      
+      <button (click)="closeHospitalDetailsModal()" class="btn-secondary">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hospital Reject Modal -->
+<div *ngIf="showHospitalRejectModal" class="modal-overlay" (click)="closeHospitalRejectModal()">
+  <div class="modal-content modal-small" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Reject Hospital</h2>
+      <button class="btn-close" (click)="closeHospitalRejectModal()">&times;</button>
+    </div>
+    
+    <div class="modal-body">
+      <p>Please provide a reason for rejecting <strong>{{ selectedHospital?.hospitalName }}</strong>:</p>
+      <textarea 
+        [(ngModel)]="rejectionReason" 
+        placeholder="Enter rejection reason..."
+        rows="4"
+        class="rejection-textarea"></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button 
+        (click)="confirmHospitalReject()" 
+        class="btn-reject"
+        [disabled]="!rejectionReason.trim() || rejectingHospitalId">
+        {{ rejectingHospitalId ? 'Rejecting...' : 'Confirm Rejection' }}
+      </button>
+      <button (click)="closeHospitalRejectModal()" class="btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+<!-- User Details Modal -->
+<div *ngIf="showUserDetailsModal" class="modal-overlay" (click)="closeUserDetailsModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>User Details</h2>
+      <button class="btn-close" (click)="closeUserDetailsModal()">&times;</button>
+    </div>
+    
+    <div class="modal-body" *ngIf="selectedUser">
+      <div class="details-section">
+        <h3>Basic Information</h3>
+        <div class="detail-row">
+          <span class="label">Name:</span>
+          <span class="value">{{ selectedUser.name }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Email:</span>
+          <span class="value">{{ selectedUser.email }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Role:</span>
+          <span class="role-badge" [ngClass]="getUserRoleBadgeClass(selectedUser.role)">
+            {{ selectedUser.role | titlecase }}
+          </span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Status:</span>
+          <span class="status-badge" [class.active]="selectedUser.isActive">
+            {{ selectedUser.isActive ? 'Active' : 'Inactive' }}
+          </span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Registration Date:</span>
+          <span class="value">{{ formatDate(selectedUser.createdAt) }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Last Login:</span>
+          <span class="value">{{ formatDate(selectedUser.lastLogin) }}</span>
+        </div>
+      </div>
+
+      <!-- Role-specific details -->
+      <div class="details-section" *ngIf="selectedUser.role === 'patient'">
+        <h3>Patient Information</h3>
+        <div class="detail-row">
+          <span class="label">Blood Group:</span>
+          <span class="value">{{ selectedUser.bloodGroup || 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Date of Birth:</span>
+          <span class="value">{{ formatDate(selectedUser.dateOfBirth) }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Phone:</span>
+          <span class="value">{{ selectedUser.phone || 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Address:</span>
+          <span class="value">{{ selectedUser.address || 'N/A' }}</span>
+        </div>
+      </div>
+
+      <div class="details-section" *ngIf="selectedUser.role === 'doctor'">
+        <h3>Doctor Information</h3>
+        <div class="detail-row">
+          <span class="label">Speciality:</span>
+          <span class="value">{{ selectedUser.speciality || 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Degree:</span>
+          <span class="value">{{ selectedUser.degree || 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Experience:</span>
+          <span class="value">{{ selectedUser.experienceYears || 0 }} years</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">License Number:</span>
+          <span class="value">{{ selectedUser.licenseNumber || 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Subscription Status:</span>
+          <span class="value">{{ selectedUser.subscriptionStatus || 'N/A' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button 
+        *ngIf="!selectedUser?.isRemoved && canRemoveUser(selectedUser)"
+        (click)="removeUser(selectedUser._id, selectedUser.role); closeUserDetailsModal()" 
+        class="btn-remove"
+        [disabled]="removingUserId === selectedUser._id">
+        {{ removingUserId === selectedUser._id ? 'Removing...' : 'Remove User' }}
+      </button>
+      
+      <button 
+        *ngIf="selectedUser?.isRemoved && isRootAdmin"
+        (click)="restoreUser(selectedUser._id); closeUserDetailsModal()" 
+        class="btn-restore"
+        [disabled]="restoringUserId === selectedUser._id">
+        {{ restoringUserId === selectedUser._id ? 'Restoring...' : 'Restore User' }}
+      </button>
+      
+      <button (click)="closeUserDetailsModal()" class="btn-secondary">Close</button>
     </div>
   </div>
 </div>

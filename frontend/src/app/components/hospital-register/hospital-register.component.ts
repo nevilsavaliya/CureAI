@@ -44,6 +44,8 @@ export class HospitalRegisterComponent implements OnInit {
   showConfirmPassword = false;
   registrationSuccess = false;
   registeredEmail = '';
+  private lastSubmitTime = 0;
+  private readonly SUBMIT_DEBOUNCE_TIME = 2000; // 2 seconds for registration
 
   constructor(
     private fb: FormBuilder,
@@ -252,6 +254,21 @@ export class HospitalRegisterComponent implements OnInit {
   }
 
   async submitRegistration(): Promise<void> {
+    // Prevent multiple submissions with debounce
+    const currentTime = Date.now();
+    if (this.isSubmitting) {
+      console.log('⚠️ Registration already in progress, ignoring duplicate submission');
+      return;
+    }
+    
+    if (currentTime - this.lastSubmitTime < this.SUBMIT_DEBOUNCE_TIME) {
+      console.log('⚠️ Submit too soon after last attempt, ignoring');
+      this.toastService.warning('Please wait a moment before trying again.');
+      return;
+    }
+    
+    this.lastSubmitTime = currentTime;
+
     // Validate all forms
     if (!this.validateAllForms()) {
       if (!this.basicInfoForm.valid) {
@@ -316,7 +333,10 @@ export class HospitalRegisterComponent implements OnInit {
           if (response.success) {
             this.registrationSuccess = true;
             this.registeredEmail = this.basicInfoForm.value.email;
-            this.toastService.success('Registration submitted successfully!');
+            this.toastService.success('Registration submitted successfully! Please check your email for confirmation.');
+            
+            // Scroll to top to show success message
+            window.scrollTo({ top: 0, behavior: 'smooth' });
           }
         },
         error: (error) => {

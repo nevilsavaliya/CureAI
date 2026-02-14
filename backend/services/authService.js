@@ -5,10 +5,16 @@ const Admin = require('../models/Admin');
 const Hospital = require('../models/Hospital');
 
 class AuthService {
-  // Generate JWT token
-  generateToken(userId, role) {
+  // Generate JWT token with enhanced admin role information
+  generateToken(userId, role, additionalData = {}) {
+    const payload = { 
+      id: userId, 
+      role: role,
+      ...additionalData
+    };
+    
     return jwt.sign(
-      { id: userId, role: role },
+      payload,
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
     );
@@ -181,11 +187,26 @@ class AuthService {
         }
       }
 
-      // Update last login
-      await user.updateLastLogin();
+      // Update last login with IP and user agent tracking for admins
+      if (role === 'admin') {
+        // For admin users, we'll update this in the controller with proper IP/user agent
+        user.lastLogin = new Date();
+        await user.save();
+      } else {
+        await user.updateLastLogin();
+      }
 
-      // Generate token
-      const token = this.generateToken(user._id, role);
+      // Generate token with admin role information
+      let tokenData = {};
+      if (role === 'admin') {
+        tokenData = {
+          isRootAdmin: user.isRoot(),
+          adminPermissions: user.permissions || [],
+          email: user.email
+        };
+      }
+      
+      const token = this.generateToken(user._id, role, tokenData);
 
       const response = {
         token,
@@ -196,6 +217,13 @@ class AuthService {
           role: role
         }
       };
+
+      // Add admin-specific information to response
+      if (role === 'admin') {
+        response.user.isRootAdmin = user.isRoot();
+        response.user.permissions = user.permissions || [];
+        response.user.lastLogin = user.lastLogin;
+      }
 
       // Add subscription status for doctors
       if (role === 'doctor') {
