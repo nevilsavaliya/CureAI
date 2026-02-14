@@ -25,7 +25,6 @@ import { AdminHospitalsComponent } from './components/admin-hospitals/admin-hosp
 import { HospitalRegisterComponent } from './components/hospital-register/hospital-register.component';
 import { HospitalLoginComponent } from './components/hospital-login/hospital-login.component';
 import { HospitalDashboardComponent } from './components/hospital-dashboard/hospital-dashboard.component';
-import { HospitalApiDocsComponent } from './components/hospital-api-docs/hospital-api-docs.component';
 import { LogoComponent } from './components/logo/logo.component';
 import { AdminUserManagementComponent } from './components/admin-user-management/admin-user-management.component';
 import { UserRemovalModalComponent } from './components/user-removal-modal/user-removal-modal.component';
@@ -53,7 +52,6 @@ import { AuditLogsComponent } from './components/audit-logs/audit-logs.component
     HospitalRegisterComponent,
     HospitalLoginComponent,
     HospitalDashboardComponent,
-    HospitalApiDocsComponent,
     LogoComponent,
     AdminUserManagementComponent,
     UserRemovalModalComponent,
