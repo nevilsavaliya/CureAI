@@ -41,5 +41,6 @@ testem.log
 .DS_Store
 Thumbs.db
 
-# Environment files
-src/config/environment.ts
+# Environment files - Keep both environment.ts and environment.prod.ts for Angular builds
+# Only ignore local override files
+src/config/environment.local.ts
