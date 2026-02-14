@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { BehaviorSubject, Observable, interval, Subscription } from 'rxjs';
 import { AuthService } from './auth.service';
 import { CaseService } from './case.service';
+import { environment } from '../../config/environment';
 
 export interface SocketMessage {
   caseId: string;
@@ -33,7 +34,7 @@ export interface CaseUpdateEvent {
 })
 export class SocketService {
   private socket: Socket | null = null;
-  private socketUrl = 'http://localhost:3000';
+  private socketUrl = environment.socketUrl;
   
   // Connection status
   private connectedSubject = new BehaviorSubject<boolean>(false);

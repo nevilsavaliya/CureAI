@@ -45,29 +45,65 @@ describe('HospitalDashboardComponent', () => {
   });
 
   it('should calculate usage percentage correctly', () => {
-    component.apiUsageStats.rateLimit = 100;
-    component.apiUsageStats.remainingRequests = 50;
+    component.state.apiStats = {
+      totalRequests: 1000,
+      requestsToday: 50,
+      requestsThisWeek: 300,
+      requestsThisMonth: 800,
+      averageResponseTime: 250,
+      successRate: 98.5,
+      remainingRequests: 50,
+      rateLimit: 100,
+      lastUpdated: new Date()
+    };
     
     expect(component.getUsagePercentage()).toBe(50);
   });
 
   it('should return green color for low usage', () => {
-    component.apiUsageStats.rateLimit = 100;
-    component.apiUsageStats.remainingRequests = 80;
+    component.state.apiStats = {
+      totalRequests: 1000,
+      requestsToday: 50,
+      requestsThisWeek: 300,
+      requestsThisMonth: 800,
+      averageResponseTime: 250,
+      successRate: 98.5,
+      remainingRequests: 80,
+      rateLimit: 100,
+      lastUpdated: new Date()
+    };
     
     expect(component.getUsageColor()).toBe('#10b981');
   });
 
   it('should return orange color for medium usage', () => {
-    component.apiUsageStats.rateLimit = 100;
-    component.apiUsageStats.remainingRequests = 40;
+    component.state.apiStats = {
+      totalRequests: 1000,
+      requestsToday: 50,
+      requestsThisWeek: 300,
+      requestsThisMonth: 800,
+      averageResponseTime: 250,
+      successRate: 98.5,
+      remainingRequests: 40,
+      rateLimit: 100,
+      lastUpdated: new Date()
+    };
     
     expect(component.getUsageColor()).toBe('#f59e0b');
   });
 
   it('should return red color for high usage', () => {
-    component.apiUsageStats.rateLimit = 100;
-    component.apiUsageStats.remainingRequests = 10;
+    component.state.apiStats = {
+      totalRequests: 1000,
+      requestsToday: 50,
+      requestsThisWeek: 300,
+      requestsThisMonth: 800,
+      averageResponseTime: 250,
+      successRate: 98.5,
+      remainingRequests: 10,
+      rateLimit: 100,
+      lastUpdated: new Date()
+    };
     
     expect(component.getUsageColor()).toBe('#ef4444');
   });
@@ -94,7 +130,32 @@ describe('HospitalDashboardComponent', () => {
   });
 
   it('should copy API key to clipboard', async () => {
-    component.apiKey = 'HK_test123';
+    component.state.hospital = {
+      _id: '123',
+      name: 'Test Hospital',
+      email: 'test@hospital.com',
+      hospitalName: 'Test Hospital',
+      registrationNumber: 'REG123',
+      address: {
+        street: '123 Main St',
+        city: 'Test City',
+        state: 'Test State',
+        zipCode: '12345',
+        country: 'Test Country'
+      },
+      contactNumber: '1234567890',
+      emergencyContact: '0987654321',
+      specializations: ['General'],
+      numberOfBeds: 100,
+      facilities: ['ICU'],
+      verificationStatus: 'verified',
+      apiKey: 'HK_test123',
+      apiAccessCount: 50,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
     spyOn(navigator.clipboard, 'writeText').and.returnValue(Promise.resolve());
     
     component.copyApiKey();
@@ -103,16 +164,18 @@ describe('HospitalDashboardComponent', () => {
     
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('HK_test123');
     expect(component.apiKeyCopied).toBe(true);
-    expect(mockToastService.show).toHaveBeenCalledWith('API Key copied to clipboard!', 'success');
+    expect(mockToastService.success).toHaveBeenCalledWith('API Key copied to clipboard successfully!');
   });
 
-  it('should show warning when trying to copy API secret', () => {
+  it('should show warning when trying to copy API secret', (done) => {
     component.copyApiSecret();
     
-    expect(mockToastService.show).toHaveBeenCalledWith(
-      jasmine.stringContaining('API Secret cannot be copied'),
-      'warning'
-    );
+    setTimeout(() => {
+      expect(mockToastService.warning).toHaveBeenCalledWith(
+        jasmine.stringContaining('API Secret cannot be copied')
+      );
+      done();
+    }, 600);
   });
 
   it('should toggle API secret visibility', () => {
@@ -132,22 +195,30 @@ describe('HospitalDashboardComponent', () => {
 
   it('should show info toast for profile management', () => {
     component.goToProfile();
-    expect(mockToastService.show).toHaveBeenCalledWith('Profile management coming soon!', 'info');
+    expect(mockToastService.info).toHaveBeenCalledWith(jasmine.stringContaining('Profile management feature is coming soon'));
   });
 
-  it('should refresh data and show success toast', () => {
-    spyOn(component, 'loadHospitalData');
-    
+  it('should refresh data and show info toast', () => {
     component.refreshData();
     
-    expect(component.loadHospitalData).toHaveBeenCalled();
-    expect(mockToastService.show).toHaveBeenCalledWith('Data refreshed successfully!', 'success');
+    expect(mockToastService.info).toHaveBeenCalledWith('Refreshing dashboard data...');
   });
 
-  it('should logout and navigate to login page', () => {
+  it('should show logout confirmation dialog', () => {
     component.logout();
     
+    expect(component.showLogoutConfirm).toBe(true);
+  });
+
+  it('should confirm logout and navigate to login page', (done) => {
+    component.confirmLogout();
+    
     expect(mockAuthService.logout).toHaveBeenCalled();
-    expect(mockRouter.navigate).toHaveBeenCalledWith(['/hospital/login']);
+    expect(mockToastService.info).toHaveBeenCalledWith('Logging out...');
+    
+    setTimeout(() => {
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/hospital/login']);
+      done();
+    }, 1100);
   });
 });

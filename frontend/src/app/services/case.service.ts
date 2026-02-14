@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, retryWhen } from 'rxjs/operators';
-import { environment } from '../../environments/environment';
+import { environment } from '../../config/environment';
 import { ErrorHandlerService } from './error-handler.service';
 
 export interface Case {
@@ -25,6 +25,10 @@ export interface Case {
   status: 'pending' | 'ongoing' | 'treated' | 'rejected';
   symptoms: string[];
   predictedConditions: string[];
+  predictionConfidence?: Array<{
+    condition: string;
+    confidence: number;
+  }>;
   chatbotHistory: Array<{
     question: string;
     answer: string;

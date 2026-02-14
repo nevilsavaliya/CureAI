@@ -1,11 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { AdminService } from './admin.service';
+import { environment } from '../../config/environment';
 
 describe('AdminService', () => {
   let service: AdminService;
   let httpMock: HttpTestingController;
-  const apiUrl = 'http://localhost:3000/api';
+  const apiUrl = environment.apiUrl;
 
   beforeEach(() => {
     TestBed.configureTestingModule({

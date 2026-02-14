@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { CaseService, Case, Message } from './case.service';
 import { ErrorHandlerService } from './error-handler.service';
-import { environment } from '../../environments/environment';
+import { environment } from '../../config/environment';
 
 describe('CaseService', () => {
   let service: CaseService;
