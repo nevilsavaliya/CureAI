@@ -23,6 +23,7 @@ export class SubscriptionService {
    */
   simulateTestPayment(): Observable<any> {
     return this.http.post(`${this.apiUrl}/test-payment/simulate`, {
+      upiId: 'test@upi',  // Mock UPI ID for test payments
       amount: 30,
       planName: 'Monthly Subscription'
     });
