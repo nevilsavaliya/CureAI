@@ -1,75 +1,29 @@
-const nodemailer = require('nodemailer');
 const AuditLog = require('../models/AuditLog');
 
 class EmailNotificationService {
   constructor() {
-    // Check if email is configured
-    this.isConfigured = process.env.EMAIL_USER && process.env.EMAIL_PASSWORD &&
-      process.env.EMAIL_USER !== 'your-email@gmail.com';
+    // Check if MailerSend is configured
+    this.isConfigured = process.env.MAILERSEND_API_KEY && 
+                        process.env.MAILERSEND_FROM_EMAIL;
 
     if (this.isConfigured) {
-      // Determine SMTP provider (default to Gmail)
-      const emailProvider = process.env.EMAIL_PROVIDER || 'gmail';
-
-      // SMTP configurations for different providers
-      const smtpConfigs = {
-        gmail: {
-          host: 'smtp.gmail.com',
-          port: 465,
-          secure: true
-        },
-        sendgrid: {
-          host: 'smtp.sendgrid.net',
-          port: 587,
-          secure: false
-        },
-        mailgun: {
-          host: 'smtp.mailgun.org',
-          port: 587,
-          secure: false
-        },
-        ses: {
-          host: process.env.SES_SMTP_HOST || 'email-smtp.us-east-1.amazonaws.com',
-          port: 587,
-          secure: false
-        },
-        custom: {
-          host: process.env.SMTP_HOST || 'smtp.gmail.com',
-          port: parseInt(process.env.SMTP_PORT) || 587,
-          secure: process.env.SMTP_SECURE === 'true'
-        }
+      // Configure MailerSend
+      this.mailersendConfig = {
+        apiKey: process.env.MAILERSEND_API_KEY,
+        fromEmail: process.env.MAILERSEND_FROM_EMAIL,
+        fromName: process.env.MAILERSEND_FROM_NAME || 'Healthcare Platform',
+        apiUrl: 'https://api.mailersend.com/v1/email'
       };
 
-      const config = smtpConfigs[emailProvider] || smtpConfigs.gmail;
-
-      // Create transporter
-      this.transporter = nodemailer.createTransport({
-        ...config,
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASSWORD
-        },
-        tls: {
-          rejectUnauthorized: false,
-          minVersion: 'TLSv1.2'
-        },
-        connectionTimeout: 30000, // Increased timeout for cloud servers
-        socketTimeout: 30000,
-        greetingTimeout: 30000,
-        debug: process.env.NODE_ENV === 'development',
-        logger: process.env.NODE_ENV === 'development'
-      });
-
-      // Verify connection configuration
-      this.transporter.verify((error, success) => {
-        if (error) {
-          console.error('❌ Email transporter verification failed:', error.message);
-        } else {
-          console.log('✅ Email notification service is ready');
-        }
-      });
+      console.log('✅ MailerSend email service is ready');
     } else {
       console.log('⚠️  Email not configured - using console logging for notifications');
+      if (!process.env.MAILERSEND_API_KEY) {
+        console.log('   Missing: MAILERSEND_API_KEY');
+      }
+      if (!process.env.MAILERSEND_FROM_EMAIL) {
+        console.log('   Missing: MAILERSEND_FROM_EMAIL');
+      }
     }
 
     // Email delivery tracking
@@ -126,10 +80,8 @@ class EmailNotificationService {
       const result = await this._sendEmailWithRetry(mailOptions, 'USER_REMOVAL_NOTIFICATION');
 
       if (result.success) {
-        this.deliveryStats.sent++;
         console.log(`✅ User removal notification sent to ${email}`);
       } else {
-        this.deliveryStats.failed++;
         console.error(`❌ Failed to send user removal notification to ${email}`);
       }
 
@@ -193,10 +145,8 @@ class EmailNotificationService {
       const result = await this._sendEmailWithRetry(mailOptions, 'ADMIN_WELCOME');
 
       if (result.success) {
-        this.deliveryStats.sent++;
         console.log(`✅ Admin welcome email sent to ${email}`);
       } else {
-        this.deliveryStats.failed++;
         console.error(`❌ Failed to send admin welcome email to ${email}`);
       }
 
@@ -259,10 +209,8 @@ class EmailNotificationService {
       const result = await this._sendEmailWithRetry(mailOptions, 'USER_RESTORATION_NOTIFICATION');
 
       if (result.success) {
-        this.deliveryStats.sent++;
         console.log(`✅ User restoration notification sent to ${email}`);
       } else {
-        this.deliveryStats.failed++;
         console.error(`❌ Failed to send user restoration notification to ${email}`);
       }
 
@@ -329,10 +277,8 @@ class EmailNotificationService {
       const result = await this._sendEmailWithRetry(mailOptions, 'BULK_OPERATION_SUMMARY');
 
       if (result.success) {
-        this.deliveryStats.sent++;
         console.log(`✅ Bulk operation summary sent to ${adminEmail}`);
       } else {
-        this.deliveryStats.failed++;
         console.error(`❌ Failed to send bulk operation summary to ${adminEmail}`);
       }
 
@@ -359,7 +305,7 @@ class EmailNotificationService {
   }
 
   /**
-   * Send email with retry mechanism
+   * Send email with retry mechanism using MailerSend API
    * @private
    * @param {Object} mailOptions - Email options
    * @param {string} emailType - Type of email for logging
@@ -367,32 +313,83 @@ class EmailNotificationService {
    * @returns {Object} Result with success status
    */
   async _sendEmailWithRetry(mailOptions, emailType, maxRetries = 3) {
+    const axios = require('axios');
     let lastError;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const info = await this.transporter.sendMail(mailOptions);
+        // Build MailerSend request payload
+        const payload = {
+          from: {
+            email: this.mailersendConfig.fromEmail,
+            name: this.mailersendConfig.fromName
+          },
+          to: [{
+            email: mailOptions.to,
+            name: this._extractNameFromEmail(mailOptions.to)
+          }],
+          subject: mailOptions.subject,
+          html: mailOptions.html
+        };
+
+        // Send via MailerSend API
+        const response = await axios.post(
+          this.mailersendConfig.apiUrl,
+          payload,
+          {
+            headers: {
+              'Authorization': `Bearer ${this.mailersendConfig.apiKey}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 30000
+          }
+        );
+
+        // Extract message ID from response headers or body
+        const messageId = response.headers['x-message-id'] || response.data?.message_id || 'unknown';
+
+        // Update sent counter after successful MailerSend API response
+        this.deliveryStats.sent++;
 
         // Log successful email delivery
         await this._logEmailDelivery(mailOptions.to, emailType, 'success', {
-          messageId: info.messageId,
+          messageId,
           attempt
         });
 
-        return { success: true, messageId: info.messageId };
+        return { success: true, messageId };
 
       } catch (error) {
         lastError = error;
-        this.deliveryStats.retries++;
+        
+        // Increment retries counter for each retry attempt in the loop
+        if (attempt > 1) {
+          this.deliveryStats.retries++;
+        }
 
-        console.warn(`Email delivery attempt ${attempt}/${maxRetries} failed for ${mailOptions.to}: ${error.message}`);
+        // Determine if error is retryable
+        const isRetryable = this._isRetryableError(error);
+        
+        console.warn(
+          `Email delivery attempt ${attempt}/${maxRetries} failed for ${mailOptions.to}: ${error.message}`
+        );
 
-        // Wait before retry (exponential backoff)
+        // Don't retry client errors (4xx except 429)
+        if (!isRetryable) {
+          console.error(`Non-retryable error encountered, stopping retry attempts`);
+          break;
+        }
+
+        // Wait before retry (exponential backoff: 2s, 4s, 8s)
         if (attempt < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+          const delay = Math.pow(2, attempt) * 1000;
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
     }
+
+    // Update failed counter after all retry attempts exhausted
+    this.deliveryStats.failed++;
 
     // Log failed email delivery
     await this._logEmailDelivery(mailOptions.to, emailType, 'failed', {
@@ -404,30 +401,99 @@ class EmailNotificationService {
   }
 
   /**
+   * Determine if an error should trigger a retry
+   * @private
+   * @param {Error} error - The error to classify
+   * @returns {boolean} True if error is retryable
+   */
+  _isRetryableError(error) {
+    // Network errors - retry
+    if (error.code === 'ECONNREFUSED' || 
+        error.code === 'ETIMEDOUT' || 
+        error.code === 'ENOTFOUND') {
+      return true;
+    }
+
+    // HTTP 5xx errors - retry
+    if (error.response && error.response.status >= 500) {
+      return true;
+    }
+
+    // HTTP 429 (rate limit) - retry
+    if (error.response && error.response.status === 429) {
+      return true;
+    }
+
+    // HTTP 4xx errors (except 429) - don't retry
+    if (error.response && error.response.status >= 400 && error.response.status < 500) {
+      return false;
+    }
+
+    // Unknown errors - retry to be safe
+    return true;
+  }
+
+  /**
+   * Extract name from email address
+   * @private
+   * @param {string} email - Email address
+   * @returns {string} Extracted name or default
+   */
+  _extractNameFromEmail(email) {
+    // Extract username part before @ symbol as fallback name
+    if (typeof email === 'string' && email.includes('@')) {
+      return email.split('@')[0];
+    }
+    // Return 'User' as default if email is invalid or empty
+    return 'User';
+  }
+
+  /**
    * Log email delivery for audit purposes
    * @private
    * @param {string} recipient - Email recipient
    * @param {string} emailType - Type of email
-   * @param {string} status - Delivery status
-   * @param {Object} details - Additional details
+   * @param {string} status - Delivery status ('success' or 'failed')
+   * @param {Object} details - Additional details (messageId, attempt, error, attempts)
    */
   async _logEmailDelivery(recipient, emailType, status, details = {}) {
     try {
-      await AuditLog.logAction({
+      // Build audit log data with all required fields
+      const auditLogData = {
         adminId: 'system',
         adminEmail: 'system@email-service',
         action: 'EMAIL_NOTIFICATION',
         targetUserEmail: recipient,
         details: {
           emailType,
+          recipient,
           status,
+          timestamp: new Date().toISOString(),
           ipAddress: 'system',
           userAgent: 'email-service',
-          additionalData: details
+          additionalData: {
+            // Include MailerSend message ID for successful deliveries
+            messageId: details.messageId || null,
+            // Include number of delivery attempts
+            deliveryAttempts: details.attempt || details.attempts || 1,
+            // Include error message for failed deliveries
+            errorMessage: status === 'failed' ? details.error : null,
+            // Include any other details passed
+            ...details
+          }
         },
         status: status === 'success' ? 'success' : 'failed',
         errorMessage: status === 'failed' ? details.error : null
-      });
+      };
+
+      await AuditLog.logAction(auditLogData);
+      
+      // Log to console for visibility
+      if (status === 'success') {
+        console.log(`📧 Audit: ${emailType} sent to ${recipient} (Message ID: ${details.messageId || 'N/A'}, Attempt: ${details.attempt || 1})`);
+      } else {
+        console.error(`📧 Audit: ${emailType} failed for ${recipient} after ${details.attempts || 1} attempts - ${details.error || 'Unknown error'}`);
+      }
     } catch (error) {
       console.error('Failed to log email delivery:', error);
     }
@@ -964,10 +1030,8 @@ class EmailNotificationService {
       const result = await this._sendEmailWithRetry(mailOptions, 'SUSPICIOUS_ACTIVITY_ALERT');
 
       if (result.success) {
-        this.deliveryStats.sent++;
         console.log(`✅ Suspicious activity alert sent to ${rootAdminEmail}`);
       } else {
-        this.deliveryStats.failed++;
         console.error(`❌ Failed to send suspicious activity alert to ${rootAdminEmail}`);
       }
 

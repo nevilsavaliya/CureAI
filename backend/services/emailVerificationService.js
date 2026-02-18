@@ -14,14 +14,20 @@ class EmailVerificationService {
    * @returns {Promise<Boolean>}
    */
   async sendVerificationOTP(email, purpose = 'signup') {
+    console.log('🔵 [OTP] sendVerificationOTP called for:', email, 'purpose:', purpose);
+    
     try {
       // Generate 6-digit OTP
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      console.log('🔵 [OTP] Generated OTP:', otp);
       
       // Delete any existing OTPs for this email
+      console.log('🔵 [OTP] Deleting existing OTPs...');
       await OTP.deleteMany({ email, purpose });
+      console.log('✅ [OTP] Existing OTPs deleted');
       
       // Save new OTP (expires in 10 minutes)
+      console.log('🔵 [OTP] Saving new OTP to database...');
       const otpDoc = new OTP({
         email,
         otp,
@@ -29,13 +35,23 @@ class EmailVerificationService {
         expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
       });
       await otpDoc.save();
+      console.log('✅ [OTP] OTP saved to database');
       
       // Send OTP via email (use signup template)
+      console.log('🔵 [OTP] Sending OTP email...');
       const emailSent = await emailService.sendSignupOTP(email, otp);
+      console.log('🔵 [OTP] Email service returned:', emailSent);
+      
+      if (emailSent) {
+        console.log('✅ [OTP] OTP email sent successfully');
+      } else {
+        console.log('❌ [OTP] Failed to send OTP email');
+      }
       
       return emailSent;
     } catch (error) {
-      console.error('Error sending verification OTP:', error);
+      console.error('❌ [OTP] Error sending verification OTP:', error.message);
+      console.error('❌ [OTP] Error stack:', error.stack);
       throw new Error('Failed to send verification OTP');
     }
   }

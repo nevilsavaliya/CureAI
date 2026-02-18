@@ -12,8 +12,6 @@ const REQUIRED_VARS = [
   'MONGODB_URI',
   'JWT_SECRET',
   'FRONTEND_URL',
-  'EMAIL_USER',
-  'EMAIL_PASSWORD',
   'API_URL'
 ];
 
@@ -43,9 +41,10 @@ const VALIDATION_RULES = {
     minLength: 32,
     description: 'JWT secret must be at least 32 characters long'
   },
-  EMAIL_USER: {
+  MAILERSEND_FROM_EMAIL: {
     pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    description: 'EMAIL_USER must be a valid email address'
+    description: 'MAILERSEND_FROM_EMAIL must be a valid email address',
+    optional: true
   },
   API_RATE_LIMIT: {
     type: 'number',
@@ -411,8 +410,8 @@ function validateEnvironment() {
       errors.push('JWT_SECRET must be changed from default value in production');
     }
     
-    if (process.env.EMAIL_PASSWORD === 'your_app_specific_password') {
-      errors.push('EMAIL_PASSWORD must be set to actual app password in production');
+    if (process.env.MAILERSEND_API_KEY === 'your_mailersend_api_key_here') {
+      warnings.push('MAILERSEND_API_KEY should be set to actual API key for email functionality');
     }
 
     if (process.env.MONGODB_URI.includes('localhost')) {

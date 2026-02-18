@@ -120,6 +120,7 @@ const apiMonitoringRoutes = require('./routes/apiMonitoringRoutes');
 const alertRoutes = require('./routes/alertRoutes');
 const adminUserManagementRoutes = require('./routes/adminUserManagementRoutes');
 const adminSecurityRoutes = require('./routes/adminSecurityRoutes');
+const testPaymentRoutes = require('./routes/testPaymentRoutes');
 
 // Swagger API Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
@@ -141,6 +142,7 @@ app.get('/api/health', (req, res) => {
 // Mount specific routes first (more specific paths should come before general ones)
 app.use('/api/auth', authRoutes);
 app.use('/api/password', passwordResetRoutes);
+app.use('/api/test-payment', testPaymentRoutes); // Test payment endpoints for development
 app.use('/api/hospitals', hospitalRoutes);
 app.use('/api/admin', hospitalAdminRoutes);
 app.use('/api/admin/logs', logRoutes);

@@ -346,6 +346,7 @@ export class PatientDashboardComponent implements OnInit, OnDestroy {
   }
 
   requestConsultation(doctor: Doctor): void {
+    console.log('🔵 requestConsultation called for doctor:', doctor.name, doctor._id);
     this.selectedDoctor = doctor;
     this.showCaseRequestModal = true;
     this.caseRequestError = '';
@@ -443,7 +444,10 @@ export class PatientDashboardComponent implements OnInit, OnDestroy {
    * Check if a doctor has already been requested for current symptoms
    */
   isDoctorRequested(doctorId: string): boolean {
-    return this.requestedDoctorIds.has(doctorId);
+    const isRequested = this.requestedDoctorIds.has(doctorId);
+    console.log('🔍 isDoctorRequested:', doctorId, '→', isRequested);
+    console.log('🔍 requestedDoctorIds:', Array.from(this.requestedDoctorIds));
+    return isRequested;
   }
 
   logout(): void {

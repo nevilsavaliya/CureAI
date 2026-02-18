@@ -119,8 +119,8 @@ class AlertService {
 
     // Email configuration for alerts
     this.alertEmailConfig = {
-      from: process.env.ALERT_EMAIL_FROM || process.env.EMAIL_USER,
-      to: process.env.ALERT_EMAIL_TO ? process.env.ALERT_EMAIL_TO.split(',') : ['admin@hospital-system.com'],
+      from: process.env.MAILERSEND_FROM_EMAIL || 'noreply@system.com',
+      to: process.env.ALERT_EMAIL_TO ? process.env.ALERT_EMAIL_TO.split(',') : [],
       subject: {
         critical: '[CRITICAL] Hospital System Alert',
         high: '[HIGH] Hospital System Alert',
@@ -129,9 +129,14 @@ class AlertService {
       }
     };
 
-    // Start monitoring if enabled
-    if (process.env.ALERTS_ENABLED !== 'false') {
+    // Start monitoring if enabled (disabled by default to avoid trial account limits)
+    if (process.env.ALERTS_ENABLED === 'true') {
       this.startMonitoring();
+    } else {
+      logger.info('Alert monitoring is disabled. Set ALERTS_ENABLED=true to enable.', {
+        type: 'ALERT_SYSTEM_DISABLED',
+        timestamp: new Date().toISOString()
+      });
     }
   }
 
@@ -444,13 +449,23 @@ class AlertService {
    */
   async sendEmailAlert(alert) {
     try {
+      // Check if email recipients are configured
+      if (!this.alertEmailConfig.to || this.alertEmailConfig.to.length === 0) {
+        logger.warn('No alert email recipients configured, skipping email alert', {
+          type: 'ALERT_EMAIL_SKIPPED',
+          alertId: alert.id,
+          reason: 'No recipients configured',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
       const subject = `${this.alertEmailConfig.subject[alert.severity]} - ${alert.name}`;
       
       const htmlContent = this.generateAlertEmailHTML(alert);
       const textContent = this.generateAlertEmailText(alert);
 
       await emailService.sendEmail({
-        from: this.alertEmailConfig.from,
         to: this.alertEmailConfig.to,
         subject: subject,
         text: textContent,

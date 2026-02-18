@@ -2,11 +2,17 @@ const authService = require('../services/authService');
 
 // Patient signup - Step 1: Submit details and send OTP
 exports.signupPatient = async (req, res) => {
+  console.log('🔵 [SIGNUP] Patient signup request received');
+  console.log('🔵 [SIGNUP] Request body:', JSON.stringify(req.body, null, 2));
+  
   try {
     const { name, email, password, confirmPassword, dateOfBirth, bloodGroup, otp } = req.body;
 
+    console.log('🔵 [SIGNUP] Extracted fields:', { name, email, dateOfBirth, bloodGroup, hasOtp: !!otp });
+
     // Validate required fields
     if (!name || !email || !password || !dateOfBirth || !bloodGroup) {
+      console.log('❌ [SIGNUP] Missing required fields');
       return res.status(400).json({
         success: false,
         message: 'Please provide all required fields: name, email, password, dateOfBirth, bloodGroup'
@@ -15,32 +21,42 @@ exports.signupPatient = async (req, res) => {
 
     // Validate password confirmation
     if (confirmPassword && password !== confirmPassword) {
+      console.log('❌ [SIGNUP] Passwords do not match');
       return res.status(400).json({
         success: false,
         message: 'Passwords do not match'
       });
     }
 
+    console.log('🔵 [SIGNUP] Checking if email exists...');
     // Check if email already exists
     const existingUser = await authService.checkEmailExists(email);
     if (existingUser) {
+      console.log('❌ [SIGNUP] Email already exists');
       return res.status(400).json({
         success: false,
         message: 'Email is already registered. Please login instead.'
       });
     }
+    console.log('✅ [SIGNUP] Email is available');
 
     // If OTP is provided, verify it and create account
     if (otp) {
+      console.log('🔵 [SIGNUP] OTP provided, verifying...');
       const emailVerificationService = require('../services/emailVerificationService');
       
       try {
         // Verify OTP
         await emailVerificationService.verifyOTP(email, otp, 'signup');
+        console.log('✅ [SIGNUP] OTP verified successfully');
         
         // OTP verified, create account
+        console.log('🔵 [SIGNUP] Creating patient account...');
         const user = await authService.signupPatient(req.body);
+        console.log('✅ [SIGNUP] Patient account created:', user.userId);
+        
         const token = authService.generateToken(user.userId, 'patient');
+        console.log('✅ [SIGNUP] Token generated');
 
         return res.status(201).json({
           success: true,
@@ -49,6 +65,7 @@ exports.signupPatient = async (req, res) => {
           user
         });
       } catch (error) {
+        console.log('❌ [SIGNUP] OTP verification failed:', error.message);
         return res.status(400).json({
           success: false,
           message: error.message || 'Invalid or expired OTP'
@@ -57,10 +74,15 @@ exports.signupPatient = async (req, res) => {
     }
 
     // No OTP provided, send OTP to email
+    console.log('🔵 [SIGNUP] No OTP provided, sending OTP to email...');
     const emailVerificationService = require('../services/emailVerificationService');
+    
+    console.log('🔵 [SIGNUP] Calling sendVerificationOTP...');
     const otpSent = await emailVerificationService.sendVerificationOTP(email, 'signup');
+    console.log('🔵 [SIGNUP] sendVerificationOTP returned:', otpSent);
 
     if (otpSent) {
+      console.log('✅ [SIGNUP] OTP sent successfully');
       // Store signup data temporarily (you might want to use session or cache)
       // For now, just return success and ask for OTP
       return res.status(200).json({
@@ -70,12 +92,15 @@ exports.signupPatient = async (req, res) => {
         email: email
       });
     } else {
+      console.log('❌ [SIGNUP] Failed to send OTP');
       return res.status(500).json({
         success: false,
         message: 'Failed to send OTP. Please try again.'
       });
     }
   } catch (error) {
+    console.log('❌ [SIGNUP] Error in signup:', error.message);
+    console.log('❌ [SIGNUP] Error stack:', error.stack);
     res.status(400).json({
       success: false,
       message: error.message

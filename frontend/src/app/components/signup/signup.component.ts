@@ -276,6 +276,10 @@ export class SignupComponent implements OnInit {
             // Account created directly (with OTP already verified)
             localStorage.setItem('token', response.token);
             localStorage.setItem('user', JSON.stringify(response.user));
+            
+            // Set flag for new doctor signup to trigger subscription check
+            sessionStorage.setItem('newDoctorSignup', 'true');
+            
             this.successMessage = 'Registration successful! Redirecting to subscription...';
             setTimeout(() => {
               this.router.navigate(['/subscription']);

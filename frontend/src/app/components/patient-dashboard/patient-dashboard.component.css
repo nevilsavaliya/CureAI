@@ -548,6 +548,9 @@
   font-weight: 600;
   font-size: 0.95rem;
   transition: all 0.3s;
+  pointer-events: auto; /* Ensure buttons are clickable */
+  position: relative; /* Ensure proper stacking */
+  z-index: 1; /* Above any background elements */
 }
 
 .btn-primary {
