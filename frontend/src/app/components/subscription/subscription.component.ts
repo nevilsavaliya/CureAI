@@ -48,14 +48,17 @@ export class SubscriptionComponent implements OnInit, OnDestroy {
     this.subscriptionService.getTestPaymentStatus().subscribe({
       next: (response) => {
         if (response.subscriptionStatus === 'active') {
-          // Doctor already has active subscription, redirect to dashboard
-          this.success = true;
-          this.startSuccessCountdown();
+          // Doctor already has active subscription, redirect to dashboard immediately
+          console.log('Doctor already has active subscription, redirecting...');
+          this.router.navigate(['/doctor/dashboard']);
+        } else {
+          // Show payment form for pending/inactive subscriptions
+          console.log('Subscription status:', response.subscriptionStatus, '- showing payment form');
         }
       },
       error: (error) => {
         // If error checking status, continue with normal flow
-        console.log('No existing subscription found, showing payment form');
+        console.log('Error checking subscription, showing payment form');
       }
     });
   }

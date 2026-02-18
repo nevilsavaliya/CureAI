@@ -1,11 +1,11 @@
-// Production environment configuration
+// Development environment configuration (Local)
 
 export const environment = {
-    production: true,
-    apiUrl: 'https://cureai-1.onrender.com/api',
-    socketUrl: 'https://cureai-1.onrender.com',
+    production: false,
+    apiUrl: 'http://localhost:3000/api',
+    socketUrl: 'http://localhost:3000',
     appName: 'Healthcare Platform',
     appVersion: '1.0.0',
-    enableAnalytics: true,
-    enableDebug: false
+    enableAnalytics: false,
+    enableDebug: true
 };

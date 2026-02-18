@@ -26,24 +26,38 @@ export class SubscriptionGuard implements CanActivate {
       return true;
     }
 
-    // Check doctor's subscription status using test payment endpoint
-    return this.subscriptionService.getTestPaymentStatus().pipe(
-      map(response => {
-        if (response.subscriptionStatus === 'active') {
-          // Subscription is active, allow access
-          return true;
-        } else {
-          // Subscription is pending or expired, redirect to subscription page
+    // Check if this is a new signup (coming from signup flow)
+    const isNewSignup = sessionStorage.getItem('newDoctorSignup') === 'true';
+    
+    if (isNewSignup) {
+      // New doctor signup - check subscription status
+      console.log('🔍 New doctor signup detected, checking subscription...');
+      
+      return this.subscriptionService.getTestPaymentStatus().pipe(
+        map(response => {
+          if (response.subscriptionStatus === 'active') {
+            // Subscription is active, clear flag and allow access
+            sessionStorage.removeItem('newDoctorSignup');
+            return true;
+          } else {
+            // Subscription is pending, redirect to subscription page
+            console.log('⚠️ Subscription pending, redirecting to payment...');
+            this.router.navigate(['/subscription']);
+            return false;
+          }
+        }),
+        catchError(error => {
+          console.error('Error checking subscription status:', error);
+          // On error for new signup, redirect to subscription page
           this.router.navigate(['/subscription']);
-          return false;
-        }
-      }),
-      catchError(error => {
-        console.error('Error checking subscription status:', error);
-        // On error, redirect to subscription page to be safe
-        this.router.navigate(['/subscription']);
-        return of(false);
-      })
-    );
+          return of(false);
+        })
+      );
+    } else {
+      // Existing doctor login - allow access without subscription check
+      console.log('✅ Existing doctor login, allowing access to dashboard');
+      return true;
+    }
   }
 }
+
