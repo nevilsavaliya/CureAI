@@ -85,10 +85,18 @@ async function generateEnvForRender() {
     }
   } while (!frontendUrl.trim());
 
-  // Optional: Email configuration
-  const emailUser = await question('\nEnter email for notifications (optional, press Enter to skip): ');
-  const emailPassword = emailUser.trim() ? 
-    await question('Enter email app password (for Gmail use App Password): ') : '';
+  // Optional: MailerSend Email configuration
+  console.log('\n📧 Email Configuration (MailerSend)');
+  console.log('For email notifications, you need a MailerSend account.');
+  console.log('Visit: https://www.mailersend.com/');
+  const useMailerSend = await question('\nDo you want to configure MailerSend? (y/N): ');
+  let mailersendApiKey = '', mailersendFromEmail = '', mailersendFromName = '';
+  
+  if (useMailerSend.toLowerCase() === 'y' || useMailerSend.toLowerCase() === 'yes') {
+    mailersendApiKey = await question('Enter MailerSend API Key: ');
+    mailersendFromEmail = await question('Enter sender email (must be verified in MailerSend): ');
+    mailersendFromName = await question('Enter sender name (default: Healthcare Platform): ') || 'Healthcare Platform';
+  }
 
   // Optional: Payment configuration
   const useRazorpay = await question('\nDo you want to configure Razorpay payments? (y/N): ');
@@ -121,11 +129,12 @@ async function generateEnvForRender() {
   console.log(`FRONTEND_URL=${frontendUrl.trim()}`);
   console.log(`CORS_ORIGINS=${frontendUrl.trim()}`);
 
-  if (emailUser.trim()) {
-    console.log('\n📧 EMAIL CONFIGURATION:');
+  if (mailersendApiKey.trim()) {
+    console.log('\n📧 EMAIL CONFIGURATION (MailerSend):');
     console.log('');
-    console.log(`EMAIL_USER=${emailUser.trim()}`);
-    console.log(`EMAIL_PASSWORD=${emailPassword.trim()}`);
+    console.log(`MAILERSEND_API_KEY=${mailersendApiKey.trim()}`);
+    console.log(`MAILERSEND_FROM_EMAIL=${mailersendFromEmail.trim()}`);
+    console.log(`MAILERSEND_FROM_NAME=${mailersendFromName.trim()}`);
   }
 
   if (razorpayKeyId.trim()) {
