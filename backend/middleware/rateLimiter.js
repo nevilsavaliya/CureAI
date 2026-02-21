@@ -1,4 +1,8 @@
 /**
+ * @deprecated This middleware has been consolidated into consolidatedRateLimiter.js
+ * Please use the new consolidated rate limiter for better configuration and performance.
+ * See backend/middleware/MIGRATION_GUIDE.md for migration instructions.
+ * 
  * Rate Limiting Middleware for Hospital API
  * Limits API calls to 100 requests per hour per hospital
  */

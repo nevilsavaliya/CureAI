@@ -13,15 +13,15 @@ const trackCriticalErrors = (req, res, next) => {
   // Store original res.status and res.json methods
   const originalStatus = res.status;
   const originalJson = res.json;
-  
+
   // Override res.status to capture status codes
-  res.status = function(statusCode) {
+  res.status = function (statusCode) {
     res.statusCode = statusCode;
     return originalStatus.call(this, statusCode);
   };
-  
+
   // Override res.json to check for errors
-  res.json = function(data) {
+  res.json = function (data) {
     // Check for critical errors (5xx status codes)
     if (res.statusCode >= 500) {
       // Send critical error alert
@@ -48,10 +48,10 @@ const trackCriticalErrors = (req, res, next) => {
         });
       });
     }
-    
+
     return originalJson.call(this, data);
   };
-  
+
   next();
 };
 
@@ -60,12 +60,12 @@ const trackCriticalErrors = (req, res, next) => {
  */
 const trackDatabaseErrors = (error, req, res, next) => {
   // Check if it's a database-related error
-  if (error.name === 'MongoError' || 
-      error.name === 'MongooseError' || 
-      error.name === 'ValidationError' ||
-      error.message.includes('database') ||
-      error.message.includes('connection')) {
-    
+  if (error.name === 'MongoError' ||
+    error.name === 'MongooseError' ||
+    error.name === 'ValidationError' ||
+    error.message.includes('database') ||
+    error.message.includes('connection')) {
+
     alertService.sendAlert('DATABASE_ISSUES', {
       message: `Database error detected: ${error.message}`,
       details: {
@@ -89,7 +89,7 @@ const trackDatabaseErrors = (error, req, res, next) => {
       });
     });
   }
-  
+
   next(error);
 };
 
@@ -100,15 +100,15 @@ const trackAuthFailures = (req, res, next) => {
   // Store original res.status and res.json methods
   const originalStatus = res.status;
   const originalJson = res.json;
-  
+
   // Override res.status to capture status codes
-  res.status = function(statusCode) {
+  res.status = function (statusCode) {
     res.statusCode = statusCode;
     return originalStatus.call(this, statusCode);
   };
-  
+
   // Override res.json to check for auth failures
-  res.json = function(data) {
+  res.json = function (data) {
     // Check for authentication failures (401 status codes)
     if (res.statusCode === 401) {
       // Track authentication failure for potential alert
@@ -120,20 +120,20 @@ const trackAuthFailures = (req, res, next) => {
         userAgent: logger.getUserAgent(req),
         timestamp: new Date().toISOString()
       };
-      
+
       // Store in request for potential aggregation
       if (!req.authFailures) {
         req.authFailures = [];
       }
       req.authFailures.push(authFailureData);
-      
+
       // Note: Actual alert sending is handled by the alert service's monitoring
       // This just tracks individual failures for aggregation
     }
-    
+
     return originalJson.call(this, data);
   };
-  
+
   next();
 };
 
@@ -166,7 +166,7 @@ const trackEmailFailures = (req, res, next) => {
       });
     });
   };
-  
+
   next();
 };
 
@@ -177,15 +177,15 @@ const trackRateLimitViolations = (req, res, next) => {
   // Store original res.status and res.json methods
   const originalStatus = res.status;
   const originalJson = res.json;
-  
+
   // Override res.status to capture status codes
-  res.status = function(statusCode) {
+  res.status = function (statusCode) {
     res.statusCode = statusCode;
     return originalStatus.call(this, statusCode);
   };
-  
+
   // Override res.json to check for rate limit violations
-  res.json = function(data) {
+  res.json = function (data) {
     // Check for rate limit violations (429 status codes)
     if (res.statusCode === 429) {
       // Track rate limit violation for potential alert
@@ -198,20 +198,20 @@ const trackRateLimitViolations = (req, res, next) => {
         userAgent: logger.getUserAgent(req),
         timestamp: new Date().toISOString()
       };
-      
+
       // Store in request for potential aggregation
       if (!req.rateLimitViolations) {
         req.rateLimitViolations = [];
       }
       req.rateLimitViolations.push(rateLimitData);
-      
+
       // Note: Actual alert sending is handled by the alert service's monitoring
       // This just tracks individual violations for aggregation
     }
-    
+
     return originalJson.call(this, data);
   };
-  
+
   next();
 };
 
@@ -220,14 +220,14 @@ const trackRateLimitViolations = (req, res, next) => {
  */
 const trackSlowResponses = (req, res, next) => {
   const startTime = Date.now();
-  
+
   // Store original res.end method
   const originalEnd = res.end;
-  
+
   // Override res.end to capture response time
-  res.end = function(...args) {
+  res.end = function (...args) {
     const responseTime = Date.now() - startTime;
-    
+
     // Check for slow responses (over 5 seconds)
     if (responseTime > 5000) {
       alertService.sendAlert('SLOW_PERFORMANCE', {
@@ -252,10 +252,10 @@ const trackSlowResponses = (req, res, next) => {
         });
       });
     }
-    
+
     return originalEnd.apply(this, args);
   };
-  
+
   next();
 };
 
@@ -263,25 +263,15 @@ const trackSlowResponses = (req, res, next) => {
  * Global error handler with alert integration
  */
 const globalErrorHandler = (error, req, res, next) => {
-  // Log the error
-  logger.error('Unhandled error', {
-    type: 'UNHANDLED_ERROR',
-    error: error.message,
-    stack: error.stack,
-    endpoint: req.originalUrl,
-    method: req.method,
-    hospitalId: req.hospitalId || req.user?.hospitalId,
-    userId: req.user?.id,
-    ip: logger.getClientIP(req),
-    timestamp: new Date().toISOString()
-  });
-  
-  // Send critical error alert
-  alertService.sendAlert('CRITICAL_ERROR', {
-    message: `Unhandled error: ${error.message}`,
-    details: {
-      errorName: error.name,
-      errorMessage: error.message,
+  // Determine status code and error details
+  const statusCode = error.statusCode || error.status || 500;
+  const isOperational = error.isOperational || false;
+
+  // Log the error (only log as error for 5xx, warn for 4xx)
+  if (statusCode >= 500) {
+    logger.error('Unhandled error', {
+      type: 'UNHANDLED_ERROR',
+      error: error.message,
       stack: error.stack,
       endpoint: req.originalUrl,
       method: req.method,
@@ -289,22 +279,42 @@ const globalErrorHandler = (error, req, res, next) => {
       userId: req.user?.id,
       ip: logger.getClientIP(req),
       timestamp: new Date().toISOString()
-    },
-    severity: 'critical'
-  }).catch(alertError => {
-    logger.error('Failed to send unhandled error alert', {
-      type: 'ALERT_SEND_ERROR',
-      error: alertError.message,
-      originalError: error.message,
-      timestamp: new Date().toISOString()
     });
-  });
-  
-  // Send error response
-  res.status(500).json({
+
+    // Send critical error alert only for 5xx errors
+    alertService.sendAlert('CRITICAL_ERROR', {
+      message: `Unhandled error: ${error.message}`,
+      details: {
+        errorName: error.name,
+        errorMessage: error.message,
+        stack: error.stack,
+        endpoint: req.originalUrl,
+        method: req.method,
+        hospitalId: req.hospitalId || req.user?.hospitalId,
+        userId: req.user?.id,
+        ip: logger.getClientIP(req),
+        timestamp: new Date().toISOString()
+      },
+      severity: 'critical'
+    }).catch(alertError => {
+      logger.error('Failed to send unhandled error alert', {
+        type: 'ALERT_SEND_ERROR',
+        error: alertError.message,
+        originalError: error.message,
+        timestamp: new Date().toISOString()
+      });
+    });
+  }
+
+  // Send error response with appropriate status code
+  res.status(statusCode).json({
     success: false,
-    message: 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? error.message : 'An unexpected error occurred'
+    message: error.message || (statusCode >= 500 ? 'Internal server error' : 'Request failed'),
+    error: process.env.NODE_ENV === 'development' ? {
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    } : error.message
   });
 };
 
@@ -328,7 +338,7 @@ const addAlertTracking = (req, res, next) => {
       }
     });
   };
-  
+
   // Add method to track hospital-specific alerts
   req.sendHospitalAlert = (alertType, alertData) => {
     return alertService.sendAlert(alertType, {
@@ -345,7 +355,7 @@ const addAlertTracking = (req, res, next) => {
       }
     });
   };
-  
+
   next();
 };
 

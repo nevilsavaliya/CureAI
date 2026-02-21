@@ -1,0 +1,146 @@
+<div class="summary-chart-container" [class.loading]="loading" role="region" [attr.aria-label]="config.title || 'Summary chart'">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="chart-skeleton" aria-live="polite" aria-busy="true" aria-label="Loading chart data">
+    <div class="skeleton-circle" aria-hidden="true"></div>
+    <div class="skeleton-legend">
+      <div class="skeleton-legend-item" *ngFor="let i of [1,2,3]" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!loading && error" class="error-state" role="alert" aria-live="assertive">
+    <div class="error-icon">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+    </div>
+    <p class="error-message-title">Failed to load chart</p>
+    <p class="error-message-subtitle">{{ error }}</p>
+    <div class="error-actions">
+      <button class="error-action-button" (click)="onRetry()" aria-label="Retry loading chart">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="retry-icon" aria-hidden="true">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+        Retry
+      </button>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !error && !hasData()" class="empty-state" role="status" aria-live="polite">
+    <div class="empty-icon">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M12 6v6l4 2" stroke-linecap="round"></path>
+      </svg>
+    </div>
+    <p class="empty-message">{{ emptyMessage }}</p>
+  </div>
+
+  <!-- Chart Content -->
+  <div *ngIf="!loading && !error && hasData()" class="chart-content" @chartAnimation>
+    <!-- Chart Title -->
+    <h3 class="chart-title">{{ config.title }}</h3>
+
+    <div class="chart-wrapper">
+      <!-- SVG Donut Chart -->
+      <div class="chart-svg-container">
+        <svg 
+          [attr.viewBox]="'0 0 ' + size + ' ' + size"
+          class="chart-svg"
+          role="img"
+          [attr.aria-label]="config.title + ' chart showing ' + segments.length + ' categories'">
+          
+          <!-- Chart segments -->
+          <g *ngFor="let segment of segments" @segmentAnimation>
+            <path
+              [attr.d]="segment.path"
+              [attr.fill]="segment.data.color"
+              [class.segment-highlighted]="isSegmentHighlighted(segment)"
+              [class.segment-dimmed]="isSegmentDimmed(segment)"
+              class="chart-segment"
+              (mouseenter)="onSegmentHover(segment)"
+              (mouseleave)="onSegmentHover(null)"
+              (click)="onSegmentClick(segment)"
+              [attr.aria-label]="segment.data.label + ': ' + formatValue(segment.data.value) + ' (' + formatPercentage(segment.percentage) + ')'"
+              role="button"
+              tabindex="0"
+              (keydown.enter)="onSegmentClick(segment)"
+              (keydown.space)="onSegmentClick(segment)">
+            </path>
+          </g>
+
+          <!-- Center text showing total -->
+          <text
+            [attr.x]="centerX"
+            [attr.y]="centerY - 10"
+            class="chart-center-label"
+            text-anchor="middle"
+            dominant-baseline="middle">
+            Total
+          </text>
+          <text
+            [attr.x]="centerX"
+            [attr.y]="centerY + 15"
+            class="chart-center-value"
+            text-anchor="middle"
+            dominant-baseline="middle">
+            {{ formatValue(total) }}
+          </text>
+        </svg>
+
+        <!-- Hover Tooltip -->
+        <div 
+          *ngIf="hoveredSegment"
+          class="chart-tooltip"
+          [style.left.px]="getTooltipPosition(hoveredSegment).x"
+          [style.top.px]="getTooltipPosition(hoveredSegment).y">
+          <div class="tooltip-label">{{ hoveredSegment.data.label }}</div>
+          <div class="tooltip-value">{{ formatValue(hoveredSegment.data.value) }}</div>
+          <div class="tooltip-percentage">{{ formatPercentage(hoveredSegment.percentage) }}</div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div 
+        *ngIf="config.legend !== false" 
+        class="chart-legend"
+        role="list"
+        aria-label="Chart legend">
+        <div
+          *ngFor="let segment of segments"
+          class="legend-item"
+          [class.legend-item-selected]="selectedSegment === segment"
+          [class.legend-item-dimmed]="isSegmentDimmed(segment)"
+          (click)="onLegendClick(segment)"
+          (mouseenter)="onSegmentHover(segment)"
+          (mouseleave)="onSegmentHover(null)"
+          role="listitem"
+          tabindex="0"
+          (keydown.enter)="onLegendClick(segment)"
+          (keydown.space)="onLegendClick(segment)"
+          [attr.aria-label]="segment.data.label + ': ' + formatValue(segment.data.value)">
+          
+          <div class="legend-color" [style.background-color]="segment.data.color"></div>
+          <div class="legend-content">
+            <div class="legend-label">{{ segment.data.label }}</div>
+            <div class="legend-stats">
+              <span class="legend-value">{{ formatValue(segment.data.value) }}</span>
+              <span class="legend-percentage">{{ formatPercentage(segment.percentage) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen reader announcement for selected segment -->
+  <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+    <span *ngIf="selectedSegment">
+      Selected: {{ selectedSegment.data.label }}, {{ formatValue(selectedSegment.data.value) }}, {{ formatPercentage(selectedSegment.percentage) }}
+    </span>
+  </div>
+</div>

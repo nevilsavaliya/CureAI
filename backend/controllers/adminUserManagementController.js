@@ -1,11 +1,7 @@
 const Admin = require('../models/Admin');
-const Patient = require('../models/Patient');
-const Doctor = require('../models/Doctor');
-const Hospital = require('../models/Hospital');
 const userManagementService = require('../services/userManagementService');
 const auditLoggerService = require('../services/auditLoggerService');
 const emailNotificationService = require('../services/emailNotificationService');
-const bcrypt = require('bcrypt');
 
 /**
  * Admin User Management Controller

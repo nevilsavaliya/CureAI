@@ -4,7 +4,7 @@ const { body } = require('express-validator');
 const authController = require('../controllers/authController');
 const emailVerificationController = require('../controllers/emailVerificationController');
 const { authenticate } = require('../middleware/auth');
-const { validateDateOfBirth } = require('../middleware/validation');
+const { validateDateOfBirth } = require('../core/middleware');
 
 // Validation middleware for patient signup
 const validatePatientSignup = [

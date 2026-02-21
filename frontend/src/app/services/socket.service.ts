@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { BehaviorSubject, Observable, interval, Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { CaseService } from './case.service';
 import { environment } from '../../config/environment';
@@ -88,41 +89,68 @@ export class SocketService {
   constructor(
     private authService: AuthService,
     private caseService: CaseService
-  ) {}
+  ) {
+    // Auto-connect when user is authenticated
+    this.authService.currentUser.subscribe(user => {
+      if (user) {
+        // User is logged in, connect socket
+        const token = this.authService.getToken();
+        if (token) {
+          this.connect();
+        }
+      } else {
+        // User logged out, disconnect socket
+        this.disconnect();
+      }
+    });
+  }
 
   /**
    * Connect to Socket.IO server with JWT authentication
    */
   connect(): void {
+    // If already connected, just return
     if (this.socket?.connected) {
       console.log('Socket already connected');
+      return;
+    }
+
+    // If socket exists but disconnected, try to reconnect
+    if (this.socket && !this.socket.connected) {
+      console.log('Reconnecting existing socket...');
+      this.socket.connect();
       return;
     }
 
     const token = this.authService.getToken();
     
     if (!token) {
-      console.error('No authentication token available');
+      console.error('No authentication token available for socket connection');
       return;
     }
 
-    console.log('Connecting to Socket.IO server...');
+    console.log('Connecting to Socket.IO server at:', this.socketUrl);
 
-    this.socket = io(this.socketUrl, {
-      auth: {
-        token: token
-      },
-      reconnection: true,
-      reconnectionDelay: 2000,
-      reconnectionDelayMax: 10000,
-      reconnectionAttempts: 3,
-      timeout: 10000,
-      transports: ['websocket', 'polling'],
-      autoConnect: true,
-      forceNew: false
-    });
+    try {
+      this.socket = io(this.socketUrl, {
+        auth: {
+          token: token
+        },
+        reconnection: true,
+        reconnectionDelay: 2000,
+        reconnectionDelayMax: 10000,
+        reconnectionAttempts: 5,
+        timeout: 10000,
+        transports: ['websocket', 'polling'],
+        autoConnect: true,
+        forceNew: false
+      });
 
-    this.setupEventListeners();
+      this.setupEventListeners();
+    } catch (error) {
+      console.error('Error creating socket connection:', error);
+      this.connectionStatusSubject.next('disconnected');
+    }
   }
 
   /**
@@ -169,6 +197,16 @@ export class SocketService {
     this.socket.on('connect_error', (error) => {
       console.error('Socket connection error:', error.message);
       this.connectedSubject.next(false);
+      
+      // Check if error is due to authentication
+      if (error.message.includes('authentication') || error.message.includes('token')) {
+        console.error('Socket authentication failed - token may be invalid');
+        // Try to refresh token from localStorage
+        const token = this.authService.getToken();
+        if (token && this.socket) {
+          this.socket.auth = { token };
+        }
+      }
       
       // Only switch to polling after multiple failed attempts
       // Socket.IO will handle reconnection automatically
@@ -230,12 +268,20 @@ export class SocketService {
 
     // Message events
     this.socket.on('new_message', (data: SocketMessage) => {
-      console.log('New message received:', data);
+      console.log('New message received via socket:', data);
+      // Ensure we emit the message even if it's for the current case
       this.newMessageSubject.next(data);
     });
 
     this.socket.on('message_sent', (data) => {
       console.log('Message sent confirmation:', data);
+      // Also emit as new message for immediate display
+      if (data.message) {
+        this.newMessageSubject.next({
+          caseId: data.caseId || data.message.caseId,
+          message: data.message
+        });
+      }
     });
 
     this.socket.on('message_read', (data: MessageReadEvent) => {
@@ -262,7 +308,12 @@ export class SocketService {
 
     // Notifications
     this.socket.on('new_notification', (data) => {
-      console.log('New notification:', data);
+      console.log('New notification received via socket:', data);
+      this.notificationSubject.next(data);
+    });
+
+    this.socket.on('notification', (data) => {
+      console.log('Notification event received via socket:', data);
       this.notificationSubject.next(data);
     });
   }
@@ -309,13 +360,24 @@ export class SocketService {
   sendMessage(caseId: string, message: any): void {
     if (this.socket?.connected) {
       console.log('Sending message via socket:', { caseId, message });
-      this.socket.emit('send_message', { caseId, message });
+      this.socket.emit('send_message', { caseId, message }, (acknowledgment: any) => {
+        if (acknowledgment) {
+          console.log('Message send acknowledged:', acknowledgment);
+        }
+      });
     } else {
       // Fallback to REST API when socket not connected
       console.log('Socket not connected, sending via REST API');
       this.caseService.sendMessage(caseId, message.content || message).subscribe({
         next: (response) => {
           console.log('Message sent via REST API:', response);
+          // Emit the message locally for immediate display
+          if (response.success && response.message) {
+            this.newMessageSubject.next({
+              caseId: caseId,
+              message: response.message
+            });
+          }
           // Trigger immediate poll to get the sent message
           if (this.isPollingActive) {
             this.pollForMessages();
@@ -555,11 +617,26 @@ export class SocketService {
     if (this.socket) {
       console.log('Disconnecting socket...');
       this.socket.disconnect();
+      this.socket.removeAllListeners();
       this.socket = null;
       this.connectedSubject.next(false);
       this.connectionStatusSubject.next('disconnected');
       this.currentCaseId = null;
+      this.connectionAttempts = 0;
     }
+  }
+
+  /**
+   * Force reconnection (useful after token refresh or network recovery)
+   */
+  forceReconnect(): void {
+    console.log('Forcing socket reconnection...');
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+    }
+    this.connectionAttempts = 0;
+    this.connect();
   }
 
   /**
@@ -584,6 +661,42 @@ export class SocketService {
   }
 
   /**
+   * Get new message events as observable (filtered by case ID if provided)
+   */
+  onNewMessage(caseId?: string): Observable<SocketMessage | null> {
+    if (caseId) {
+      return this.newMessage$.pipe(
+        filter(data => data !== null && data.caseId === caseId)
+      );
+    }
+    return this.newMessage$;
+  }
+
+  /**
+   * Get typing indicator events as observable (filtered by case ID if provided)
+   */
+  onTyping(caseId?: string): Observable<TypingIndicator | null> {
+    if (caseId) {
+      return this.typing$.pipe(
+        filter(data => data !== null && data.caseId === caseId)
+      );
+    }
+    return this.typing$;
+  }
+
+  /**
+   * Get stop typing events as observable (filtered by case ID if provided)
+   */
+  onStopTyping(caseId?: string): Observable<TypingIndicator | null> {
+    if (caseId) {
+      return this.stopTyping$.pipe(
+        filter(data => data !== null && data.caseId === caseId)
+      );
+    }
+    return this.stopTyping$;
+  }
+
+  /**
    * Get current connection status
    */
   getConnectionStatusObservable(): Observable<'connected' | 'polling' | 'disconnected'> {
@@ -595,5 +708,19 @@ export class SocketService {
    */
   getCurrentConnectionStatus(): 'connected' | 'polling' | 'disconnected' {
     return this.connectionStatusSubject.value;
+  }
+
+  /**
+   * Check if socket is ready to receive real-time updates
+   */
+  isReady(): boolean {
+    return this.socket?.connected || false;
+  }
+
+  /**
+   * Get socket ID (useful for debugging)
+   */
+  getSocketId(): string | undefined {
+    return this.socket?.id;
   }
 }

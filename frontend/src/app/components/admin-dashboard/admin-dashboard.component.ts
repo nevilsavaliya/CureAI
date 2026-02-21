@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { AdminService } from '../../services/admin.service';
 import { HospitalService, Hospital as BaseHospital } from '../../services/hospital.service';
+import { ToastService } from '../../services/toast.service';
 
 interface Hospital extends Omit<BaseHospital, 'address'> {
   address?: {
@@ -20,7 +21,13 @@ interface Hospital extends Omit<BaseHospital, 'address'> {
   styleUrls: ['./admin-dashboard.component.css']
 })
 export class AdminDashboardComponent implements OnInit {
+  // Mobile navigation
+  mobileSidebarOpen: boolean = false;
+
   userName: string = '';
+  
+  // Expose Math for template
+  Math = Math;
 
   // Metrics
   metrics: any = {
@@ -54,6 +61,12 @@ export class AdminDashboardComponent implements OnInit {
   usersError: string = '';
   selectedRole: string = '';
   searchTerm: string = '';
+  
+  // User pagination
+  userCurrentPage: number = 1;
+  userItemsPerPage: number = 10;
+  userTotalPages: number = 1;
+  userTotalItems: number = 0;
 
   // Hospital management
   pendingHospitalsCount: number = 0;
@@ -158,6 +171,7 @@ export class AdminDashboardComponent implements OnInit {
     private authService: AuthService,
     private adminService: AdminService,
     private hospitalService: HospitalService,
+    private toastService: ToastService,
     private router: Router
   ) { }
 
@@ -173,10 +187,55 @@ export class AdminDashboardComponent implements OnInit {
     // Refresh admin data in AdminService
     this.adminService.refreshCurrentAdmin();
 
+    // Set default view to overview
+    this.activeView = 'overview';
+
     this.loadMetrics();
     this.loadPendingHospitalsCount();
     this.loadHospitalStatistics();
     this.loadUserManagementStatistics();
+  }
+
+  getViewTitle(): string {
+    switch (this.activeView) {
+      case 'overview':
+        return 'Dashboard Overview';
+      case 'metrics':
+        return 'Platform Metrics';
+      case 'users':
+        return 'User Management';
+      case 'hospitals':
+        return 'Hospital Management';
+      case 'audit-logs':
+        return 'Audit Logs';
+      case 'add-admin':
+        return 'Add Administrator';
+      case 'performance':
+        return 'Performance Monitor';
+      default:
+        return 'Admin Dashboard';
+    }
+  }
+
+  getViewSubtitle(): string {
+    switch (this.activeView) {
+      case 'overview':
+        return 'Monitor key metrics and system health';
+      case 'metrics':
+        return 'View detailed platform statistics';
+      case 'users':
+        return 'Manage patients, doctors, and administrators';
+      case 'hospitals':
+        return 'Review and verify hospital registrations';
+      case 'audit-logs':
+        return 'Track administrative actions and system events';
+      case 'add-admin':
+        return 'Create new administrator accounts';
+      case 'performance':
+        return 'Monitor system performance and health';
+      default:
+        return '';
+    }
   }
 
   loadMetrics(): void {
@@ -289,6 +348,8 @@ export class AdminDashboardComponent implements OnInit {
 
   switchView(view: string): void {
     this.activeView = view;
+    
+    // Load data based on view
     if (view === 'users' && this.users.length === 0) {
       this.loadUsers();
     } else if (view === 'hospitals' && this.hospitals.length === 0) {
@@ -299,6 +360,10 @@ export class AdminDashboardComponent implements OnInit {
       this.startPerformanceMonitoring();
     } else if (view === 'add-admin' && this.admins.length === 0) {
       this.loadAdmins();
+    } else if (view === 'overview') {
+      // Refresh overview data
+      this.loadMetrics();
+      this.loadHospitalStatistics();
     }
   }
 
@@ -308,12 +373,28 @@ export class AdminDashboardComponent implements OnInit {
 
     // Pass the role filter and search term properly
     const roleFilter = this.selectedRole || undefined; // Convert empty string to undefined
-    const searchParams = this.searchTerm ? { search: this.searchTerm } : undefined;
+    const searchParams: any = {};
+    
+    if (this.searchTerm) {
+      searchParams.search = this.searchTerm;
+    }
+    
+    // Add pagination parameters
+    searchParams.page = this.userCurrentPage;
+    searchParams.limit = this.userItemsPerPage;
 
     this.adminService.getUsers(roleFilter, searchParams).subscribe({
       next: (response) => {
         if (response.success) {
           this.users = response.users;
+          
+          // Extract pagination if present
+          if (response.pagination) {
+            this.userCurrentPage = response.pagination.page;
+            this.userTotalPages = response.pagination.pages;
+            this.userTotalItems = response.pagination.total;
+            this.userItemsPerPage = response.pagination.limit;
+          }
         }
         this.loadingUsers = false;
       },
@@ -325,12 +406,14 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   filterUsers(): void {
+    this.userCurrentPage = 1; // Reset to first page when filtering
     this.loadUsers();
   }
 
   clearFilters(): void {
     this.selectedRole = '';
     this.searchTerm = '';
+    this.userCurrentPage = 1; // Reset to first page
     this.loadUsers();
   }
 
@@ -808,14 +891,14 @@ export class AdminDashboardComponent implements OnInit {
     this.adminService.addAdmin(adminData).subscribe({
       next: (response) => {
         if (response.success) {
-          alert('Administrator created successfully!');
+          this.toastService.success('Administrator created successfully!');
           this.resetAdminForm();
           this.loadAdmins(); // Refresh the list
         }
         this.creatingAdmin = false;
       },
       error: (error) => {
-        alert(error.error?.message || 'Failed to create administrator');
+        this.toastService.error(error.error?.message || 'Failed to create administrator');
         this.creatingAdmin = false;
       }
     });
@@ -842,13 +925,13 @@ export class AdminDashboardComponent implements OnInit {
     this.adminService.removeUser(adminId, 'admin').subscribe({
       next: (response) => {
         if (response.success) {
-          alert('Administrator removed successfully!');
+          this.toastService.success('Administrator removed successfully!');
           this.loadAdmins(); // Refresh the list
         }
         this.removingAdminId = '';
       },
       error: (error) => {
-        alert(error.error?.message || 'Failed to remove administrator');
+        this.toastService.error(error.error?.message || 'Failed to remove administrator');
         this.removingAdminId = '';
       }
     });
@@ -877,16 +960,16 @@ export class AdminDashboardComponent implements OnInit {
     this.adminService.removeUser(userId, userType).subscribe({
       next: (response) => {
         if (response.success) {
-          alert(`${userType} removed successfully!`);
+          this.toastService.success(`${userType} removed successfully!`);
           this.loadUsers(); // Refresh the list
         } else {
-          alert(response.message || `Failed to remove ${userType}`);
+          this.toastService.error(response.message || `Failed to remove ${userType}`);
         }
         this.removingUserId = '';
       },
       error: (error) => {
         console.error('Remove user error:', error);
-        alert(error.error?.message || `Failed to remove ${userType}`);
+        this.toastService.error(error.error?.message || `Failed to remove ${userType}`);
         this.removingUserId = '';
       }
     });
@@ -908,13 +991,13 @@ export class AdminDashboardComponent implements OnInit {
     this.adminService.restoreUser(userId, userType).subscribe({
       next: (response) => {
         if (response.success) {
-          alert('User restored successfully!');
+          this.toastService.success('User restored successfully!');
           this.loadUsers(); // Refresh the list
         }
         this.restoringUserId = '';
       },
       error: (error) => {
-        alert(error.error?.message || 'Failed to restore user');
+        this.toastService.error(error.error?.message || 'Failed to restore user');
         this.restoringUserId = '';
       }
     });
@@ -930,8 +1013,81 @@ export class AdminDashboardComponent implements OnInit {
     this.selectedUser = null;
   }
 
+  /**
+   * Toggle mobile sidebar
+   */
+  toggleMobileSidebar(): void {
+    this.mobileSidebarOpen = !this.mobileSidebarOpen;
+  }
+
+  /**
+   * Close mobile sidebar
+   */
+  closeMobileSidebar(): void {
+    this.mobileSidebarOpen = false;
+  }
+
+  /**
+   * Switch view and close mobile sidebar
+   */
+  switchViewMobile(view: string): void {
+    this.switchView(view);
+    this.closeMobileSidebar();
+  }
+
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  // User pagination methods
+  nextUserPage(): void {
+    if (this.userCurrentPage < this.userTotalPages) {
+      this.userCurrentPage++;
+      this.loadUsers();
+    }
+  }
+
+  previousUserPage(): void {
+    if (this.userCurrentPage > 1) {
+      this.userCurrentPage--;
+      this.loadUsers();
+    }
+  }
+
+  goToUserPage(page: number): void {
+    if (page >= 1 && page <= this.userTotalPages) {
+      this.userCurrentPage = page;
+      this.loadUsers();
+    }
+  }
+
+  getUserPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    
+    if (this.userTotalPages <= maxPagesToShow) {
+      // Show all pages if total is less than max
+      for (let i = 1; i <= this.userTotalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Show current page with 2 pages on each side
+      let startPage = Math.max(1, this.userCurrentPage - 2);
+      let endPage = Math.min(this.userTotalPages, this.userCurrentPage + 2);
+      
+      // Adjust if we're near the start or end
+      if (this.userCurrentPage <= 3) {
+        endPage = maxPagesToShow;
+      } else if (this.userCurrentPage >= this.userTotalPages - 2) {
+        startPage = this.userTotalPages - maxPagesToShow + 1;
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
   }
 }

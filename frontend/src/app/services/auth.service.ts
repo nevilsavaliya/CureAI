@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, tap, map, catchError } from 'rxjs';
+import { Observable, BehaviorSubject, tap, map, catchError, throwError } from 'rxjs';
 import { environment } from '../../config/environment';
 
 export interface User {
@@ -45,24 +45,80 @@ export class AuthService {
 
   signupPatient(userData: any): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/auth/signup/patient`, userData).pipe(
-      tap(response => {
-        if (response.success && response.token && response.user) {
-          localStorage.setItem('token', response.token);
-          localStorage.setItem('currentUser', JSON.stringify(response.user));
-          this.currentUserSubject.next(response.user);
+      map(response => {
+        // Handle both nested and spread response formats
+        const success = response.success;
+        const token = response.token;
+        const user = response.user;
+        const requiresOTP = response.requiresOTP;
+        const email = response.email;
+        const message = response.message;
+
+        // Store token and user if signup is complete
+        if (success && token && user) {
+          localStorage.setItem('token', token);
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          this.currentUserSubject.next(user);
         }
+
+        return {
+          success,
+          token,
+          user,
+          requiresOTP,
+          email,
+          message
+        };
+      }),
+      catchError((error: any) => {
+        console.error('Signup error:', error);
+        // Extract error message from response
+        const errorMessage = error.error?.message || error.message || 'Signup failed';
+        return throwError(() => ({
+          success: false,
+          message: errorMessage,
+          status: error.status
+        }));
       })
     );
   }
 
   signupDoctor(userData: any): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/auth/signup/doctor`, userData).pipe(
-      tap(response => {
-        if (response.success && response.token && response.user) {
-          localStorage.setItem('token', response.token);
-          localStorage.setItem('currentUser', JSON.stringify(response.user));
-          this.currentUserSubject.next(response.user);
+      map(response => {
+        // Handle both nested and spread response formats
+        const success = response.success;
+        const token = response.token;
+        const user = response.user;
+        const requiresOTP = response.requiresOTP;
+        const email = response.email;
+        const message = response.message;
+
+        // Store token and user if signup is complete
+        if (success && token && user) {
+          localStorage.setItem('token', token);
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          this.currentUserSubject.next(user);
         }
+
+        return {
+          success,
+          token,
+          user,
+          requiresOTP,
+          email,
+          message
+        };
+      }),
+      catchError((error: any) => {
+        console.error('Doctor signup error:', error);
+        // Extract error message from response
+        const errorMessage = error.error?.message || error.message || 'Doctor signup failed';
+        return throwError(() => ({
+          success: false,
+          message: errorMessage,
+          status: error.status
+        }));
       })
     );
   }
@@ -72,13 +128,34 @@ export class AuthService {
       email,
       password
     }).pipe(
-      tap(response => {
-        if (response.success && response.token && response.user) {
-          // Store token and user in localStorage
-          localStorage.setItem('token', response.token);
-          localStorage.setItem('currentUser', JSON.stringify(response.user));
-          this.currentUserSubject.next(response.user);
+      map(response => {
+        // Handle both nested and spread response formats
+        const success = response.success;
+        const token = response.token;
+        const user = response.user;
+        const message = response.message;
+
+        // Store token and user if login is successful
+        if (success && token && user) {
+          localStorage.setItem('token', token);
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          this.currentUserSubject.next(user);
+          
+          // Set up token expiration monitoring
+          this.checkTokenExpiration();
         }
+
+        return {
+          success,
+          token,
+          user,
+          message
+        };
+      }),
+      catchError((error: any) => {
+        console.error('Login error:', error);
+        // Pass through the HttpErrorResponse so error handler can extract the message
+        return throwError(() => error);
       })
     );
   }

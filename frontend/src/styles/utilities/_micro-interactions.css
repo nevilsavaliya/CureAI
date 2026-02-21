@@ -1,0 +1,647 @@
+/* Micro-interactions and Polish */
+
+/* ============================================
+   Button Micro-interactions
+   ============================================ */
+
+/* Enhanced Ripple Effect */
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn-ripple:active::after {
+  width: 300px;
+  height: 300px;
+  transition: width 0s, height 0s;
+}
+
+/* Button Pulse on Hover */
+.btn-pulse:hover:not(:disabled) {
+  animation: pulse-subtle 1.5s infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(102, 126, 234, 0);
+  }
+}
+
+/* Button Glow Effect */
+.btn-glow:hover:not(:disabled) {
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.5),
+              0 0 40px rgba(102, 126, 234, 0.3);
+}
+
+/* Button Shine Effect */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shine::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.btn-shine:hover::before {
+  left: 100%;
+}
+
+/* ============================================
+   Card Micro-interactions
+   ============================================ */
+
+/* Card Lift on Hover */
+.card-lift {
+  transition: transform var(--transition-base),
+              box-shadow var(--transition-base);
+}
+
+.card-lift:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-xl);
+}
+
+/* Card Tilt Effect */
+.card-tilt {
+  transition: transform var(--transition-base);
+}
+
+.card-tilt:hover {
+  transform: perspective(1000px) rotateX(2deg) rotateY(-2deg);
+}
+
+/* Card Border Glow */
+.card-glow {
+  position: relative;
+  transition: all var(--transition-base);
+}
+
+.card-glow::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: var(--gradient-primary);
+  border-radius: var(--radius-xl);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  z-index: -1;
+  filter: blur(10px);
+}
+
+.card-glow:hover::before {
+  opacity: 0.5;
+}
+
+/* Card Scale on Hover */
+.card-scale:hover {
+  transform: scale(1.02);
+}
+
+/* Card Shimmer Effect */
+.card-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.7s;
+}
+
+.card-shimmer:hover::after {
+  left: 150%;
+}
+
+/* ============================================
+   Input Micro-interactions
+   ============================================ */
+
+/* Input Glow on Focus */
+.input-glow:focus {
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1),
+              0 0 20px rgba(102, 126, 234, 0.2);
+}
+
+/* Input Label Float Animation */
+.input-label-float {
+  transition: all var(--transition-base) cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.input:focus ~ .input-label-float,
+.input:not(:placeholder-shown) ~ .input-label-float {
+  transform: translateY(-150%) scale(0.85);
+  color: var(--color-primary-600);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Input Border Animation */
+.input-border-animate {
+  position: relative;
+  border: 2px solid var(--color-gray-300);
+}
+
+.input-border-animate::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--gradient-primary);
+  transition: width var(--transition-base), left var(--transition-base);
+}
+
+.input-border-animate:focus::after {
+  width: 100%;
+  left: 0;
+}
+
+/* Input Icon Bounce */
+.input-icon-bounce {
+  transition: transform var(--transition-base);
+}
+
+.input:focus ~ .input-icon-bounce {
+  animation: icon-bounce 0.5s ease;
+}
+
+@keyframes icon-bounce {
+  0%, 100% {
+    transform: translateY(-50%) scale(1);
+  }
+  50% {
+    transform: translateY(-50%) scale(1.2);
+  }
+}
+
+/* ============================================
+   Success Animations
+   ============================================ */
+
+/* Success Checkmark */
+.success-checkmark {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto;
+}
+
+.success-checkmark-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  stroke-width: 2;
+  stroke-miterlimit: 10;
+  stroke: var(--color-success-500);
+  fill: none;
+  animation: checkmark-circle 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.success-checkmark-check {
+  transform-origin: 50% 50%;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  stroke: var(--color-success-500);
+  stroke-width: 3;
+  fill: none;
+  animation: checkmark-check 0.3s 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+@keyframes checkmark-circle {
+  0% {
+    stroke-dashoffset: 166;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes checkmark-check {
+  0% {
+    stroke-dashoffset: 48;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Success Badge Bounce */
+.success-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  background: var(--color-success-100);
+  border-radius: var(--radius-full);
+  animation: success-bounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes success-bounce {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Success Confetti Effect */
+.success-confetti {
+  position: relative;
+}
+
+.success-confetti::before,
+.success-confetti::after {
+  content: '✨';
+  position: absolute;
+  font-size: var(--font-size-2xl);
+  animation: confetti-fall 1s ease-out forwards;
+}
+
+.success-confetti::before {
+  left: -20px;
+  animation-delay: 0.1s;
+}
+
+.success-confetti::after {
+  right: -20px;
+  animation-delay: 0.2s;
+}
+
+@keyframes confetti-fall {
+  0% {
+    top: -20px;
+    opacity: 1;
+  }
+  100% {
+    top: 40px;
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   Loading Micro-interactions
+   ============================================ */
+
+/* Skeleton Pulse */
+.skeleton-pulse {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Spinner Smooth */
+.spinner-smooth {
+  animation: spinner-rotate 1s linear infinite;
+}
+
+@keyframes spinner-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Progress Bar Fill */
+.progress-fill {
+  animation: progress-fill 2s ease-in-out;
+}
+
+@keyframes progress-fill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* ============================================
+   Hover Effects
+   ============================================ */
+
+/* Subtle Lift */
+.hover-lift {
+  transition: transform var(--transition-base);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* Subtle Scale */
+.hover-scale {
+  transition: transform var(--transition-base);
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+/* Subtle Brightness */
+.hover-brighten {
+  transition: filter var(--transition-base);
+}
+
+.hover-brighten:hover {
+  filter: brightness(1.1);
+}
+
+/* Subtle Shadow */
+.hover-shadow {
+  transition: box-shadow var(--transition-base);
+}
+
+.hover-shadow:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+/* Underline Expand */
+.hover-underline {
+  position: relative;
+  text-decoration: none;
+}
+
+.hover-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: currentColor;
+  transition: width var(--transition-base), left var(--transition-base);
+}
+
+.hover-underline:hover::after {
+  width: 100%;
+  left: 0;
+}
+
+/* ============================================
+   Interactive States
+   ============================================ */
+
+/* Active Press */
+.active-press:active {
+  transform: scale(0.95);
+  transition: transform 0.1s;
+}
+
+/* Focus Ring */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
+/* Disabled State */
+.disabled-state {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: grayscale(0.5);
+}
+
+/* ============================================
+   Notification Animations
+   ============================================ */
+
+/* Toast Slide In */
+.toast-slide-in {
+  animation: toast-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes toast-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Toast Slide Out */
+.toast-slide-out {
+  animation: toast-slide-out 0.2s ease-in forwards;
+}
+
+@keyframes toast-slide-out {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Alert Shake */
+.alert-shake {
+  animation: alert-shake 0.5s;
+}
+
+@keyframes alert-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-5px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(5px);
+  }
+}
+
+/* ============================================
+   Optimistic UI Updates
+   ============================================ */
+
+/* Optimistic Fade */
+.optimistic-fade {
+  opacity: 0.6;
+  pointer-events: none;
+  transition: opacity var(--transition-base);
+}
+
+.optimistic-fade.success {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Optimistic Pulse */
+.optimistic-pulse {
+  animation: optimistic-pulse 1s infinite;
+}
+
+@keyframes optimistic-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Optimistic Shimmer */
+.optimistic-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.optimistic-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: optimistic-shimmer 1.5s infinite;
+}
+
+@keyframes optimistic-shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+
+/* Smooth Transitions */
+.transition-all {
+  transition: all var(--transition-base);
+}
+
+.transition-colors {
+  transition: background-color var(--transition-base),
+              border-color var(--transition-base),
+              color var(--transition-base);
+}
+
+.transition-transform {
+  transition: transform var(--transition-base);
+}
+
+.transition-opacity {
+  transition: opacity var(--transition-base);
+}
+
+/* Animation Delays */
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+.delay-200 {
+  animation-delay: 200ms;
+}
+
+.delay-300 {
+  animation-delay: 300ms;
+}
+
+.delay-500 {
+  animation-delay: 500ms;
+}
+
+/* ============================================
+   Reduced Motion Support
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-ripple::after,
+  .btn-pulse,
+  .btn-shine::before,
+  .card-shimmer::after,
+  .input-icon-bounce,
+  .success-confetti::before,
+  .success-confetti::after,
+  .skeleton-pulse,
+  .spinner-smooth,
+  .optimistic-pulse,
+  .optimistic-shimmer::after {
+    animation: none !important;
+  }
+
+  .card-lift:hover,
+  .card-tilt:hover,
+  .card-scale:hover,
+  .hover-lift:hover,
+  .hover-scale:hover {
+    transform: none !important;
+  }
+
+  .card-glow::before,
+  .input-glow:focus {
+    opacity: 0 !important;
+  }
+}

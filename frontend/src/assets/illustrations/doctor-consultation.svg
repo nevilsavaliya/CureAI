@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <!-- Doctor with patient consultation illustration -->
+  <rect x="50" y="180" width="300" height="100" rx="8" fill="#f3f4f6"/>
+  <circle cx="120" cy="120" r="40" fill="#667eea"/>
+  <path d="M120 160 L120 200 M100 180 L140 180" stroke="#374151" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="120" cy="110" r="15" fill="#fef3c7"/>
+  <path d="M105 125 Q120 135 135 125" stroke="#374151" stroke-width="2" fill="none"/>
+  <rect x="110" y="95" width="20" height="8" rx="4" fill="#ef4444"/>
+  <circle cx="280" cy="120" r="40" fill="#10b981"/>
+  <path d="M280 160 L280 200 M260 180 L300 180" stroke="#374151" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="280" cy="110" r="15" fill="#fef3c7"/>
+  <path d="M265 125 Q280 135 295 125" stroke="#374151" stroke-width="2" fill="none"/>
+  <rect x="190" y="80" width="60" height="40" rx="4" fill="#fff" stroke="#d1d5db" stroke-width="2"/>
+  <line x1="200" y1="95" x2="240" y2="95" stroke="#667eea" stroke-width="2"/>
+  <line x1="200" y1="105" x2="230" y2="105" stroke="#d1d5db" stroke-width="2"/>
+  <line x1="200" y1="115" x2="235" y2="115" stroke="#d1d5db" stroke-width="2"/>
+  <path d="M150 140 Q200 120 250 140" stroke="#667eea" stroke-width="2" stroke-dasharray="4 4" fill="none"/>
+  <circle cx="200" cy="40" r="25" fill="#fef3c7" opacity="0.3"/>
+  <circle cx="320" cy="60" r="20" fill="#dbeafe" opacity="0.3"/>
+  <circle cx="80" cy="50" r="15" fill="#fce7f3" opacity="0.3"/>
+</svg>

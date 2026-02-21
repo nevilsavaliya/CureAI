@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { CaseService, Message } from '../../services/case.service';
 import { SocketService } from '../../services/socket.service';
+import { ToastService } from '../../services/toast.service';
 import { interval, Subscription, Subject } from 'rxjs';
 import { switchMap, distinctUntilChanged, debounceTime, filter } from 'rxjs/operators';
 
@@ -51,6 +52,9 @@ export class DoctorCasesComponent implements OnInit, OnDestroy {
   selectedCase: DoctorCase | null = null;
   messages: Message[] = [];
   
+  // Expose Math for template
+  Math = Math;
+  
   // Filter and search
   selectedFilter: string = 'all';
   searchQuery: string = '';
@@ -59,13 +63,25 @@ export class DoctorCasesComponent implements OnInit, OnDestroy {
   sortBy: string = 'date'; // 'date', 'status', 'unread'
   sortOrder: string = 'desc'; // 'asc', 'desc'
   
+  // Pagination
+  currentPage: number = 1;
+  itemsPerPage: number = 10;
+  totalPages: number = 1;
+  totalItems: number = 0;
+  
   // Message input
   messageText: string = '';
   sendingMessage: boolean = false;
   
+  // Active tab
+  activeTab: string = 'overview';
+  
   // Treatment status
   showTreatmentDialog: boolean = false;
   markingAsTreated: boolean = false;
+  
+  // Processing action (for accept/reject)
+  processingAction: boolean = false;
   
   // Video call scheduling
   showVideoCallDialog: boolean = false;
@@ -100,6 +116,7 @@ export class DoctorCasesComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private caseService: CaseService,
     private socketService: SocketService,
+    private toastService: ToastService,
     private router: Router
   ) {}
 
@@ -272,10 +289,19 @@ export class DoctorCasesComponent implements OnInit, OnDestroy {
 
   loadCases(): void {
     this.loadingCases = true;
-    this.caseService.getCases().subscribe({
+    this.caseService.getCases(this.currentPage, this.itemsPerPage).subscribe({
       next: (response) => {
         if (response.success) {
           this.cases = response.cases;
+          
+          // Extract pagination if present
+          if (response.pagination) {
+            this.currentPage = response.pagination.page;
+            this.totalPages = response.pagination.pages;
+            this.totalItems = response.pagination.total;
+            this.itemsPerPage = response.pagination.limit;
+          }
+          
           this.applyFilters();
         }
         this.loadingCases = false;
@@ -418,6 +444,7 @@ export class DoctorCasesComponent implements OnInit, OnDestroy {
       next: (response) => {
         if (response.success) {
           this.messageText = '';
+          this.toastService.success('Message sent successfully');
           
           // Message will be received via WebSocket, but add immediately for better UX
           if (!this.useWebSocket || !this.socketService.isConnected()) {
@@ -431,7 +458,7 @@ export class DoctorCasesComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error sending message:', error);
-        alert('Failed to send message. Please try again.');
+        this.toastService.error('Failed to send message. Please try again.');
         this.sendingMessage = false;
       }
     });
@@ -588,7 +615,7 @@ export class DoctorCasesComponent implements OnInit, OnDestroy {
     }
 
     if (!this.videoCallDate || !this.videoCallTime) {
-      alert('Please select date and time for the video call');
+      this.toastService.warning('Please select date and time for the video call');
       return;
     }
 
@@ -605,7 +632,7 @@ export class DoctorCasesComponent implements OnInit, OnDestroy {
         this.schedulingVideoCall = false;
         if (response.success) {
           this.videoCallLink = response.videoConsultation.videoLink;
-          alert('Video consultation scheduled successfully! Emails sent to both you and the patient with the meeting link.');
+          this.toastService.success('Video consultation scheduled successfully! Emails sent to both you and the patient.');
           this.closeVideoCallDialog();
           
           // Reload cases to show updated video consultation details
@@ -615,7 +642,7 @@ export class DoctorCasesComponent implements OnInit, OnDestroy {
       error: (error) => {
         this.schedulingVideoCall = false;
         console.error('Error scheduling video consultation:', error);
-        alert('Failed to schedule video consultation. Please try again.');
+        this.toastService.error('Failed to schedule video consultation. Please try again.');
       }
     });
   }
@@ -637,7 +664,7 @@ export class DoctorCasesComponent implements OnInit, OnDestroy {
     this.caseService.markAsTreated(this.selectedCase._id).subscribe({
       next: (response) => {
         if (response.success) {
-          alert('Case marked as treated successfully! Patient will be notified.');
+          this.toastService.success('Case marked as treated successfully! Patient will be notified.');
           this.closeTreatmentDialog();
           this.loadCases();
           
@@ -651,8 +678,68 @@ export class DoctorCasesComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error marking case as treated:', error);
-        alert('Failed to mark case as treated. Please try again.');
+        this.toastService.error('Failed to mark case as treated. Please try again.');
         this.markingAsTreated = false;
+      }
+    });
+  }
+
+  acceptCase(): void {
+    if (!this.selectedCase || this.processingAction) {
+      return;
+    }
+    
+    this.processingAction = true;
+    this.caseService.acceptCase(this.selectedCase._id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.toastService.success('Case accepted successfully! You can now start consultation.');
+          this.loadCases();
+          
+          // Update the selected case status
+          if (this.selectedCase) {
+            this.selectedCase.status = 'ongoing';
+            this.selectedCase.acceptedAt = new Date();
+          }
+        }
+        this.processingAction = false;
+      },
+      error: (error) => {
+        console.error('Error accepting case:', error);
+        this.toastService.error('Failed to accept case. Please try again.');
+        this.processingAction = false;
+      }
+    });
+  }
+
+  rejectCase(): void {
+    if (!this.selectedCase || this.processingAction) {
+      return;
+    }
+    
+    if (!confirm('Are you sure you want to reject this case? The patient will be notified.')) {
+      return;
+    }
+    
+    this.processingAction = true;
+    this.caseService.rejectCase(this.selectedCase._id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.toastService.success('Case rejected. Patient has been notified.');
+          this.loadCases();
+          
+          // Update the selected case status
+          if (this.selectedCase) {
+            this.selectedCase.status = 'rejected';
+            this.selectedCase.rejectedAt = new Date();
+          }
+        }
+        this.processingAction = false;
+      },
+      error: (error) => {
+        console.error('Error rejecting case:', error);
+        this.toastService.error('Failed to reject case. Please try again.');
+        this.processingAction = false;
       }
     });
   }
@@ -919,7 +1006,7 @@ export class DoctorCasesComponent implements OnInit, OnDestroy {
     link.click();
     window.URL.revokeObjectURL(url);
     
-    alert('Case history exported successfully!');
+    this.toastService.success('Case history exported successfully!');
   }
 
   logout(): void {
@@ -931,5 +1018,56 @@ export class DoctorCasesComponent implements OnInit, OnDestroy {
     if (confidence >= 70) return 'confidence-high';
     if (confidence >= 50) return 'confidence-medium';
     return 'confidence-low';
+  }
+
+  // Pagination methods
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.loadCases();
+    }
+  }
+
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.loadCases();
+    }
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.loadCases();
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    
+    if (this.totalPages <= maxPagesToShow) {
+      // Show all pages if total is less than max
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Show current page with 2 pages on each side
+      let startPage = Math.max(1, this.currentPage - 2);
+      let endPage = Math.min(this.totalPages, this.currentPage + 2);
+      
+      // Adjust if we're near the start or end
+      if (this.currentPage <= 3) {
+        endPage = maxPagesToShow;
+      } else if (this.currentPage >= this.totalPages - 2) {
+        startPage = this.totalPages - maxPagesToShow + 1;
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
   }
 }

@@ -1,0 +1,208 @@
+/* Appointment Item */
+.appointment-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3, 0.75rem);
+  padding: var(--spacing-3, 0.75rem);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--color-gray-50, #f9fafb);
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.appointment-item.clickable {
+  cursor: pointer;
+}
+
+.appointment-item.clickable:hover {
+  background: var(--color-gray-100, #f3f4f6);
+  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+  transform: translateY(-1px);
+}
+
+.appointment-item.clickable:active {
+  transform: translateY(0);
+}
+
+.appointment-item:focus-visible {
+  outline: 2px solid var(--color-primary, #4F46E5);
+  outline-offset: 2px;
+}
+
+/* Avatar */
+.appointment-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.avatar-initials {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-primary, #4F46E5), var(--color-primary-dark, #4338CA));
+  color: white;
+  font-size: var(--font-size-lg, 1.125rem);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Content */
+.appointment-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1, 0.25rem);
+}
+
+.appointment-name {
+  font-size: var(--font-size-base, 1rem);
+  font-weight: 600;
+  color: var(--color-text-primary, #1f2937);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.appointment-subtitle {
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Time/Status */
+.appointment-time {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.time-text {
+  font-size: var(--font-size-sm, 0.875rem);
+  font-weight: 500;
+  color: var(--color-text-secondary, #6b7280);
+  white-space: nowrap;
+}
+
+/* Status Badge */
+.status-badge {
+  padding: var(--spacing-1, 0.25rem) var(--spacing-3, 0.75rem);
+  border-radius: var(--radius-full, 9999px);
+  font-size: var(--font-size-xs, 0.75rem);
+  font-weight: 600;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.status-ongoing {
+  background: var(--color-success-light, #d1fae5);
+  color: var(--color-success-dark, #065f46);
+}
+
+.status-upcoming {
+  background: var(--color-info-light, #dbeafe);
+  color: var(--color-info-dark, #1e40af);
+}
+
+.status-completed {
+  background: var(--color-gray-200, #e5e7eb);
+  color: var(--color-gray-700, #374151);
+}
+
+/* Responsive Design */
+
+/* Mobile (< 640px) */
+@media (max-width: 639px) {
+  .appointment-item {
+    padding: var(--spacing-2, 0.5rem);
+    gap: var(--spacing-2, 0.5rem);
+  }
+
+  .appointment-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .avatar-initials {
+    font-size: var(--font-size-base, 1rem);
+  }
+
+  .appointment-name {
+    font-size: var(--font-size-sm, 0.875rem);
+  }
+
+  .appointment-subtitle {
+    font-size: var(--font-size-xs, 0.75rem);
+  }
+
+  .time-text {
+    font-size: var(--font-size-xs, 0.75rem);
+  }
+
+  .status-badge {
+    padding: 2px var(--spacing-2, 0.5rem);
+    font-size: 0.625rem;
+  }
+
+  /* Ensure touch-friendly tap targets */
+  .appointment-item.clickable {
+    min-height: 44px;
+  }
+}
+
+/* Tablet (640px - 1024px) */
+@media (min-width: 640px) and (max-width: 1024px) {
+  .appointment-item {
+    padding: var(--spacing-2-5, 0.625rem);
+  }
+
+  .appointment-avatar {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Desktop (> 1024px) */
+@media (min-width: 1025px) {
+  .appointment-item.clickable:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .appointment-item {
+    border: 1px solid var(--color-gray-300, #d1d5db);
+  }
+
+  .appointment-item.clickable:hover {
+    border-color: var(--color-primary, #4F46E5);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+
+  .appointment-item,
+  .appointment-item.clickable:hover {
+    transition: none;
+    transform: none;
+  }
+}

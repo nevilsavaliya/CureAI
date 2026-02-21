@@ -2,22 +2,27 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { BaseComponent } from '../base/base.component';
+import { ErrorHandlerService } from '../../services/error-handler.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent extends BaseComponent implements OnInit {
   loginForm!: FormGroup;
-  loading = false;
-  errorMessage = '';
 
   constructor(
     private formBuilder: FormBuilder,
     private authService: AuthService,
-    private router: Router
-  ) {}
+    private router: Router,
+    protected override errorHandler: ErrorHandlerService,
+    protected override toastService: ToastService
+  ) {
+    super(errorHandler, toastService);
+  }
 
   ngOnInit(): void {
     // Redirect if already logged in
@@ -36,27 +41,32 @@ export class LoginComponent implements OnInit {
   }
 
   onSubmit(): void {
-    this.errorMessage = '';
+    this.clearError();
 
     if (this.loginForm.invalid) {
+      this.error = 'Please fill in all required fields correctly.';
       return;
     }
 
-    this.loading = true;
+    this.setLoading(true);
     const { email, password } = this.loginForm.value;
 
-    this.authService.login(email, password).subscribe({
+    const sub = this.authService.login(email, password).subscribe({
       next: (response) => {
-        this.loading = false;
+        this.setLoading(false);
         if (response.success) {
+          this.showSuccess('Login successful!');
           this.redirectBasedOnRole();
+        } else {
+          this.error = response.message || 'Login failed. Please try again.';
         }
       },
       error: (error) => {
-        this.loading = false;
-        this.errorMessage = error.error?.message || 'Login failed. Please try again.';
+        this.handleError(error, 'authentication');
       }
     });
+
+    this.addSubscription(sub);
   }
 
   private redirectBasedOnRole(): void {
@@ -74,5 +84,9 @@ export class LoginComponent implements OnInit {
       default:
         this.router.navigate(['/']);
     }
+  }
+
+  retryLogin(): void {
+    this.onSubmit();
   }
 }

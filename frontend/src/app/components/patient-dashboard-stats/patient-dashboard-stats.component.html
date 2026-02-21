@@ -1,0 +1,65 @@
+<!-- Loading State -->
+<div *ngIf="loading" class="loading-state">
+  <div class="stats-grid">
+    <div *ngFor="let i of [1,2,3]" class="stat-card-skeleton">
+      <div class="skeleton-icon"></div>
+      <div class="skeleton-content">
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard Content -->
+<div *ngIf="!loading && dashboardData" class="dashboard-container">
+  <!-- Stats Cards Row -->
+  <div class="stats-row">
+    <app-stat-card *ngFor="let stat of dashboardData.stats.slice(0, 3)" 
+      [title]="stat.title" 
+      [value]="stat.value"
+      [subtitle]="stat.subtitle || ''" 
+      [icon]="stat.icon" 
+      [color]="stat.color" 
+      [trend]="stat.trend"
+      [loading]="stat.loading || false">
+    </app-stat-card>
+  </div>
+
+  <!-- Main Dashboard Grid -->
+  <div class="dashboard-grid">
+    <!-- Consultation Summary Chart -->
+    <div class="dashboard-card chart-card" *ngIf="dashboardData.chart">
+      <app-summary-chart 
+        [config]="dashboardData.chart" 
+        [loading]="loading">
+      </app-summary-chart>
+    </div>
+
+    <!-- Upcoming Appointments -->
+    <div class="dashboard-card appointments-card" *ngIf="dashboardData.upcomingAppointments">
+      <app-appointment-list
+        [config]="dashboardData.upcomingAppointments"
+        (appointmentClick)="onAppointmentClick($event)">
+      </app-appointment-list>
+    </div>
+
+    <!-- Doctor Details -->
+    <div class="dashboard-card doctor-card" *ngIf="dashboardData.doctorDetails">
+      <app-user-details-panel
+        [config]="dashboardData.doctorDetails"
+        [loading]="loading">
+      </app-user-details-panel>
+    </div>
+
+    <!-- Calendar Widget -->
+    <div class="dashboard-card calendar-card" *ngIf="dashboardData.calendar">
+      <app-calendar-widget
+        [config]="dashboardData.calendar"
+        [loading]="loading"
+        (dateClick)="onCalendarDateClick($event)"
+        (monthChange)="onCalendarMonthChange($event.month, $event.year)">
+      </app-calendar-widget>
+    </div>
+  </div>
+</div>

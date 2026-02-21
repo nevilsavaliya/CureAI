@@ -1,7 +1,7 @@
 require('dotenv').config();
 
-// Validate environment variables before starting the application
-const { validateAndExit, getCorsOrigins } = require('./utils/validateEnv');
+// Validate configuration using ConfigService before starting
+const { validateAndExit } = require('./core/config/startupValidation');
 validateAndExit();
 
 const express = require('express');
@@ -13,6 +13,7 @@ const connectDB = require('./config/database');
 const socketService = require('./services/socketService');
 const logger = require('./services/logger');
 const sslConfig = require('./config/ssl');
+const configService = require('./core/config/ConfigService');
 const { securityHeaders, httpsRedirect } = require('./middleware/securityHeaders');
 const { requestLogger, errorLogger, hospitalLogger } = require('./middleware/logging');
 const { globalErrorTracking, hospitalErrorTracking } = require('./middleware/errorTracking');
@@ -33,6 +34,37 @@ const httpsServer = sslConfig.createHTTPSServer(app);
 
 // Connect to MongoDB
 connectDB();
+
+// Initialize cache system
+const { initializeCache, shutdownCache } = require('./core/utils/initializeCache');
+initializeCache({
+  enableMonitoring: configService.isProduction(),
+  monitoringInterval: 15, // Check every 15 minutes
+  warmCache: true
+});
+
+// Initialize subscription scheduler
+const { initializeScheduler } = require('./services/subscriptionScheduler');
+initializeScheduler();
+
+// Graceful shutdown handlers
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  shutdownCache();
+  server.close(() => {
+    logger.info('HTTP server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, shutting down gracefully');
+  shutdownCache();
+  server.close(() => {
+    logger.info('HTTP server closed');
+    process.exit(0);
+  });
+});
 
 // Initialize Socket.IO on both HTTP and HTTPS servers
 socketService.initialize(server);
@@ -65,7 +97,7 @@ if (sslConfig.sslEnabled) {
 app.use(securityHeaders);
 
 // Middleware
-const corsOrigins = getCorsOrigins();
+const corsOrigins = configService.getCorsOrigins();
 app.use(cors({
   origin: corsOrigins,
   credentials: true,
@@ -77,6 +109,10 @@ app.use(cors({
 app.use(requestLogger);
 app.use(hospitalLogger);
 app.use(hospitalErrorTracking);
+
+// Response compression middleware (should be early in the stack)
+const { createCompressionMiddleware } = require('./middleware/compressionMiddleware');
+app.use(createCompressionMiddleware());
 
 // Performance tracking middleware
 const { performanceTracker } = require('./middleware/performanceTracker');
@@ -121,6 +157,9 @@ const alertRoutes = require('./routes/alertRoutes');
 const adminUserManagementRoutes = require('./routes/adminUserManagementRoutes');
 const adminSecurityRoutes = require('./routes/adminSecurityRoutes');
 const testPaymentRoutes = require('./routes/testPaymentRoutes');
+const healthRoutes = require('./routes/healthRoutes');
+const performanceRoutes = require('./routes/performanceRoutes');
+const doctorPaymentRoutes = require('./routes/doctorPayment');
 
 // Swagger API Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
@@ -135,14 +174,14 @@ app.get('/api-docs.json', (req, res) => {
   res.send(swaggerSpec);
 });
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Healthcare Platform API is running' });
-});
+// Health check routes (should be first for load balancers)
+app.use('/api/health', healthRoutes);
 
 // Mount specific routes first (more specific paths should come before general ones)
 app.use('/api/auth', authRoutes);
 app.use('/api/password', passwordResetRoutes);
 app.use('/api/test-payment', testPaymentRoutes); // Test payment endpoints for development
+app.use('/api/doctor', doctorPaymentRoutes); // Doctor payment and profile routes
 app.use('/api/hospitals', hospitalRoutes);
 app.use('/api/admin', hospitalAdminRoutes);
 app.use('/api/admin/logs', logRoutes);
@@ -150,6 +189,7 @@ app.use('/api/admin/errors', errorTrackingRoutes);
 app.use('/api/admin/monitoring', apiMonitoringRoutes);
 app.use('/api/admin/alerts', alertRoutes);
 app.use('/api/admin/security', adminSecurityRoutes);
+app.use('/api/admin', performanceRoutes);
 app.use('/api/admin', adminUserManagementRoutes);
 
 // Mount general /api routes last
@@ -171,8 +211,8 @@ app.use(globalErrorTracking);
 // Global error handler with alert integration
 app.use(globalErrorHandler);
 
-const PORT = process.env.PORT || 3000;
-const SSL_PORT = process.env.SSL_PORT || 3443;
+const PORT = configService.getPort();
+const SSL_PORT = configService.getSslConfig().port;
 
 // Start HTTP server
 server.listen(PORT, () => {
@@ -180,7 +220,7 @@ server.listen(PORT, () => {
     type: 'SERVER_START',
     port: PORT,
     protocol: 'HTTP',
-    environment: process.env.NODE_ENV || 'development',
+    environment: configService.getNodeEnv(),
     timestamp: new Date().toISOString()
   });
 });
@@ -192,7 +232,7 @@ if (httpsServer) {
       type: 'SERVER_START',
       port: SSL_PORT,
       protocol: 'HTTPS',
-      environment: process.env.NODE_ENV || 'development',
+      environment: configService.getNodeEnv(),
       timestamp: new Date().toISOString()
     });
     

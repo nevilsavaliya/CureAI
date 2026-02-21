@@ -1,0 +1,23 @@
+<div class="success-checkmark-container" [@successAnimation]>
+  <svg 
+    class="success-checkmark" 
+    [attr.width]="checkmarkSize" 
+    [attr.height]="checkmarkSize" 
+    viewBox="0 0 52 52"
+    xmlns="http://www.w3.org/2000/svg">
+    <circle 
+      class="success-checkmark-circle" 
+      cx="26" 
+      cy="26" 
+      r="25" 
+      fill="none"/>
+    <path 
+      class="success-checkmark-check" 
+      fill="none" 
+      d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+  </svg>
+  
+  <p *ngIf="showMessage" class="success-message" [@successAnimation]>
+    {{ message }}
+  </p>
+</div>

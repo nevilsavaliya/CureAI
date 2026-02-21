@@ -1,112 +1,168 @@
-<div class="login-container">
-  <div class="login-card">
-    <div class="logo-section">
-      <app-logo [size]="'medium'" [variant]="'default'" [clickable]="true"></app-logo>
-      <p class="subtitle">Hospital Portal</p>
-    </div>
-    
-    <h2>Hospital Login</h2>
-    
-    <!-- Verification Status Messages -->
-    <div class="verification-message pending" *ngIf="verificationStatus === 'pending'">
-      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-      </svg>
-      <span>{{ verificationMessage }}</span>
-    </div>
-
-    <div class="verification-message rejected" *ngIf="verificationStatus === 'rejected'">
-      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-      </svg>
-      <span>{{ verificationMessage }}</span>
-    </div>
-    
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-      <!-- Email Field -->
-      <div class="form-group">
-        <label for="email">Email Address</label>
-        <input 
-          type="email" 
-          id="email" 
-          formControlName="email"
-          class="form-control"
-          placeholder="hospital@example.com"
-          [class.is-invalid]="f['email'].invalid && f['email'].touched"
-        />
-        <div class="error-message" *ngIf="f['email'].invalid && f['email'].touched">
-          <span *ngIf="f['email'].errors?.['required']">Email is required</span>
-          <span *ngIf="f['email'].errors?.['email']">Please enter a valid email address</span>
-        </div>
+<div class="login-wrapper">
+  <!-- Left Side - Form -->
+  <div class="login-form-section">
+    <div class="login-form-container">
+      <!-- Logo -->
+      <div class="logo-container">
+        <app-logo [size]="'large'" [variant]="'default'" [clickable]="true"></app-logo>
+        <p class="portal-badge">Hospital Portal</p>
       </div>
 
-      <!-- Password Field -->
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input 
-          type="password" 
-          id="password" 
-          formControlName="password"
-          class="form-control"
-          placeholder="Enter your password"
-          [class.is-invalid]="f['password'].invalid && f['password'].touched"
-        />
-        <div class="error-message" *ngIf="f['password'].invalid && f['password'].touched">
-          <span *ngIf="f['password'].errors?.['required']">Password is required</span>
-          <span *ngIf="f['password'].errors?.['minlength']">Password must be at least 8 characters</span>
-        </div>
+      <!-- Welcome Text -->
+      <div class="welcome-text">
+        <h1>Hospital Login</h1>
+        <p>Access your hospital management dashboard</p>
       </div>
 
-      <!-- Remember Me Checkbox -->
-      <div class="form-group checkbox-group">
-        <label class="checkbox-label">
-          <input 
-            type="checkbox" 
-            formControlName="rememberMe"
-            class="checkbox-input"
-          />
-          <span class="checkbox-text">Remember me</span>
-        </label>
-      </div>
-
-      <!-- Error Message -->
-      <div class="error-message main-error" *ngIf="errorMessage">
-        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      <!-- Verification Status Messages -->
+      <div class="verification-alert pending" *ngIf="verificationStatus === 'pending'">
+        <svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
-        {{ errorMessage }}
+        <span>{{ verificationMessage }}</span>
       </div>
 
-      <!-- Submit Button -->
-      <button 
-        type="submit" 
-        class="btn-primary" 
-        [disabled]="loading || loginForm.invalid"
-        [class.loading]="loading">
-        <span *ngIf="!loading">Login</span>
-        <span *ngIf="loading" class="loading-spinner">
-          <svg class="spinner" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      <div class="verification-alert rejected" *ngIf="verificationStatus === 'rejected'">
+        <svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span>{{ verificationMessage }}</span>
+      </div>
+
+      <!-- Login Form -->
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+        <!-- Email Field -->
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <input 
+              type="email" 
+              id="email" 
+              formControlName="email"
+              class="form-control"
+              placeholder="hospital@example.com"
+              [class.error]="f['email'].invalid && f['email'].touched"
+              autocomplete="email"
+            />
+          </div>
+          <div class="form-error" *ngIf="f['email'].invalid && f['email'].touched">
+            <span *ngIf="f['email'].errors?.['required']">Email is required</span>
+            <span *ngIf="f['email'].errors?.['email']">Please enter a valid email address</span>
+          </div>
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <input 
+              type="password" 
+              id="password" 
+              formControlName="password"
+              class="form-control"
+              placeholder="Enter your password"
+              [class.error]="f['password'].invalid && f['password'].touched"
+              autocomplete="current-password"
+            />
+          </div>
+          <div class="form-error" *ngIf="f['password'].invalid && f['password'].touched">
+            <span *ngIf="f['password'].errors?.['required']">Password is required</span>
+            <span *ngIf="f['password'].errors?.['minlength']">Password must be at least 8 characters</span>
+          </div>
+        </div>
+
+        <!-- Remember Me & Forgot Password -->
+        <div class="form-options">
+          <label class="checkbox-label">
+            <input 
+              type="checkbox" 
+              formControlName="rememberMe"
+              class="checkbox"
+            />
+            <span>Remember me</span>
+          </label>
+          <a routerLink="/forgot-password" class="forgot-link">Forgot Password?</a>
+        </div>
+
+        <!-- Error Message -->
+        <div class="alert alert-danger" *ngIf="errorMessage">
+          <svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
-          Logging in...
-        </span>
-      </button>
-    </form>
+          {{ errorMessage }}
+        </div>
 
-    <!-- Forgot Password Link -->
-    <div class="forgot-password-link">
-      <a routerLink="/forgot-password">Forgot Password?</a>
+        <!-- Submit Button -->
+        <button 
+          type="submit" 
+          class="btn-login" 
+          [disabled]="loading">
+          <span *ngIf="!loading">Sign In</span>
+          <span *ngIf="loading" class="loading-content">
+            <svg class="spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Signing in...
+          </span>
+        </button>
+      </form>
+
+      <!-- Registration Link -->
+      <div class="signup-prompt">
+        <p>Don't have an account? <a routerLink="/hospital/register" class="signup-link">Register your hospital</a></p>
+      </div>
+
+      <!-- Divider -->
+      <div class="divider">
+        <span>or</span>
+      </div>
+
+      <!-- Back to Main Login -->
+      <div class="alt-login-options">
+        <a routerLink="/login" class="alt-login-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span>Back to Patient/Doctor Login</span>
+        </a>
+      </div>
     </div>
+  </div>
 
-    <!-- Registration Link -->
-    <div class="signup-link">
-      Don't have an account? <a routerLink="/hospital/register">Register your hospital</a>
-    </div>
-
-    <!-- Back to Main Login -->
-    <div class="back-link">
-      <a routerLink="/login">← Back to main login</a>
+  <!-- Right Side - Hero Section -->
+  <div class="login-image-section">
+    <div class="image-overlay"></div>
+    <img src="assets/illustrations/medical-team.svg" alt="Medical Team" class="hero-image">
+    <div class="image-content">
+      <h2>Trusted Healthcare Partner</h2>
+      <p>Manage your hospital operations, staff, and patient care with our comprehensive platform</p>
+      <div class="features">
+        <div class="feature-item">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          <span>Secure & Compliant</span>
+        </div>
+        <div class="feature-item">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          <span>Staff Management</span>
+        </div>
+        <div class="feature-item">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          <span>Analytics & Reports</span>
+        </div>
+      </div>
     </div>
   </div>
 </div>

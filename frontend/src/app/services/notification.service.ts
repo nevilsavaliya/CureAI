@@ -59,7 +59,9 @@ export class NotificationService {
     return this.http.get<any>(`${this.apiUrl}${queryParams}`).pipe(
       tap(response => {
         if (response.success) {
-          this.notificationsSubject.next(response.notifications);
+          // Backend spreads data directly into response as 'data' field
+          const notifications = response.data || [];
+          this.notificationsSubject.next(notifications);
         }
       })
     );
@@ -85,16 +87,24 @@ export class NotificationService {
     return this.http.put<any>(`${this.apiUrl}/${notificationId}/read`, {}).pipe(
       tap(response => {
         if (response.success) {
-          // Update local state
-          const currentNotifications = this.notificationsSubject.value;
-          const updatedNotifications = currentNotifications.map(n => 
-            n._id === notificationId ? { ...n, isRead: true, readAt: new Date() } : n
-          );
-          this.notificationsSubject.next(updatedNotifications);
+          // Backend returns the updated notification in response.notification
+          const updatedNotification = response.notification;
           
-          // Decrement unread count
-          const currentCount = this.unreadCountSubject.value;
-          this.unreadCountSubject.next(Math.max(0, currentCount - 1));
+          if (updatedNotification) {
+            // Update local state with the actual notification from backend
+            const currentNotifications = this.notificationsSubject.value;
+            const updatedNotifications = currentNotifications.map(n => 
+              n._id === notificationId ? updatedNotification : n
+            );
+            this.notificationsSubject.next(updatedNotifications);
+            
+            // Decrement unread count if notification was previously unread
+            const wasUnread = currentNotifications.find(n => n._id === notificationId && !n.isRead);
+            if (wasUnread) {
+              const currentCount = this.unreadCountSubject.value;
+              this.unreadCountSubject.next(Math.max(0, currentCount - 1));
+            }
+          }
         }
       })
     );
@@ -107,14 +117,15 @@ export class NotificationService {
     return this.http.put<any>(`${this.apiUrl}/read-all`, {}).pipe(
       tap(response => {
         if (response.success) {
-          // Update local state
+          // Backend returns modifiedCount in response.modifiedCount
+          // Update local state - mark all notifications as read
           const currentNotifications = this.notificationsSubject.value;
           const updatedNotifications = currentNotifications.map(n => 
             ({ ...n, isRead: true, readAt: new Date() })
           );
           this.notificationsSubject.next(updatedNotifications);
           
-          // Reset unread count
+          // Reset unread count to 0
           this.unreadCountSubject.next(0);
         }
       })

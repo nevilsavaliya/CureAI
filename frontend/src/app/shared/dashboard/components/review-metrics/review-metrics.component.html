@@ -1,0 +1,50 @@
+<div class="review-metrics-container" [class.loading]="loading" role="region" [attr.aria-label]="config?.title || 'Review metrics'">
+  <!-- Loading Skeleton -->
+  <div *ngIf="loading" class="skeleton-container" aria-live="polite" aria-busy="true" aria-label="Loading review metrics">
+    <div class="skeleton-title" aria-hidden="true"></div>
+    <div class="skeleton-metric" *ngFor="let i of [1, 2, 3, 4]" aria-hidden="true">
+      <div class="skeleton-label"></div>
+      <div class="skeleton-bar"></div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div *ngIf="!loading && config" class="review-metrics-content">
+    <h3 class="metrics-title">{{ config.title }}</h3>
+    
+    <div class="metrics-list" role="list" [attr.aria-label]="config.title">
+      <div 
+        *ngFor="let metric of config.metrics; trackBy: trackByLabel"
+        class="metric-item"
+        role="listitem">
+        
+        <div class="metric-header">
+          <span class="metric-label">{{ metric.label }}</span>
+          <span class="metric-percentage" [attr.aria-label]="metric.label + ': ' + getPercentage(metric) + ' percent'">
+            {{ getPercentage(metric) }}%
+          </span>
+        </div>
+        
+        <div class="progress-bar-container" role="progressbar" 
+             [attr.aria-valuenow]="metric.value"
+             [attr.aria-valuemin]="0"
+             [attr.aria-valuemax]="metric.maxValue"
+             [attr.aria-label]="metric.label + ' progress'">
+          <div 
+            class="progress-bar-track">
+            <div 
+              class="progress-bar-fill"
+              [style.background-color]="metric.color"
+              [@barAnimation]="getAnimationState(metric)">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !config" class="empty-state" role="status" aria-live="polite">
+    <p>No review metrics available</p>
+  </div>
+</div>

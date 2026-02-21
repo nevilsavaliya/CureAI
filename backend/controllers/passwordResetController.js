@@ -3,7 +3,6 @@ const Doctor = require('../models/Doctor');
 const Admin = require('../models/Admin');
 const OTP = require('../models/OTP');
 const emailService = require('../services/emailService');
-const bcrypt = require('bcrypt');
 
 // Generate 6-digit OTP
 const generateOTP = () => {

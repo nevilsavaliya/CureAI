@@ -57,10 +57,14 @@ cp .env.example .env
 
 # Validate configuration
 npm run setup:validate
-cp .env.example .env
 ```
 
-4. Update .env with your MongoDB URI and JWT secret
+4. Configure required environment variables in `.env`:
+   - `MONGODB_URI`: Your MongoDB connection string
+   - `JWT_SECRET`: Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+   - `MAILERSEND_API_KEY`: Your MailerSend API key (see Email Configuration below)
+   - `MAILERSEND_FROM_EMAIL`: Your verified sender email
+   - `FRONTEND_URL`: Your frontend URL for CORS
 
 5. Start the server:
 ```bash
@@ -91,6 +95,50 @@ ng serve
 ```
 
 Frontend will run on http://localhost:4200
+
+## 📧 Email Configuration
+
+The platform uses MailerSend for sending transactional emails (notifications, alerts, etc.).
+
+### MailerSend Setup
+
+1. **Create Account**: Sign up at [mailersend.com](https://www.mailersend.com/)
+
+2. **Verify Domain**:
+   - Go to **Domains** → **Add Domain**
+   - Add your domain and configure DNS records (SPF, DKIM, CNAME)
+   - For testing, use the provided test domain (e.g., `test-xxxxx.mlsender.net`)
+
+3. **Generate API Key**:
+   - Go to **API Tokens** → **Create Token**
+   - Name: "Healthcare Platform"
+   - Permissions: Email → Full Access
+   - Copy the API key (shown only once)
+
+4. **Configure Environment Variables**:
+   ```bash
+   # Add to backend/.env
+   MAILERSEND_API_KEY=mlsn.your_api_key_here
+   MAILERSEND_FROM_EMAIL=no-reply@yourdomain.com
+   MAILERSEND_FROM_NAME=Healthcare Platform
+   ```
+
+5. **Test Email Sending**:
+   ```bash
+   cd backend
+   npm run dev
+   # Look for: ✅ MailerSend email service is ready
+   ```
+
+### Email Features
+- User removal notifications
+- Admin welcome emails
+- User restoration notifications
+- Bulk operation summaries
+- Suspicious activity alerts
+
+### Migration from Gmail SMTP
+If you're migrating from Gmail SMTP, see [MAILERSEND_MIGRATION_GUIDE.md](MAILERSEND_MIGRATION_GUIDE.md) for detailed instructions.
 
 ## 🔐 SSL/HTTPS Setup (Optional)
 
@@ -150,6 +198,12 @@ See [SSL Setup Guide](docs/SSL_SETUP_GUIDE.md) for detailed instructions.
 - User management
 - Platform metrics
 - System monitoring
+
+## 📚 Documentation
+
+- **[MailerSend Migration Guide](MAILERSEND_MIGRATION_GUIDE.md)** - Migrate from Gmail SMTP to MailerSend
+- **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Complete deployment instructions
+- **[SSL Setup Guide](docs/SSL_SETUP_GUIDE.md)** - HTTPS configuration
 
 ## API Documentation
 

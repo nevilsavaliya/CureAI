@@ -1,27 +1,30 @@
 const AuditLog = require('../models/AuditLog');
+const configService = require('../core/config/ConfigService');
 
 class EmailNotificationService {
   constructor() {
+    // Get configuration from ConfigService
+    const mailersendConfig = configService.getMailerSendConfig();
+    
     // Check if MailerSend is configured
-    this.isConfigured = process.env.MAILERSEND_API_KEY && 
-                        process.env.MAILERSEND_FROM_EMAIL;
+    this.isConfigured = mailersendConfig.apiKey && mailersendConfig.fromEmail;
 
     if (this.isConfigured) {
-      // Configure MailerSend
+      // Configure MailerSend using ConfigService
       this.mailersendConfig = {
-        apiKey: process.env.MAILERSEND_API_KEY,
-        fromEmail: process.env.MAILERSEND_FROM_EMAIL,
-        fromName: process.env.MAILERSEND_FROM_NAME || 'Healthcare Platform',
-        apiUrl: 'https://api.mailersend.com/v1/email'
+        apiKey: mailersendConfig.apiKey,
+        fromEmail: mailersendConfig.fromEmail,
+        fromName: mailersendConfig.fromName,
+        apiUrl: mailersendConfig.apiUrl
       };
 
       console.log('✅ MailerSend email service is ready');
     } else {
       console.log('⚠️  Email not configured - using console logging for notifications');
-      if (!process.env.MAILERSEND_API_KEY) {
+      if (!mailersendConfig.apiKey) {
         console.log('   Missing: MAILERSEND_API_KEY');
       }
-      if (!process.env.MAILERSEND_FROM_EMAIL) {
+      if (!mailersendConfig.fromEmail) {
         console.log('   Missing: MAILERSEND_FROM_EMAIL');
       }
     }
@@ -45,7 +48,8 @@ class EmailNotificationService {
   async sendUserRemovalNotification(userData, reason = '', adminName = 'Administrator', options = {}) {
     try {
       const { email, name, userType } = userData;
-      const { supportEmail = 'support@healthcare.com', appealProcess = true } = options;
+      const supportEmail = options.supportEmail || configService.getSupportEmail();
+      const { appealProcess = true } = options;
 
       // If email not configured, log to console
       if (!this.isConfigured) {
@@ -64,7 +68,7 @@ class EmailNotificationService {
       const subject = `Account Deactivation Notice - Healthcare Platform`;
 
       const mailOptions = {
-        from: process.env.EMAIL_USER || 'Healthcare Platform <noreply@healthcare.com>',
+        from: configService.getDefaultFromEmail(),
         to: email,
         subject,
         html: this._generateUserRemovalTemplate({
@@ -105,11 +109,9 @@ class EmailNotificationService {
   async sendNewAdminWelcomeEmail(adminData, temporaryPassword, createdByName = 'Root Administrator', options = {}) {
     try {
       const { email, name } = adminData;
-      const {
-        loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:4200'}/admin/login`,
-        supportEmail = 'support@healthcare.com',
-        passwordChangeRequired = true
-      } = options;
+      const loginUrl = options.loginUrl || `${configService.getFrontendUrl()}/admin/login`;
+      const supportEmail = options.supportEmail || configService.getSupportEmail();
+      const { passwordChangeRequired = true } = options;
 
       // If email not configured, log to console
       if (!this.isConfigured) {
@@ -128,7 +130,7 @@ class EmailNotificationService {
       const subject = `Welcome to Healthcare Platform - Admin Account Created`;
 
       const mailOptions = {
-        from: process.env.EMAIL_USER || 'Healthcare Platform <noreply@healthcare.com>',
+        from: configService.getDefaultFromEmail(),
         to: email,
         subject,
         html: this._generateAdminWelcomeTemplate({
@@ -170,10 +172,8 @@ class EmailNotificationService {
   async sendUserRestorationNotification(userData, restoredByName = 'Administrator', notes = '', options = {}) {
     try {
       const { email, name, userType } = userData;
-      const {
-        loginUrl = this._getLoginUrl(userType),
-        supportEmail = 'support@healthcare.com'
-      } = options;
+      const loginUrl = options.loginUrl || this._getLoginUrl(userType);
+      const supportEmail = options.supportEmail || configService.getSupportEmail();
 
       // If email not configured, log to console
       if (!this.isConfigured) {
@@ -193,7 +193,7 @@ class EmailNotificationService {
       const subject = `Account Restored - Healthcare Platform`;
 
       const mailOptions = {
-        from: process.env.EMAIL_USER || 'Healthcare Platform <noreply@healthcare.com>',
+        from: configService.getDefaultFromEmail(),
         to: email,
         subject,
         html: this._generateUserRestorationTemplate({
@@ -260,7 +260,7 @@ class EmailNotificationService {
       const subject = `Bulk ${operation} Operation Summary - Healthcare Platform`;
 
       const mailOptions = {
-        from: process.env.EMAIL_USER || 'Healthcare Platform <noreply@healthcare.com>',
+        from: configService.getDefaultFromEmail(),
         to: adminEmail,
         subject,
         html: this._generateBulkOperationSummaryTemplate({
@@ -522,7 +522,7 @@ class EmailNotificationService {
    * @returns {string} Login URL
    */
   _getLoginUrl(userType) {
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+    const baseUrl = configService.getFrontendUrl();
     const urlMap = {
       patient: `${baseUrl}/login`,
       doctor: `${baseUrl}/login`,
@@ -1021,7 +1021,7 @@ class EmailNotificationService {
       const subject = `🚨 Security Alert: Suspicious Admin Activity Detected`;
 
       const mailOptions = {
-        from: process.env.EMAIL_USER || 'Healthcare Platform Security <security@healthcare.com>',
+        from: configService.getDefaultFromEmail(),
         to: rootAdminEmail,
         subject,
         html: this._generateSuspiciousActivityAlertTemplate(activityData)

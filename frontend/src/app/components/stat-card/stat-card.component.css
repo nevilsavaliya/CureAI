@@ -1,0 +1,423 @@
+/* ============================================
+   STAT CARD - MODERN DESIGN
+   ============================================ */
+
+/* Import shared styles */
+@import '../../shared/dashboard/styles/skeleton-loader.css';
+@import '../../shared/dashboard/styles/error-empty-states.css';
+
+.stat-card {
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-6);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-gray-200);
+  transition: var(--transition-all);
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card-clickable {
+  cursor: pointer;
+}
+
+.stat-card-clickable:focus {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+.stat-card-clickable:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.stat-card-clickable:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-primary);
+  opacity: 0;
+  transition: var(--transition-all);
+}
+
+.stat-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+  border-color: var(--color-gray-300);
+}
+
+.stat-card:hover::before {
+  opacity: 1;
+}
+
+.stat-card-clickable:active {
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   STAT CARD CONTENT
+   ============================================ */
+
+.stat-card-content {
+  display: flex;
+  gap: var(--spacing-4);
+  align-items: flex-start;
+}
+
+/* ============================================
+   STAT ICON
+   ============================================ */
+
+.stat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: var(--transition-all);
+}
+
+.stat-card:hover .stat-icon {
+  transform: scale(1.05);
+}
+
+.stat-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+/* ============================================
+   STAT CONTENT
+   ============================================ */
+
+.stat-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  min-width: 0;
+}
+
+.stat-title {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+}
+
+.stat-value {
+  margin: 0;
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.stat-subtitle {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  line-height: var(--line-height-normal);
+}
+
+/* ============================================
+   TREND INDICATOR
+   ============================================ */
+
+.stat-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+.trend-up {
+  background-color: var(--color-success-50);
+  color: var(--color-success-700);
+}
+
+.trend-down {
+  background-color: var(--color-error-50);
+  color: var(--color-error-700);
+}
+
+.trend-icon {
+  font-size: var(--font-size-sm);
+  line-height: 1;
+}
+
+.trend-value {
+  line-height: 1;
+}
+
+/* ============================================
+   COLOR VARIANTS
+   ============================================ */
+
+/* Primary */
+.stat-card-primary .stat-icon {
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+  color: var(--color-white);
+}
+
+.stat-card-primary::before {
+  background: var(--gradient-primary);
+}
+
+/* Success */
+.stat-card-success .stat-icon {
+  background: linear-gradient(135deg, var(--color-success-500), var(--color-success-600));
+  color: var(--color-white);
+}
+
+.stat-card-success::before {
+  background: var(--gradient-success);
+}
+
+/* Warning */
+.stat-card-warning .stat-icon {
+  background: linear-gradient(135deg, var(--color-warning-500), var(--color-warning-600));
+  color: var(--color-white);
+}
+
+.stat-card-warning::before {
+  background: linear-gradient(135deg, var(--color-warning-500), var(--color-warning-600));
+}
+
+/* Danger */
+.stat-card-danger .stat-icon {
+  background: linear-gradient(135deg, var(--color-error-500), var(--color-error-600));
+  color: var(--color-white);
+}
+
+.stat-card-danger::before {
+  background: linear-gradient(135deg, var(--color-error-500), var(--color-error-600));
+}
+
+/* Info */
+.stat-card-info .stat-icon {
+  background: linear-gradient(135deg, var(--color-info-500), var(--color-info-600));
+  color: var(--color-white);
+}
+
+.stat-card-info::before {
+  background: linear-gradient(135deg, var(--color-info-500), var(--color-info-600));
+}
+
+/* Secondary */
+.stat-card-secondary .stat-icon {
+  background: linear-gradient(135deg, var(--color-secondary-500), var(--color-secondary-600));
+  color: var(--color-white);
+}
+
+.stat-card-secondary::before {
+  background: linear-gradient(135deg, var(--color-secondary-500), var(--color-secondary-600));
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+
+.stat-card-loading {
+  display: flex;
+  gap: var(--spacing-4);
+  align-items: flex-start;
+}
+
+.skeleton-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(90deg,
+      var(--color-gray-100) 0%,
+      var(--color-gray-50) 20%,
+      var(--color-gray-100) 40%,
+      var(--color-gray-100) 100%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  flex-shrink: 0;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg,
+      var(--color-gray-100) 0%,
+      var(--color-gray-50) 20%,
+      var(--color-gray-100) 40%,
+      var(--color-gray-100) 100%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+.skeleton-title {
+  width: 50%;
+  height: 10px;
+}
+
+.skeleton-value {
+  width: 70%;
+  height: 24px;
+  margin: var(--spacing-1) 0;
+}
+
+.skeleton-subtitle {
+  width: 40%;
+  height: 8px;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+/* Mobile (< 640px) */
+@media (max-width: 639px) {
+  .stat-card {
+    padding: var(--spacing-4);
+  }
+
+  .stat-card-content {
+    gap: var(--spacing-3);
+  }
+
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .stat-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .stat-value {
+    font-size: var(--font-size-2xl);
+  }
+
+  .stat-title {
+    font-size: var(--font-size-xs);
+  }
+
+  .stat-subtitle {
+    font-size: 0.7rem;
+  }
+
+  .stat-trend {
+    font-size: 0.7rem;
+    padding: 2px var(--spacing-1);
+  }
+
+  /* Ensure touch-friendly tap targets */
+  .stat-card-clickable {
+    min-height: 44px;
+  }
+}
+
+/* Tablet (640px - 1024px) */
+@media (min-width: 640px) and (max-width: 1024px) {
+  .stat-card {
+    padding: var(--spacing-5);
+  }
+
+  .stat-icon {
+    width: 52px;
+    height: 52px;
+  }
+
+  .stat-icon svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  .stat-value {
+    font-size: var(--font-size-2xl);
+  }
+}
+
+/* Desktop (> 1024px) */
+@media (min-width: 1025px) {
+  .stat-card:hover {
+    transform: translateY(-4px);
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .stat-card,
+  .stat-icon {
+    transition: none;
+  }
+
+  .stat-card:hover {
+    transform: none;
+  }
+
+  .stat-card:hover .stat-icon {
+    transform: none;
+  }
+
+  .skeleton-icon,
+  .skeleton-line {
+    animation: none;
+    background: var(--color-gray-100);
+  }
+}
+
+/* ============================================
+   GRID LAYOUT HELPER
+   ============================================ */
+
+.stat-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--spacing-4);
+}
+
+@media (max-width: 640px) {
+  .stat-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}

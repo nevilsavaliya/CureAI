@@ -1,0 +1,70 @@
+<div class="appointment-list-container" role="region" [attr.aria-label]="config.title">
+  <!-- Header -->
+  <div class="appointment-list-header">
+    <h3 class="appointment-list-title">{{ config.title }}</h3>
+    <a *ngIf="config.showSeeAll && !config.loading && !error && config.appointments.length > 0" class="see-all-link"
+      (click)="onSeeAllClick()" (keydown.enter)="onSeeAllClick()" tabindex="0" role="button"
+      aria-label="See all appointments">
+      See All
+    </a>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="config.loading" class="appointment-list-loading" aria-live="polite" aria-busy="true">
+    <div class="skeleton-item" *ngFor="let item of [1, 2, 3]">
+      <div class="skeleton-avatar"></div>
+      <div class="skeleton-content">
+        <div class="skeleton-line skeleton-line-title"></div>
+        <div class="skeleton-line skeleton-line-subtitle"></div>
+      </div>
+      <div class="skeleton-time"></div>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!config.loading && error" class="error-state error-state-small" role="alert" aria-live="assertive">
+    <div class="error-icon error-icon-small">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        aria-hidden="true">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+    </div>
+    <p class="error-message-title">Failed to load appointments</p>
+    <p class="error-message-subtitle">{{ error }}</p>
+    <div class="error-actions">
+      <button class="error-action-button" (click)="onRetry()" aria-label="Retry loading appointments">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          class="retry-icon" aria-hidden="true">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+        Retry
+      </button>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!config.loading && !error && config.appointments.length === 0" class="appointment-list-empty"
+    role="status" aria-live="polite">
+    <div class="empty-icon">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="16" y1="2" x2="16" y2="6"></line>
+        <line x1="8" y1="2" x2="8" y2="6"></line>
+        <line x1="3" y1="10" x2="21" y2="10"></line>
+      </svg>
+    </div>
+    <p class="empty-message">{{ config.emptyMessage }}</p>
+  </div>
+
+  <!-- Appointment List -->
+  <ul *ngIf="!config.loading && !error && config.appointments.length > 0" class="appointment-list" role="list"
+    aria-label="Appointment items">
+    <li *ngFor="let appointment of config.appointments; trackBy: trackByAppointmentId" role="listitem">
+      <app-appointment-list-item [appointment]="appointment" (itemClick)="onAppointmentClick($event)">
+      </app-appointment-list-item>
+    </li>
+  </ul>
+</div>

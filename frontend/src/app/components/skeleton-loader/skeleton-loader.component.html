@@ -1,0 +1,44 @@
+<div class="skeleton-container">
+  <!-- List Skeleton -->
+  <div *ngIf="type === 'list'" class="skeleton-list">
+    <div *ngFor="let item of items" class="skeleton-list-item">
+      <div class="skeleton-avatar"></div>
+      <div class="skeleton-content">
+        <div class="skeleton-line skeleton-line-title"></div>
+        <div class="skeleton-line skeleton-line-subtitle"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card Skeleton -->
+  <div *ngIf="type === 'card'" class="skeleton-cards">
+    <div *ngFor="let item of items" class="skeleton-card">
+      <div class="skeleton-card-header"></div>
+      <div class="skeleton-card-body">
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line skeleton-line-short"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Text Skeleton -->
+  <div *ngIf="type === 'text'" class="skeleton-text">
+    <div *ngFor="let item of items" class="skeleton-line" [style.height]="height" [style.width]="width"></div>
+  </div>
+
+  <!-- Circle Skeleton -->
+  <div *ngIf="type === 'circle'" class="skeleton-circles">
+    <div *ngFor="let item of items" class="skeleton-circle" [style.width]="width" [style.height]="height"></div>
+  </div>
+
+  <!-- Table Skeleton -->
+  <div *ngIf="type === 'table'" class="skeleton-table">
+    <div class="skeleton-table-header">
+      <div class="skeleton-line"></div>
+    </div>
+    <div *ngFor="let item of items" class="skeleton-table-row">
+      <div class="skeleton-line"></div>
+    </div>
+  </div>
+</div>

@@ -9,7 +9,19 @@ export interface ErrorDetails {
   errors?: string[];
   retryable: boolean;
   userFriendly: boolean;
+  context?: string;
 }
+
+export type ErrorContext =
+  | 'authentication'
+  | 'case_management'
+  | 'messaging'
+  | 'user_management'
+  | 'hospital'
+  | 'notification'
+  | 'profile'
+  | 'subscription'
+  | 'general';
 
 @Injectable({
   providedIn: 'root'
@@ -20,16 +32,31 @@ export class ErrorHandlerService {
   private maxRetries = 3;
   private retryDelay = 1000; // 1 second
 
-  constructor() {}
+  // Context-specific fallback error messages (only used when backend doesn't provide a message)
+  private contextMessages: Record<ErrorContext, Record<number, string>> = {
+    authentication: {},
+    case_management: {},
+    messaging: {},
+    user_management: {},
+    hospital: {},
+    notification: {},
+    profile: {},
+    subscription: {},
+    general: {}
+  };
+
+  constructor() { }
 
   /**
    * Handle HTTP errors and return user-friendly error details
    */
-  handleError(error: HttpErrorResponse, context?: string): ErrorDetails {
+  handleError(error: HttpErrorResponse, context?: string | ErrorContext): ErrorDetails {
+    const errorContext = this.normalizeContext(context);
     let errorDetails: ErrorDetails = {
       message: 'An unexpected error occurred',
       retryable: false,
-      userFriendly: false
+      userFriendly: false,
+      context: errorContext
     };
 
     if (error.error instanceof ErrorEvent) {
@@ -37,7 +64,8 @@ export class ErrorHandlerService {
       errorDetails = {
         message: 'Network error. Please check your internet connection and try again.',
         retryable: true,
-        userFriendly: true
+        userFriendly: true,
+        context: errorContext
       };
     } else {
       // Backend returned an unsuccessful response code
@@ -50,58 +78,86 @@ export class ErrorHandlerService {
             message: 'Unable to connect to the server. Please check your internet connection.',
             statusCode: 0,
             retryable: true,
-            userFriendly: true
+            userFriendly: true,
+            context: errorContext
           };
           break;
 
         case 400:
-          // Bad Request - validation errors
+          // Bad Request - validation errors - prioritize backend message
           errorDetails = {
-            message: error.error?.message || 'Invalid request. Please check your input.',
+            message: error.error?.message || this.getContextMessage(errorContext, 400) || 'Invalid request. Please check your input.',
             statusCode: 400,
             errors: error.error?.errors || [],
             retryable: false,
-            userFriendly: true
+            userFriendly: true,
+            context: errorContext
           };
           break;
 
         case 401:
-          // Unauthorized
+          // Unauthorized - prioritize backend message over context message
           errorDetails = {
-            message: 'Your session has expired. Please log in again.',
+            message: error.error?.message || this.getContextMessage(errorContext, 401) || 'Your session has expired. Please log in again.',
             statusCode: 401,
             retryable: false,
-            userFriendly: true
+            userFriendly: true,
+            context: errorContext
           };
           break;
 
         case 403:
           // Forbidden
           errorDetails = {
-            message: error.error?.message || 'You do not have permission to perform this action.',
+            message: this.getContextMessage(errorContext, 403) || error.error?.message || 'You do not have permission to perform this action.',
             statusCode: 403,
             retryable: false,
-            userFriendly: true
+            userFriendly: true,
+            context: errorContext
           };
           break;
 
         case 404:
           // Not Found
           errorDetails = {
-            message: error.error?.message || 'The requested resource was not found.',
+            message: this.getContextMessage(errorContext, 404) || error.error?.message || 'The requested resource was not found.',
             statusCode: 404,
             retryable: false,
-            userFriendly: true
+            userFriendly: true,
+            context: errorContext
+          };
+          break;
+
+        case 403:
+          // Forbidden
+          errorDetails = {
+            message: error.error?.message || this.getContextMessage(errorContext, 403) || 'You do not have permission to perform this action.',
+            statusCode: 403,
+            retryable: false,
+            userFriendly: true,
+            context: errorContext
+          };
+          break;
+
+        case 404:
+          // Not Found
+          errorDetails = {
+            message: error.error?.message || this.getContextMessage(errorContext, 404) || 'The requested resource was not found.',
+            statusCode: 404,
+            retryable: false,
+            userFriendly: true,
+            context: errorContext
           };
           break;
 
         case 409:
-          // Conflict - duplicate case
+          // Conflict
           errorDetails = {
-            message: error.error?.message || 'A conflict occurred. This action cannot be completed.',
+            message: error.error?.message || this.getContextMessage(errorContext, 409) || 'A conflict occurred. This action cannot be completed.',
             statusCode: 409,
             retryable: false,
-            userFriendly: true
+            userFriendly: true,
+            context: errorContext
           };
           break;
 
@@ -109,20 +165,22 @@ export class ErrorHandlerService {
           // Too Many Requests - rate limiting
           const retryAfter = error.error?.retryAfter || 60;
           errorDetails = {
-            message: `You're sending messages too quickly. Please wait ${retryAfter} seconds and try again.`,
+            message: error.error?.message || this.getContextMessage(errorContext, 429) || `You're sending requests too quickly. Please wait ${retryAfter} seconds and try again.`,
             statusCode: 429,
             retryable: true,
-            userFriendly: true
+            userFriendly: true,
+            context: errorContext
           };
           break;
 
         case 500:
           // Internal Server Error
           errorDetails = {
-            message: 'A server error occurred. Please try again later.',
+            message: error.error?.message || this.getContextMessage(errorContext, 500) || 'A server error occurred. Please try again later.',
             statusCode: 500,
             retryable: true,
-            userFriendly: true
+            userFriendly: true,
+            context: errorContext
           };
           break;
 
@@ -134,7 +192,8 @@ export class ErrorHandlerService {
             message: 'The server is temporarily unavailable. Please try again in a few moments.',
             statusCode: error.status,
             retryable: true,
-            userFriendly: true
+            userFriendly: true,
+            context: errorContext
           };
           break;
 
@@ -143,19 +202,15 @@ export class ErrorHandlerService {
             message: error.error?.message || 'An unexpected error occurred. Please try again.',
             statusCode: error.status,
             retryable: error.status >= 500,
-            userFriendly: false
+            userFriendly: false,
+            context: errorContext
           };
       }
     }
 
-    // Add context if provided
-    if (context) {
-      errorDetails.message = `${context}: ${errorDetails.message}`;
-    }
-
     // Log error for debugging
     console.error('Error handled:', {
-      context,
+      context: errorContext,
       status: error.status,
       message: errorDetails.message,
       originalError: error
@@ -165,11 +220,50 @@ export class ErrorHandlerService {
   }
 
   /**
+   * Get context-specific error message
+   */
+  private getContextMessage(context: ErrorContext, statusCode: number): string | undefined {
+    return this.contextMessages[context]?.[statusCode];
+  }
+
+  /**
+   * Normalize context string to ErrorContext type
+   */
+  private normalizeContext(context?: string | ErrorContext): ErrorContext {
+    if (!context) {
+      return 'general';
+    }
+
+    // Map common context strings to ErrorContext
+    const contextMap: Record<string, ErrorContext> = {
+      'auth': 'authentication',
+      'login': 'authentication',
+      'signup': 'authentication',
+      'case': 'case_management',
+      'cases': 'case_management',
+      'message': 'messaging',
+      'messages': 'messaging',
+      'chat': 'messaging',
+      'user': 'user_management',
+      'users': 'user_management',
+      'admin': 'user_management',
+      'hospital': 'hospital',
+      'notification': 'notification',
+      'notifications': 'notification',
+      'profile': 'profile',
+      'subscription': 'subscription'
+    };
+
+    const normalized = context.toLowerCase().replace(/[^a-z]/g, '');
+    return contextMap[normalized] || (context as ErrorContext) || 'general';
+  }
+
+  /**
    * Get user-friendly error message
    */
-  getUserFriendlyMessage(error: any, defaultMessage: string = 'An error occurred'): string {
+  getUserFriendlyMessage(error: any, defaultMessage: string = 'An error occurred', context?: string | ErrorContext): string {
     if (error instanceof HttpErrorResponse) {
-      const errorDetails = this.handleError(error);
+      const errorDetails = this.handleError(error, context);
       return errorDetails.message;
     }
 
@@ -182,6 +276,52 @@ export class ErrorHandlerService {
     }
 
     return defaultMessage;
+  }
+
+  /**
+   * Get formatted error message with context
+   */
+  getFormattedErrorMessage(error: HttpErrorResponse, context?: string | ErrorContext): string {
+    const errorDetails = this.handleError(error, context);
+
+    // If there are validation errors, format them
+    if (errorDetails.errors && errorDetails.errors.length > 0) {
+      return this.formatValidationErrors(errorDetails.errors);
+    }
+
+    return errorDetails.message;
+  }
+
+  /**
+   * Check if error should show toast notification
+   */
+  shouldShowToast(error: HttpErrorResponse): boolean {
+    // Don't show toast for 401 (handled by interceptor redirect)
+    if (error.status === 401) {
+      return false;
+    }
+
+    // Show toast for all other errors
+    return true;
+  }
+
+  /**
+   * Get toast type based on error
+   */
+  getToastType(error: HttpErrorResponse): 'error' | 'warning' | 'info' {
+    if (error.status === 429) {
+      return 'warning'; // Rate limit
+    }
+
+    if (error.status >= 500) {
+      return 'error'; // Server error
+    }
+
+    if (error.status === 404) {
+      return 'warning'; // Not found
+    }
+
+    return 'error'; // Default to error
   }
 
   /**

@@ -1,0 +1,288 @@
+/* ============================================
+   SKELETON LOADER - MODERN DESIGN
+   ============================================ */
+
+.skeleton-container {
+  width: 100%;
+}
+
+/* ============================================
+   BASE SKELETON ANIMATION
+   ============================================ */
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton-line,
+.skeleton-avatar,
+.skeleton-circle,
+.skeleton-card-header,
+.skeleton-card-body > div {
+  background: linear-gradient(
+    90deg,
+    var(--color-gray-100) 0%,
+    var(--color-gray-50) 20%,
+    var(--color-gray-100) 40%,
+    var(--color-gray-100) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: var(--radius-md);
+}
+
+/* ============================================
+   LIST SKELETON
+   ============================================ */
+
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.skeleton-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4);
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-gray-200);
+}
+
+.skeleton-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeleton-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-line-title {
+  width: 60%;
+  height: 16px;
+}
+
+.skeleton-line-subtitle {
+  width: 40%;
+  height: 12px;
+}
+
+.skeleton-line-short {
+  width: 30%;
+}
+
+/* ============================================
+   CARD SKELETON
+   ============================================ */
+
+.skeleton-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-4);
+}
+
+.skeleton-card {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-gray-200);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.skeleton-card-header {
+  height: 140px;
+  background: linear-gradient(
+    90deg,
+    var(--color-gray-100) 0%,
+    var(--color-gray-50) 20%,
+    var(--color-gray-100) 40%,
+    var(--color-gray-100) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+.skeleton-card-body {
+  padding: var(--spacing-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+/* ============================================
+   TEXT SKELETON
+   ============================================ */
+
+.skeleton-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+/* ============================================
+   CIRCLE SKELETON
+   ============================================ */
+
+.skeleton-circles {
+  display: flex;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+}
+
+.skeleton-circle {
+  border-radius: 50%;
+  background: linear-gradient(
+    90deg,
+    var(--color-gray-100) 0%,
+    var(--color-gray-50) 20%,
+    var(--color-gray-100) 40%,
+    var(--color-gray-100) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+/* ============================================
+   TABLE SKELETON
+   ============================================ */
+
+.skeleton-table {
+  width: 100%;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.skeleton-table-header {
+  padding: var(--spacing-4);
+  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.skeleton-table-row {
+  padding: var(--spacing-4);
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+.skeleton-table-row:last-child {
+  border-bottom: none;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+  .skeleton-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .skeleton-list-item {
+    padding: var(--spacing-3);
+  }
+
+  .skeleton-avatar {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .skeleton-card-body {
+    padding: var(--spacing-3);
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY - REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-line,
+  .skeleton-avatar,
+  .skeleton-circle,
+  .skeleton-card-header,
+  .skeleton-card-body > div {
+    animation: none;
+    background: var(--color-gray-100);
+  }
+}
+
+/* ============================================
+   ADDITIONAL VARIANTS
+   ============================================ */
+
+/* Stat Card Skeleton */
+.skeleton-stat-card {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-gray-200);
+  padding: var(--spacing-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  box-shadow: var(--shadow-sm);
+}
+
+.skeleton-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    90deg,
+    var(--color-gray-100) 0%,
+    var(--color-gray-50) 20%,
+    var(--color-gray-100) 40%,
+    var(--color-gray-100) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+.skeleton-stat-value {
+  height: 32px;
+  width: 60%;
+  background: linear-gradient(
+    90deg,
+    var(--color-gray-100) 0%,
+    var(--color-gray-50) 20%,
+    var(--color-gray-100) 40%,
+    var(--color-gray-100) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: var(--radius-md);
+}
+
+.skeleton-stat-label {
+  height: 16px;
+  width: 40%;
+  background: linear-gradient(
+    90deg,
+    var(--color-gray-100) 0%,
+    var(--color-gray-50) 20%,
+    var(--color-gray-100) 40%,
+    var(--color-gray-100) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: var(--radius-sm);
+}

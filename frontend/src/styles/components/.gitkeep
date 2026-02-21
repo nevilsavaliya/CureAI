@@ -1,0 +1,10 @@
+# Component Styles Directory
+
+This directory contains reusable component styles that can be imported as needed.
+
+Component files will be created in subsequent tasks:
+- _buttons.css
+- _inputs.css
+- _cards.css
+- _modals.css
+- _tables.css

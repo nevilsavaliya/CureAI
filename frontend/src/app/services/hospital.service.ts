@@ -143,6 +143,13 @@ export class HospitalService {
     return this.http.get<HospitalResponse>(
       `${this.apiUrl}/admin/hospitals`,
       { params }
+    ).pipe(
+      map(response => {
+        // Backend response format: { success: true, count: number, hospitals: [...] }
+        console.log('getAllHospitals response:', response);
+        return response;
+      }),
+      catchError(this.handleError)
     );
   }
 
@@ -237,6 +244,13 @@ export class HospitalService {
     return this.http.post<HospitalLoginResponse>(
       `${this.apiUrl}/hospitals/login`,
       { email, password, rememberMe }
+    ).pipe(
+      map(response => {
+        // Backend spreads data directly: { success, message, token, hospital }
+        console.log('Hospital login response:', response);
+        return response;
+      }),
+      catchError(this.handleError)
     );
   }
 
@@ -279,6 +293,9 @@ export class HospitalService {
     ).pipe(
       retry(2), // Retry failed requests up to 2 times
       map(response => {
+        // Backend spreads data directly: { success: true, hospital: {...} }
+        console.log('Hospital profile response:', response);
+        
         // Cache successful response
         if (response.success && response.hospital) {
           this.profileCache = response.hospital;
@@ -308,6 +325,9 @@ export class HospitalService {
     ).pipe(
       retry(2), // Retry failed requests up to 2 times
       map(response => {
+        // Backend spreads data directly: { success: true, message: '...', stats: {...} }
+        console.log('API usage stats response:', response);
+        
         // Cache successful response
         if (response.success && response.stats) {
           this.statsCache = {
@@ -347,6 +367,11 @@ export class HospitalService {
       { params }
     ).pipe(
       retry(2), // Retry failed requests up to 2 times
+      map(response => {
+        // Backend spreads data directly: { success: true, message: '...', requests: [...], pagination: {...} }
+        console.log('Recent API requests response:', response);
+        return response;
+      }),
       catchError(this.handleError)
     );
   }

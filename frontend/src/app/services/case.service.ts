@@ -87,8 +87,22 @@ export class CaseService {
   }
 
   // Get all cases for the current user
-  getCases(): Observable<any> {
-    return this.http.get(`${this.apiUrl}`).pipe(
+  getCases(page?: number, limit?: number): Observable<any> {
+    let url = this.apiUrl;
+    const params: string[] = [];
+    
+    if (page !== undefined) {
+      params.push(`page=${page}`);
+    }
+    if (limit !== undefined) {
+      params.push(`limit=${limit}`);
+    }
+    
+    if (params.length > 0) {
+      url += '?' + params.join('&');
+    }
+    
+    return this.http.get(url).pipe(
       retryWhen(this.errorHandler.retryStrategy(2, 1000)),
       catchError((error: HttpErrorResponse) => {
         const errorDetails = this.errorHandler.handleError(error, 'Failed to load cases');

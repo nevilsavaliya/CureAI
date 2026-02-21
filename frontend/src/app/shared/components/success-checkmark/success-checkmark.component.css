@@ -1,0 +1,77 @@
+.success-checkmark-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-4);
+  padding: var(--spacing-6);
+}
+
+.success-checkmark {
+  display: block;
+  margin: 0 auto;
+}
+
+.success-checkmark-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  stroke-width: 2;
+  stroke-miterlimit: 10;
+  stroke: var(--color-success-500);
+  fill: none;
+  animation: checkmark-circle 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.success-checkmark-check {
+  transform-origin: 50% 50%;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  stroke: var(--color-success-500);
+  stroke-width: 3;
+  fill: none;
+  animation: checkmark-check 0.3s 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+@keyframes checkmark-circle {
+  0% {
+    stroke-dashoffset: 166;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes checkmark-check {
+  0% {
+    stroke-dashoffset: 48;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.success-message {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-success-600);
+  text-align: center;
+}
+
+/* Size Variants */
+.success-checkmark-container.sm .success-message {
+  font-size: var(--font-size-base);
+}
+
+.success-checkmark-container.lg .success-message {
+  font-size: var(--font-size-2xl);
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .success-checkmark-circle,
+  .success-checkmark-check {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}

@@ -1,4 +1,4 @@
-<div class="login-wrapper">
+<div class="login-wrapper" id="main-content" role="main">
   <!-- Left Side - Form -->
   <div class="login-form-section">
     <div class="login-form-container">
@@ -14,12 +14,12 @@
       </div>
 
       <!-- Login Form -->
-      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form" role="form" aria-label="Login form">
         <!-- Email Field -->
         <div class="form-group">
           <label for="email">Email Address</label>
           <div class="input-wrapper">
-            <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
             </svg>
             <input 
@@ -29,9 +29,12 @@
               class="form-control"
               placeholder="Enter your email"
               [class.error]="f['email'].invalid && f['email'].touched"
+              [attr.aria-invalid]="f['email'].invalid && f['email'].touched"
+              [attr.aria-describedby]="f['email'].invalid && f['email'].touched ? 'email-error' : null"
+              aria-required="true"
             />
           </div>
-          <div class="form-error" *ngIf="f['email'].invalid && f['email'].touched">
+          <div class="form-error" id="email-error" *ngIf="f['email'].invalid && f['email'].touched" role="alert" aria-live="polite">
             <span *ngIf="f['email'].errors?.['required']">Email is required</span>
             <span *ngIf="f['email'].errors?.['email']">Please enter a valid email</span>
           </div>
@@ -41,7 +44,7 @@
         <div class="form-group">
           <label for="password">Password</label>
           <div class="input-wrapper">
-            <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
             <input 
@@ -51,9 +54,12 @@
               class="form-control"
               placeholder="Enter your password"
               [class.error]="f['password'].invalid && f['password'].touched"
+              [attr.aria-invalid]="f['password'].invalid && f['password'].touched"
+              [attr.aria-describedby]="f['password'].invalid && f['password'].touched ? 'password-error' : null"
+              aria-required="true"
             />
           </div>
-          <div class="form-error" *ngIf="f['password'].invalid && f['password'].touched">
+          <div class="form-error" id="password-error" *ngIf="f['password'].invalid && f['password'].touched" role="alert" aria-live="polite">
             <span *ngIf="f['password'].errors?.['required']">Password is required</span>
             <span *ngIf="f['password'].errors?.['minlength']">Password must be at least 6 characters</span>
           </div>
@@ -62,28 +68,36 @@
         <!-- Remember Me & Forgot Password -->
         <div class="form-options">
           <label class="checkbox-label">
-            <input type="checkbox" class="checkbox">
+            <input type="checkbox" class="checkbox" id="remember-me" aria-label="Remember me">
             <span>Remember me</span>
           </label>
-          <a routerLink="/forgot-password" class="forgot-link">Forgot Password?</a>
+          <a routerLink="/forgot-password" class="forgot-link" aria-label="Reset your password">Forgot Password?</a>
         </div>
 
         <!-- Error Message -->
-        <div class="alert alert-danger" *ngIf="errorMessage">
-          <svg class="alert-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>{{ errorMessage }}</span>
-        </div>
+        <app-error-display 
+          [error]="error" 
+          [retryable]="isErrorRetryable()"
+          (retry)="retryLogin()"
+          (dismiss)="clearError()">
+        </app-error-display>
+
+        <!-- Loading Spinner -->
+        <app-loading-spinner 
+          *ngIf="loading && !error" 
+          [size]="'small'" 
+          [message]="'Signing in...'">
+        </app-loading-spinner>
 
         <!-- Submit Button -->
-        <button type="submit" class="btn-login" [disabled]="loading">
+        <button type="submit" class="btn-login" [disabled]="loading" [attr.aria-busy]="loading">
           <span *ngIf="!loading">Sign In</span>
           <span *ngIf="loading" class="loading-content">
-            <svg class="spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg class="spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
+            <span class="sr-only">Signing in, please wait</span>
             Signing in...
           </span>
         </button>
@@ -91,18 +105,18 @@
 
       <!-- Sign Up Link -->
       <div class="signup-prompt">
-        <p>Don't have an account? <a routerLink="/signup" class="signup-link">Sign up here</a></p>
+        <p>Don't have an account? <a routerLink="/signup" class="signup-link" aria-label="Create a new account">Sign up here</a></p>
       </div>
 
       <!-- Divider -->
-      <div class="divider">
+      <div class="divider" role="separator" aria-label="or continue with">
         <span>or continue with</span>
       </div>
 
       <!-- Alternative Login Options -->
       <div class="alt-login-options">
-        <a routerLink="/hospital/login" class="alt-login-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <a routerLink="/hospital/login" class="alt-login-btn" aria-label="Login as hospital administrator">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
           <span>Hospital Login</span>
@@ -111,10 +125,10 @@
     </div>
   </div>
 
-  <!-- Right Side - Image -->
+  <!-- Right Side - Hero Section -->
   <div class="login-image-section">
     <div class="image-overlay"></div>
-    <img src="assets/images/doctor-consultation.svg" alt="Healthcare Professional" class="hero-image">
+    <img src="assets/illustrations/login-hero.svg" alt="Healthcare Professional" class="hero-image">
     <div class="image-content">
       <h2>Your Health, Our Priority</h2>
       <p>Connect with healthcare professionals and manage your medical records securely</p>

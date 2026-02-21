@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 400" fill="none">
+  <!-- Login page hero illustration -->
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="500" height="400" fill="url(#grad1)" opacity="0.1"/>
+  <circle cx="250" cy="150" r="80" fill="#667eea" opacity="0.2"/>
+  <circle cx="250" cy="150" r="60" fill="#667eea" opacity="0.3"/>
+  <circle cx="250" cy="150" r="40" fill="#667eea"/>
+  <path d="M230 140 L240 150 L270 120" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <rect x="150" y="240" width="200" height="120" rx="12" fill="#fff" stroke="#e5e7eb" stroke-width="2"/>
+  <rect x="170" y="260" width="160" height="12" rx="6" fill="#f3f4f6"/>
+  <rect x="170" y="285" width="120" height="12" rx="6" fill="#f3f4f6"/>
+  <rect x="170" y="310" width="140" height="12" rx="6" fill="#f3f4f6"/>
+  <rect x="170" y="335" width="80" height="12" rx="6" fill="#667eea"/>
+  <circle cx="100" cy="100" r="20" fill="#fbbf24" opacity="0.3"/>
+  <circle cx="400" cy="120" r="25" fill="#34d399" opacity="0.3"/>
+  <circle cx="420" cy="300" r="30" fill="#f472b6" opacity="0.3"/>
+  <circle cx="80" cy="320" r="22" fill="#60a5fa" opacity="0.3"/>
+  <path d="M50 200 Q100 180 150 200" stroke="#667eea" stroke-width="2" opacity="0.2" fill="none"/>
+  <path d="M350 250 Q400 230 450 250" stroke="#764ba2" stroke-width="2" opacity="0.2" fill="none"/>
+  <g id="heartbeat">
+    <path d="M220 50 L230 50 L235 40 L240 60 L245 50 L280 50" stroke="#ef4444" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="250" cy="35" r="8" fill="#ef4444" opacity="0.3"/>
+  </g>
+</svg>

@@ -1,4 +1,4 @@
-<div class="signup-wrapper">
+<div class="signup-wrapper" id="main-content" role="main">
   <!-- Left Side - Form -->
   <div class="signup-form-section">
     <div class="signup-form-container">
@@ -14,48 +14,48 @@
       </div>
 
       <!-- Progress Bar -->
-      <div class="progress-container">
+      <div class="progress-container" role="progressbar" [attr.aria-valuenow]="currentStep" aria-valuemin="1" [attr.aria-valuemax]="totalSteps" [attr.aria-label]="'Step ' + currentStep + ' of ' + totalSteps">
         <div class="progress-bar">
           <div class="progress-fill" [style.width.%]="progressPercentage"></div>
         </div>
-        <div class="progress-text">Step {{ currentStep }} of {{ totalSteps }}</div>
+        <div class="progress-text" aria-hidden="true">Step {{ currentStep }} of {{ totalSteps }}</div>
       </div>
 
       <!-- Step Indicators -->
-      <div class="step-indicators">
-        <div class="step-indicator" [class.active]="currentStep >= 1" [class.completed]="currentStep > 1" (click)="goToStep(1)">
+      <nav class="step-indicators" aria-label="Signup progress">
+        <div class="step-indicator" [class.active]="currentStep >= 1" [class.completed]="currentStep > 1" (click)="goToStep(1)" role="button" [attr.aria-current]="currentStep === 1 ? 'step' : null" [attr.aria-label]="'Step 1: Basic Info' + (currentStep > 1 ? ' (completed)' : '')">
           <div class="step-circle">
-            <svg *ngIf="currentStep > 1" class="check-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg *ngIf="currentStep > 1" class="check-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
             </svg>
-            <span *ngIf="currentStep <= 1">1</span>
+            <span *ngIf="currentStep <= 1" aria-hidden="true">1</span>
           </div>
           <div class="step-label">Basic Info</div>
         </div>
-        <div class="step-line" [class.completed]="currentStep > 1"></div>
-        <div class="step-indicator" [class.active]="currentStep >= 2" [class.completed]="currentStep > 2" (click)="goToStep(2)">
+        <div class="step-line" [class.completed]="currentStep > 1" aria-hidden="true"></div>
+        <div class="step-indicator" [class.active]="currentStep >= 2" [class.completed]="currentStep > 2" (click)="goToStep(2)" role="button" [attr.aria-current]="currentStep === 2 ? 'step' : null" [attr.aria-label]="'Step 2: Account' + (currentStep > 2 ? ' (completed)' : '')">
           <div class="step-circle">
-            <svg *ngIf="currentStep > 2" class="check-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg *ngIf="currentStep > 2" class="check-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
             </svg>
-            <span *ngIf="currentStep <= 2">2</span>
+            <span *ngIf="currentStep <= 2" aria-hidden="true">2</span>
           </div>
           <div class="step-label">Account</div>
         </div>
-        <div class="step-line" [class.completed]="currentStep > 2"></div>
-        <div class="step-indicator" [class.active]="currentStep >= 3" [class.completed]="currentStep > 3">
+        <div class="step-line" [class.completed]="currentStep > 2" aria-hidden="true"></div>
+        <div class="step-indicator" [class.active]="currentStep >= 3" [class.completed]="currentStep > 3" role="button" [attr.aria-current]="currentStep === 3 ? 'step' : null" aria-label="Step 3: Details">
           <div class="step-circle">
-            <svg *ngIf="currentStep > 3" class="check-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg *ngIf="currentStep > 3" class="check-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
             </svg>
-            <span *ngIf="currentStep <= 3">3</span>
+            <span *ngIf="currentStep <= 3" aria-hidden="true">3</span>
           </div>
           <div class="step-label">Details</div>
         </div>
-      </div>
+      </nav>
 
       <!-- Signup Form -->
-      <form [formGroup]="signupForm" (ngSubmit)="onSubmit()" class="signup-form">
+      <form [formGroup]="signupForm" (ngSubmit)="onSubmit()" class="signup-form" role="form" aria-label="Signup form">
         <!-- Step 1: Basic Information -->
         <div class="form-step" *ngIf="currentStep === 1">
           <h3 class="step-title">Basic Information</h3>
@@ -182,8 +182,32 @@
                 class="form-control"
                 placeholder="Create a password"
                 [class.error]="f['password'].invalid && f['password'].touched"
+                (input)="onPasswordChange()"
               />
             </div>
+            
+            <!-- Password Strength Indicator -->
+            <div class="password-strength" *ngIf="f['password'].value">
+              <div class="strength-bar">
+                <div 
+                  class="strength-fill" 
+                  [class.weak]="passwordStrength === 'weak'"
+                  [class.medium]="passwordStrength === 'medium'"
+                  [class.strong]="passwordStrength === 'strong'"
+                  [style.width.%]="passwordStrengthPercentage"
+                ></div>
+              </div>
+              <div class="strength-text">
+                <span 
+                  [class.weak]="passwordStrength === 'weak'"
+                  [class.medium]="passwordStrength === 'medium'"
+                  [class.strong]="passwordStrength === 'strong'"
+                >
+                  {{ passwordStrengthText }}
+                </span>
+              </div>
+            </div>
+            
             <div class="form-error" *ngIf="f['password'].invalid && f['password'].touched">
               <span *ngIf="f['password'].errors?.['required']">Password is required</span>
               <span *ngIf="f['password'].errors?.['minlength']">Password must be at least 6 characters</span>

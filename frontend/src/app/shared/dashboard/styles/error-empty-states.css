@@ -1,0 +1,462 @@
+/**
+ * Error and Empty State Styles
+ * 
+ * Shared styles for error and empty states across dashboard components.
+ * Provides consistent UI for when data is unavailable or errors occur.
+ */
+
+/* Empty State Container */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  min-height: 200px;
+}
+
+.empty-state-small {
+  min-height: 150px;
+  padding: 30px 20px;
+}
+
+.empty-state-large {
+  min-height: 300px;
+  padding: 60px 20px;
+}
+
+/* Empty State Icon */
+.empty-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  color: #9CA3AF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.empty-icon-small {
+  width: 48px;
+  height: 48px;
+}
+
+.empty-icon-large {
+  width: 80px;
+  height: 80px;
+}
+
+/* Empty State Message */
+.empty-message {
+  color: #6B7280;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 300px;
+}
+
+.empty-message-title {
+  color: #374151;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.empty-message-subtitle {
+  color: #6B7280;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Empty State Action */
+.empty-action {
+  margin-top: 16px;
+}
+
+.empty-action-button {
+  padding: 8px 16px;
+  background-color: #4F46E5;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.empty-action-button:hover {
+  background-color: #4338CA;
+}
+
+.empty-action-button:focus {
+  outline: 2px solid #4F46E5;
+  outline-offset: 2px;
+}
+
+/* Error State Container */
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  min-height: 200px;
+  background-color: #FEF2F2;
+  border: 1px solid #FEE2E2;
+  border-radius: 8px;
+}
+
+.error-state-small {
+  min-height: 150px;
+  padding: 30px 20px;
+}
+
+.error-state-large {
+  min-height: 300px;
+  padding: 60px 20px;
+}
+
+/* Error State Icon */
+.error-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  color: #EF4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.error-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.error-icon-small {
+  width: 48px;
+  height: 48px;
+}
+
+.error-icon-large {
+  width: 80px;
+  height: 80px;
+}
+
+/* Error State Message */
+.error-message {
+  color: #991B1B;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 300px;
+}
+
+.error-message-title {
+  color: #7F1D1D;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.error-message-subtitle {
+  color: #991B1B;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Error State Actions */
+.error-actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.error-action-button {
+  padding: 8px 16px;
+  background-color: #EF4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.error-action-button:hover {
+  background-color: #DC2626;
+}
+
+.error-action-button:focus {
+  outline: 2px solid #EF4444;
+  outline-offset: 2px;
+}
+
+.error-action-button-secondary {
+  background-color: white;
+  color: #EF4444;
+  border: 1px solid #EF4444;
+}
+
+.error-action-button-secondary:hover {
+  background-color: #FEF2F2;
+}
+
+/* Retry Icon Animation */
+.retry-icon {
+  display: inline-block;
+  animation: none;
+}
+
+.error-action-button:active .retry-icon {
+  animation: spin 0.5s ease-in-out;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Warning State (for partial errors) */
+.warning-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  min-height: 200px;
+  background-color: #FFFBEB;
+  border: 1px solid #FEF3C7;
+  border-radius: 8px;
+}
+
+.warning-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  color: #F59E0B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.warning-message {
+  color: #92400E;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 300px;
+}
+
+/* Component-Specific Empty States */
+
+/* Appointment List Empty State */
+.appointment-list-empty {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.appointment-list-empty .empty-icon {
+  margin: 0 auto 16px;
+}
+
+/* Request List Empty State */
+.request-list-empty {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.request-list-empty .empty-icon {
+  margin: 0 auto 16px;
+}
+
+/* Chart Empty State */
+.chart-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 250px;
+  padding: 20px;
+}
+
+/* Calendar Empty State */
+.calendar-empty-state {
+  padding: 20px;
+  text-align: center;
+}
+
+/* User Details Panel Empty State */
+.user-details-empty {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+/* Inline Error Message (for form-like components) */
+.inline-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background-color: #FEF2F2;
+  border: 1px solid #FEE2E2;
+  border-radius: 6px;
+  color: #991B1B;
+  font-size: 14px;
+  margin: 8px 0;
+}
+
+.inline-error-icon {
+  width: 20px;
+  height: 20px;
+  color: #EF4444;
+  flex-shrink: 0;
+}
+
+/* Inline Warning Message */
+.inline-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background-color: #FFFBEB;
+  border: 1px solid #FEF3C7;
+  border-radius: 6px;
+  color: #92400E;
+  font-size: 14px;
+  margin: 8px 0;
+}
+
+.inline-warning-icon {
+  width: 20px;
+  height: 20px;
+  color: #F59E0B;
+  flex-shrink: 0;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+  .empty-state,
+  .error-state,
+  .warning-state {
+    padding: 30px 16px;
+    min-height: 150px;
+  }
+
+  .empty-icon,
+  .error-icon,
+  .warning-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .empty-message,
+  .error-message,
+  .warning-message {
+    font-size: 13px;
+  }
+
+  .error-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .error-action-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .empty-state {
+    background-color: transparent;
+  }
+
+  .empty-icon {
+    color: #6B7280;
+  }
+
+  .empty-message {
+    color: #9CA3AF;
+  }
+
+  .empty-message-title {
+    color: #D1D5DB;
+  }
+
+  .error-state {
+    background-color: #7F1D1D;
+    border-color: #991B1B;
+  }
+
+  .error-message,
+  .error-message-title,
+  .error-message-subtitle {
+    color: #FEE2E2;
+  }
+
+  .warning-state {
+    background-color: #78350F;
+    border-color: #92400E;
+  }
+
+  .warning-message {
+    color: #FEF3C7;
+  }
+
+  .inline-error {
+    background-color: #7F1D1D;
+    border-color: #991B1B;
+    color: #FEE2E2;
+  }
+
+  .inline-warning {
+    background-color: #78350F;
+    border-color: #92400E;
+    color: #FEF3C7;
+  }
+}
+
+/* Accessibility */
+.empty-state[role="status"],
+.error-state[role="alert"],
+.warning-state[role="status"] {
+  /* Ensure screen readers announce these states */
+}
+
+/* Animation for state transitions */
+.empty-state,
+.error-state,
+.warning-state {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

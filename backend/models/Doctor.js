@@ -108,6 +108,13 @@ const doctorSchema = new mongoose.Schema({
   subscriptionExpiryDate: {
     type: Date
   },
+  lastPaymentDate: {
+    type: Date
+  },
+  isShadowBanned: {
+    type: Boolean,
+    default: false
+  },
   paymentInfo: {
     transactionId: String,
     amount: Number,

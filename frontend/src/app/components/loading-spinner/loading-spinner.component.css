@@ -1,0 +1,219 @@
+/* ============================================
+   LOADING SPINNER - MODERN DESIGN
+   ============================================ */
+
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-5);
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  animation: fadeIn var(--duration-base) var(--ease-out);
+}
+
+.loading-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(249, 250, 251, 0.98) 100%);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  animation: fadeIn var(--duration-base) var(--ease-out);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-4);
+  animation: scaleIn var(--duration-slow) var(--ease-out);
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ============================================
+   SPINNER SIZES
+   ============================================ */
+
+.spinner {
+  display: inline-block;
+  position: relative;
+}
+
+.spinner-small {
+  width: 24px;
+  height: 24px;
+}
+
+.spinner-medium {
+  width: 48px;
+  height: 48px;
+}
+
+.spinner-large {
+  width: 64px;
+  height: 64px;
+}
+
+/* ============================================
+   MODERN SPINNER ANIMATION
+   ============================================ */
+
+.spinner-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: var(--color-primary-500);
+  border-right-color: var(--color-primary-400);
+  border-bottom-color: var(--color-primary-300);
+  animation: spin 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+  position: relative;
+}
+
+.spinner-circle::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: var(--color-primary-200);
+  animation: spin 1.2s linear infinite reverse;
+  opacity: 0.3;
+}
+
+.spinner-small .spinner-circle {
+  border-width: 2px;
+}
+
+.spinner-small .spinner-circle::before {
+  border-width: 2px;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+}
+
+.spinner-large .spinner-circle {
+  border-width: 4px;
+}
+
+.spinner-large .spinner-circle::before {
+  border-width: 4px;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================
+   LOADING MESSAGE
+   ============================================ */
+
+.loading-message {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.loading-fullscreen .loading-message {
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+}
+
+/* ============================================
+   ACCESSIBILITY - REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner-circle,
+  .spinner-circle::before {
+    animation-duration: 2s;
+  }
+  
+  .loading-message {
+    animation: none;
+    opacity: 1;
+  }
+  
+  .loading-content {
+    animation: none;
+  }
+  
+  .loading-overlay,
+  .loading-fullscreen {
+    animation: none;
+  }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 640px) {
+  .loading-container {
+    padding: var(--spacing-4);
+  }
+  
+  .spinner-large {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .loading-message {
+    font-size: var(--font-size-xs);
+  }
+}

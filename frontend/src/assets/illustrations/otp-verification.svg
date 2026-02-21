@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <!-- OTP verification illustration -->
+  <ellipse cx="200" cy="260" rx="100" ry="12" fill="#e5e7eb" opacity="0.5"/>
+  <rect x="100" y="80" width="200" height="140" rx="12" fill="#fff" stroke="#667eea" stroke-width="3"/>
+  <rect x="100" y="80" width="200" height="40" rx="12" fill="#667eea"/>
+  <rect x="100" y="120" width="200" height="100" rx="0 0 12 12" fill="#f9fafb"/>
+  <circle cx="200" cy="100" r="12" fill="#fff"/>
+  <path d="M195 100 L198 103 L205 96" stroke="#667eea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <rect x="130" y="150" width="30" height="40" rx="6" fill="#fff" stroke="#667eea" stroke-width="2"/>
+  <text x="145" y="175" font-family="monospace" font-size="24" fill="#667eea" text-anchor="middle" font-weight="bold">5</text>
+  <rect x="170" y="150" width="30" height="40" rx="6" fill="#fff" stroke="#667eea" stroke-width="2"/>
+  <text x="185" y="175" font-family="monospace" font-size="24" fill="#667eea" text-anchor="middle" font-weight="bold">2</text>
+  <rect x="210" y="150" width="30" height="40" rx="6" fill="#fff" stroke="#667eea" stroke-width="2"/>
+  <text x="225" y="175" font-family="monospace" font-size="24" fill="#667eea" text-anchor="middle" font-weight="bold">8</text>
+  <rect x="250" y="150" width="30" height="40" rx="6" fill="#fff" stroke="#667eea" stroke-width="2"/>
+  <text x="265" y="175" font-family="monospace" font-size="24" fill="#667eea" text-anchor="middle" font-weight="bold">4</text>
+  <circle cx="320" cy="120" r="35" fill="#10b981" opacity="0.2"/>
+  <circle cx="80" cy="140" r="30" fill="#3b82f6" opacity="0.2"/>
+  <path d="M200 40 L200 60" stroke="#667eea" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="200" cy="35" r="5" fill="#667eea"/>
+  <path d="M180 50 Q200 45 220 50" stroke="#667eea" stroke-width="2" opacity="0.3" fill="none"/>
+  <g id="lock">
+    <rect x="340" y="200" width="40" height="50" rx="6" fill="#667eea" opacity="0.3"/>
+    <path d="M350 200 L350 190 Q350 180 360 180 Q370 180 370 190 L370 200" stroke="#667eea" stroke-width="3" fill="none" opacity="0.3"/>
+    <circle cx="360" cy="220" r="4" fill="#fff" opacity="0.5"/>
+  </g>
+</svg>

@@ -14,6 +14,36 @@
             "date": 1771058998136,
             "name": "/home/nevil_savaliya/CureAI/backend/logs/hospital-2026-02-14.log",
             "hash": "5581349737bb774090c0880465c5205da2c9b72537a554b395640f61627d33ed"
+        },
+        {
+            "date": 1771307416193,
+            "name": "/home/nevil_savaliya/CureAI/backend/logs/hospital-2026-02-17.log",
+            "hash": "5c75597c3a9be6dd45a0a38e523c924680a0b1b34c4a4b541fafaf01a3be9306"
+        },
+        {
+            "date": 1771386961902,
+            "name": "/home/nevil_savaliya/CureAI/backend/logs/hospital-2026-02-18.log",
+            "hash": "2b585ab0ef7848d1175d1478cab21c01096717d78a90ac52fcb0c86eeabe7059"
+        },
+        {
+            "date": 1771483861092,
+            "name": "/home/nevil_savaliya/CureAI/backend/logs/hospital-2026-02-19.log",
+            "hash": "b60acb6692289c8f40713de8c913d454796b74e9fe36635d1b5c6cdf5202c73b"
+        },
+        {
+            "date": 1771526161405,
+            "name": "/home/nevil_savaliya/CureAI/backend/logs/hospital-2026-02-20.log",
+            "hash": "76241bd46460256d66f8fd9db85126f76783bb9145e5d561bc25cff667ce3944"
+        },
+        {
+            "date": 1771614514340,
+            "name": "/home/nevil_savaliya/CureAI/backend/logs/hospital-2026-02-21.log",
+            "hash": "cd8803d550758779eb0d7349ef8b1fe523da0dcd0dd87a7a0c48a4fdb2e82ed0"
+        },
+        {
+            "date": 1771698600022,
+            "name": "/home/nevil_savaliya/CureAI/backend/logs/hospital-2026-02-22.log",
+            "hash": "f38f98f34fb5c963fca8f4cddfa5ed756b43972c63e4e2f444fca23f4f7f1c40"
         }
     ],
     "hashType": "sha256"

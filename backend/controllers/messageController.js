@@ -1,3 +1,6 @@
+const { asyncHandler, sendSuccess, sendCreated, sendError, sendNotFound, sendForbidden, validateRequiredFields } = require('../core/controllers');
+const MessageService = require('../core/services/MessageService');
+const MessageRepository = require('../core/repositories/MessageRepository');
 const Message = require('../models/Message');
 const Patient = require('../models/Patient');
 const Doctor = require('../models/Doctor');
@@ -5,144 +8,106 @@ const Case = require('../models/Case');
 const socketService = require('../services/socketService');
 const { processMessageForSymptoms } = require('../services/symptomExtractor');
 
+// Initialize repositories
+const messageRepository = new MessageRepository(Message);
+
+// Initialize MessageService
+const messageService = new MessageService(messageRepository, {
+  socketService
+});
+
 // Send message
-exports.sendMessage = async (req, res) => {
-  try {
-    const senderId = req.user.id;
-    const senderRole = req.user.role;
-    const { recipientId, content } = req.body;
+exports.sendMessage = asyncHandler(async (req, res) => {
+  const senderId = req.user.id;
+  const senderRole = req.user.role;
+  const { recipientId, content } = req.body;
 
-    if (!recipientId || !content) {
-      return res.status(400).json({
-        success: false,
-        message: 'Recipient ID and content are required'
-      });
-    }
-
-    // Determine sender and recipient models
-    let senderModel, recipientModel;
-    
-    if (senderRole === 'patient') {
-      senderModel = 'Patient';
-      recipientModel = 'Doctor'; // Patients can only message doctors
-      
-      // Verify recipient is a doctor
-      const doctor = await Doctor.findById(recipientId);
-      if (!doctor) {
-        return res.status(404).json({
-          success: false,
-          message: 'Doctor not found'
-        });
-      }
-    } else if (senderRole === 'doctor') {
-      senderModel = 'Doctor';
-      recipientModel = 'Patient'; // Doctors can only reply to patients
-      
-      // Verify recipient is a patient
-      const patient = await Patient.findById(recipientId);
-      if (!patient) {
-        return res.status(404).json({
-          success: false,
-          message: 'Patient not found'
-        });
-      }
-    } else {
-      return res.status(403).json({
-        success: false,
-        message: 'Only patients and doctors can send messages'
-      });
-    }
-
-    // Create encrypted message
-    const message = await Message.createEncrypted({
-      senderId,
-      senderModel,
-      recipientId,
-      recipientModel,
-      content
-    });
-
-    res.status(201).json({
-      success: true,
-      messageId: message._id
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+  const missingFields = validateRequiredFields(req.body, ['recipientId', 'content']);
+  if (missingFields) {
+    return sendError(res, `Missing required fields: ${missingFields.join(', ')}`, 400);
   }
-};
+
+  // Determine sender and recipient models
+  let senderModel, recipientModel;
+  
+  if (senderRole === 'patient') {
+    senderModel = 'Patient';
+    recipientModel = 'Doctor'; // Patients can only message doctors
+    
+    // Verify recipient is a doctor
+    const doctor = await Doctor.findById(recipientId);
+    if (!doctor) {
+      return sendNotFound(res, 'Doctor not found');
+    }
+  } else if (senderRole === 'doctor') {
+    senderModel = 'Doctor';
+    recipientModel = 'Patient'; // Doctors can only reply to patients
+    
+    // Verify recipient is a patient
+    const patient = await Patient.findById(recipientId);
+    if (!patient) {
+      return sendNotFound(res, 'Patient not found');
+    }
+  } else {
+    return sendForbidden(res, 'Only patients and doctors can send messages');
+  }
+
+  // Create encrypted message
+  const message = await Message.createEncrypted({
+    senderId,
+    senderModel,
+    recipientId,
+    recipientModel,
+    content
+  });
+
+  return sendCreated(res, { messageId: message._id }, 'Message sent successfully');
+});
 
 // Get messages (conversation)
-exports.getMessages = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const conversationWith = req.params.userId || req.query.conversationWith;
+exports.getMessages = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const conversationWith = req.params.userId || req.query.conversationWith;
 
-    if (!conversationWith) {
-      return res.status(400).json({
-        success: false,
-        message: 'conversationWith parameter is required'
-      });
-    }
-
-    const messages = await Message.find({
-      $or: [
-        { senderId: userId, recipientId: conversationWith },
-        { senderId: conversationWith, recipientId: userId }
-      ]
-    })
-      .populate('senderId', 'name email')
-      .populate('recipientId', 'name email')
-      .sort({ sentAt: 1 });
-
-    // Decrypt messages for response
-    const decryptedMessages = messages.map(message => {
-      const messageObj = message.toObject();
-      messageObj.content = message.getDecryptedContent();
-      return messageObj;
-    });
-
-    res.status(200).json({
-      success: true,
-      messages: decryptedMessages
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+  if (!conversationWith) {
+    return sendError(res, 'conversationWith parameter is required', 400);
   }
-};
+
+  const messages = await Message.find({
+    $or: [
+      { senderId: userId, recipientId: conversationWith },
+      { senderId: conversationWith, recipientId: userId }
+    ]
+  })
+    .populate('senderId', 'name email')
+    .populate('recipientId', 'name email')
+    .sort({ sentAt: 1 });
+
+  // Decrypt messages for response
+  const decryptedMessages = messages.map(message => {
+    const messageObj = message.toObject();
+    messageObj.content = message.getDecryptedContent();
+    return messageObj;
+  });
+
+  return sendSuccess(res, { messages: decryptedMessages }, 'Messages retrieved successfully');
+});
 
 // Mark message as read
-exports.markAsRead = async (req, res) => {
-  try {
-    const { id } = req.params;
+exports.markAsRead = asyncHandler(async (req, res) => {
+  const { id } = req.params;
 
-    const message = await Message.findById(id);
-    if (!message) {
-      return res.status(404).json({
-        success: false,
-        message: 'Message not found'
-      });
-    }
-
-    message.isRead = true;
-    message.readAt = new Date();
-    await message.save();
-
-    res.status(200).json({
-      success: true
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+  const message = await Message.findById(id);
+  if (!message) {
+    return sendNotFound(res, 'Message not found');
   }
-};
+
+  message.isRead = true;
+  message.readAt = new Date();
+  await message.save();
+
+  return sendSuccess(res, null, 'Message marked as read');
+});
 
 // Get all conversations for a doctor (patients who have messaged them)
 exports.getDoctorConversations = async (req, res) => {

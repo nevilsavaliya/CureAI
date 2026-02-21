@@ -1,263 +1,332 @@
 <div class="dashboard-container">
-  <header class="dashboard-header">
+  <!-- Mobile Navigation -->
+  <app-mobile-nav
+    [isOpen]="mobileNavOpen"
+    [userRole]="'patient'"
+    [userName]="userName"
+    (close)="closeMobileNav()"
+    (logoutClick)="logout()">
+  </app-mobile-nav>
+
+  <header class="dashboard-header" role="banner">
     <div class="header-left">
+      <app-hamburger-button
+        [isOpen]="mobileNavOpen"
+        (toggle)="toggleMobileNav()"
+        aria-label="Toggle navigation menu">
+      </app-hamburger-button>
       <app-logo [size]="'small'" [variant]="'default'" [clickable]="true"></app-logo>
       <h1>Patient Dashboard</h1>
     </div>
     <div class="user-info">
-      <button routerLink="/patient/cases" class="btn-cases">My Cases</button>
-      <app-notifications></app-notifications>
-      <span>Welcome, {{ userName }}!</span>
-      <button (click)="logout()" class="btn-logout">Logout</button>
+      <button routerLink="/patient/cases" class="btn-cases" aria-label="View my medical cases">My Cases</button>
+      <div class="user-profile" role="group" aria-label="User profile">
+        <app-avatar [name]="userName" [size]="'sm'"></app-avatar>
+        <span class="user-name">{{ userName }}</span>
+      </div>
+      <button (click)="logout()" class="btn-logout" aria-label="Logout from your account">Logout</button>
     </div>
   </header>
 
-  <div class="dashboard-content">
+  <div class="dashboard-content" id="main-content" role="main">
+    <!-- Dashboard Stats Section -->
+    <div class="dashboard-stats" *ngIf="dashboardData && !dashboardLoading" [@fadeIn]>
+      <app-stat-card
+        *ngFor="let stat of dashboardData.stats"
+        [config]="stat"
+        [loading]="dashboardLoading">
+      </app-stat-card>
+    </div>
+
+    <!-- Loading skeleton for stats -->
+    <div class="dashboard-stats" *ngIf="dashboardLoading">
+      <app-skeleton-loader [type]="'card'" [count]="3"></app-skeleton-loader>
+    </div>
+
     <div class="main-layout">
-      <!-- Chatbot Section -->
-      <div class="chatbot-section">
-        <div class="chatbot-header">
-          <h2>Healthcare Assistant</h2>
-          <button (click)="startNewConsultation()" class="btn-new">New Consultation</button>
-        </div>
+      <!-- Left Column: Symptom Analysis -->
+      <div class="left-column">
+        <!-- Chatbot Section -->
+        <div class="chatbot-section" [@cardEntrance] role="region" aria-label="Healthcare assistant chatbot">
+          <div class="chatbot-header">
+            <h2>Healthcare Assistant</h2>
+            <button (click)="startNewConsultation()" class="btn-new" aria-label="Start a new consultation">New Consultation</button>
+          </div>
 
-        <div class="chat-messages">
-          <div *ngFor="let message of chatMessages" [class.user-message]="message.isUser"
-            [class.bot-message]="!message.isUser" class="message">
-            <div class="message-content">
-              <p>{{ message.text }}</p>
-              <span class="message-time">{{ message.timestamp | date:'short' }}</span>
+          <div class="chat-messages" #chatContainer role="log" aria-live="polite" aria-atomic="false" aria-relevant="additions">
+            <div *ngFor="let message of chatMessages; let i = index" 
+                 [class.user-message]="message.isUser"
+                 [class.bot-message]="!message.isUser" 
+                 class="message"
+                 [@fadeIn]
+                 [attr.aria-label]="message.isUser ? 'Your message' : 'Assistant message'">
+              <div class="message-content">
+                <p>{{ message.text }}</p>
+                <span class="message-time">{{ message.timestamp | date:'short' }}</span>
+              </div>
+            </div>
+
+            <div *ngIf="loading" class="bot-message message" [@fadeIn] aria-label="Assistant is typing">
+              <div class="message-content">
+                <div class="typing-indicator" role="status" aria-label="Loading response">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div *ngIf="loading" class="bot-message message">
-            <div class="message-content">
-              <div class="typing-indicator">
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="chat-input">
-          <!-- Follow-up Questions UI -->
-          <div *ngIf="showingFollowUpQuestions && getCurrentQuestion()" class="follow-up-questions">
-            <div class="question-progress">
-              <div class="progress-bar">
-                <div class="progress-fill" [style.width.%]="getProgressPercentage()"></div>
-              </div>
-              <span class="progress-text">{{ answeredQuestions }} / {{ followUpQuestions.length }} answered</span>
-            </div>
-
-            <div class="question-input" [ngSwitch]="getCurrentQuestion()?.questionType">
-              <!-- Multiple Choice -->
-              <div *ngSwitchCase="'multiple_choice'" class="input-multiple-choice">
-                <div class="options-grid">
-                  <button 
-                    *ngFor="let option of getCurrentQuestion()?.options"
-                    (click)="selectedOption = option"
-                    [class.selected]="selectedOption === option"
-                    class="option-button"
-                  >
-                    {{ option }}
-                  </button>
+          <div class="chat-input">
+            <!-- Follow-up Questions UI -->
+            <div *ngIf="showingFollowUpQuestions && getCurrentQuestion()" class="follow-up-questions">
+              <div class="question-progress">
+                <div class="progress-bar">
+                  <div class="progress-fill" [style.width.%]="getProgressPercentage()"></div>
                 </div>
+                <span class="progress-text">{{ answeredQuestions }} / {{ followUpQuestions.length }} answered</span>
               </div>
 
-              <!-- Yes/No -->
-              <div *ngSwitchCase="'yes_no'" class="input-yes-no">
-                <div class="yes-no-buttons">
-                  <button 
-                    (click)="selectedOption = 'Yes'"
-                    [class.selected]="selectedOption === 'Yes'"
-                    class="yes-button"
-                  >
-                    Yes
-                  </button>
-                  <button 
-                    (click)="selectedOption = 'No'"
-                    [class.selected]="selectedOption === 'No'"
-                    class="no-button"
-                  >
-                    No
-                  </button>
+              <div class="question-input" [ngSwitch]="getCurrentQuestion()?.questionType">
+                <!-- Multiple Choice -->
+                <div *ngSwitchCase="'multiple_choice'" class="input-multiple-choice">
+                  <div class="options-grid">
+                    <button 
+                      *ngFor="let option of getCurrentQuestion()?.options"
+                      (click)="selectedOption = option"
+                      [class.selected]="selectedOption === option"
+                      class="option-button"
+                    >
+                      {{ option }}
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Scale -->
-              <div *ngSwitchCase="'scale'" class="input-scale">
-                <div class="scale-container">
-                  <span class="scale-label">{{ getCurrentQuestion()?.min || 1 }}</span>
+                <!-- Yes/No -->
+                <div *ngSwitchCase="'yes_no'" class="input-yes-no">
+                  <div class="yes-no-buttons">
+                    <button 
+                      (click)="selectedOption = 'Yes'"
+                      [class.selected]="selectedOption === 'Yes'"
+                      class="yes-button"
+                    >
+                      Yes
+                    </button>
+                    <button 
+                      (click)="selectedOption = 'No'"
+                      [class.selected]="selectedOption === 'No'"
+                      class="no-button"
+                    >
+                      No
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Scale -->
+                <div *ngSwitchCase="'scale'" class="input-scale">
+                  <div class="scale-container">
+                    <span class="scale-label">{{ getCurrentQuestion()?.min || 1 }}</span>
+                    <input 
+                      type="range" 
+                      [(ngModel)]="scaleValue"
+                      [min]="getCurrentQuestion()?.min || 1"
+                      [max]="getCurrentQuestion()?.max || 10"
+                      class="scale-slider"
+                    />
+                    <span class="scale-label">{{ getCurrentQuestion()?.max || 10 }}</span>
+                  </div>
+                  <div class="scale-value">{{ scaleValue }}</div>
+                </div>
+
+                <!-- Text -->
+                <div *ngSwitchCase="'text'" class="input-text">
                   <input 
-                    type="range" 
-                    [(ngModel)]="scaleValue"
-                    [min]="getCurrentQuestion()?.min || 1"
-                    [max]="getCurrentQuestion()?.max || 10"
-                    class="scale-slider"
+                    type="text" 
+                    [(ngModel)]="currentAnswer"
+                    (keyup.enter)="submitFollowUpAnswer()"
+                    placeholder="Type your answer..."
+                    class="text-input"
                   />
-                  <span class="scale-label">{{ getCurrentQuestion()?.max || 10 }}</span>
                 </div>
-                <div class="scale-value">{{ scaleValue }}</div>
               </div>
 
-              <!-- Text -->
-              <div *ngSwitchCase="'text'" class="input-text">
-                <input 
-                  type="text" 
-                  [(ngModel)]="currentAnswer"
-                  (keyup.enter)="submitFollowUpAnswer()"
-                  placeholder="Type your answer..."
-                  class="text-input"
-                />
+              <div class="question-actions">
+                <button (click)="skipQuestion()" class="btn-skip">Skip</button>
+                <button 
+                  (click)="submitFollowUpAnswer()" 
+                  [disabled]="loading || (!selectedOption && !currentAnswer && getCurrentQuestion()?.questionType !== 'scale')"
+                  class="btn-submit-answer"
+                >
+                  Submit Answer
+                </button>
               </div>
             </div>
 
-            <div class="question-actions">
-              <button (click)="skipQuestion()" class="btn-skip">Skip</button>
-              <button 
-                (click)="submitFollowUpAnswer()" 
-                [disabled]="loading || (!selectedOption && !currentAnswer && getCurrentQuestion()?.questionType !== 'scale')"
-                class="btn-submit-answer"
-              >
-                Submit Answer
+            <!-- Regular symptom input -->
+            <div *ngIf="!showingFollowUpQuestions" class="symptom-input">
+              <input type="text" 
+                     [(ngModel)]="symptomText" 
+                     (keyup.enter)="submitSymptom()"
+                     placeholder="Describe your symptoms (e.g., fever, headache, cough)..." 
+                     [disabled]="loading"
+                     aria-label="Describe your symptoms"
+                     [attr.aria-invalid]="!symptomText.trim() && loading"
+                     id="symptom-input" />
+              <button (click)="submitSymptom()" 
+                      [disabled]="loading || !symptomText.trim()"
+                      aria-label="Send symptom description">
+                Send
               </button>
             </div>
           </div>
+        </div>
 
-          <!-- Regular symptom input -->
-          <div *ngIf="!showingFollowUpQuestions" class="symptom-input">
-            <input type="text" [(ngModel)]="symptomText" (keyup.enter)="submitSymptom()"
-              placeholder="Describe your symptoms (e.g., fever, headache, cough)..." [disabled]="loading" />
-            <button (click)="submitSymptom()" [disabled]="loading || !symptomText.trim()">
-              Send
-            </button>
+        <!-- Results Section -->
+        <div class="results-section" *ngIf="showResults || loading" role="region" aria-label="Diagnosis results and doctor recommendations">
+          <!-- Loading Skeleton -->
+          <div *ngIf="loading && !showResults" [@fadeIn] role="status" aria-label="Loading results">
+            <app-skeleton-loader [type]="'card'" [count]="2"></app-skeleton-loader>
+          </div>
+
+          <!-- Disease Predictions -->
+          <div class="predictions-card" *ngIf="predictedDiseases.length > 0 && !loading" [@slideUp] role="article" aria-labelledby="predictions-heading">
+            <h3 id="predictions-heading">Predicted Conditions</h3>
+            
+            <!-- Low confidence disclaimer -->
+            <div *ngIf="hasLowConfidencePredictions()" class="low-confidence-disclaimer">
+              <div class="disclaimer-icon">⚠️</div>
+              <div class="disclaimer-content">
+                <strong>Low Confidence Predictions</strong>
+                <p>Based on the information provided, we have low confidence in these predictions. We recommend consulting with a General Medicine doctor for a comprehensive evaluation.</p>
+              </div>
+            </div>
+
+            <div class="disease-list">
+              <div *ngFor="let disease of predictedDiseases; let i = index" 
+                   class="disease-item"
+                   [@fadeIn]>
+                <div class="disease-header">
+                  <h4>{{ disease.name }}</h4>
+                  <div class="confidence-container">
+                    <span class="confidence-badge" [ngClass]="getConfidenceClass(disease.confidence)">
+                      {{ disease.confidence }}% confidence
+                    </span>
+                    <div class="confidence-bar">
+                      <div 
+                        class="confidence-fill" 
+                        [ngClass]="getConfidenceClass(disease.confidence)"
+                        [style.width.%]="disease.confidence"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+                <p class="disease-description" *ngIf="disease.description">{{ disease.description }}</p>
+                <div class="specialization-tags">
+                  <span *ngFor="let spec of disease.specialization" class="spec-tag">
+                    {{ spec }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Matching Doctors -->
+          <div class="doctors-card" *ngIf="matchingDoctors.length > 0 && !loading" [@slideUp] role="article" aria-labelledby="doctors-heading">
+            <h3 id="doctors-heading">Recommended Doctors</h3>
+            <div class="doctor-list" role="list">
+              <div *ngFor="let doctor of matchingDoctors; let i = index" 
+                   class="doctor-item"
+                   [@fadeIn]
+                   role="listitem">
+                <div class="doctor-info">
+                  <div class="doctor-name-row">
+                    <h4>{{ doctor.name }}</h4>
+                    <span *ngIf="doctor.isGeneralMedicine" class="general-medicine-badge" title="General Medicine doctors can treat any condition" role="note">
+                      🩺 General Medicine
+                    </span>
+                  </div>
+                  <p class="doctor-qualifications">{{ doctor.degree }}</p>
+                  <div class="doctor-details">
+                    <span class="detail-item">
+                      <strong>Speciality:</strong> {{ getSpecialization(doctor) }}
+                    </span>
+                    <span class="detail-item">
+                      <strong>Experience:</strong> {{ doctor.experienceYears }} years
+                    </span>
+                    <span class="detail-item">
+                      <strong>Rating:</strong> <span [attr.aria-label]="'Rating ' + doctor.rating + ' out of 5'">⭐ {{ doctor.rating }}/5</span> ({{ doctor.totalReviews }} reviews)
+                    </span>
+                  </div>
+                  <p class="contact-info">
+                    <strong>Email:</strong> {{ doctor.email }}
+                  </p>
+                </div>
+                <div class="doctor-actions">
+                  <button class="btn-primary" 
+                          (click)="requestConsultation(doctor)"
+                          [disabled]="isDoctorRequested(doctor._id)" 
+                          [class.btn-disabled]="isDoctorRequested(doctor._id)"
+                          [attr.aria-label]="isDoctorRequested(doctor._id) ? 'Consultation already requested with ' + doctor.name : 'Request consultation with ' + doctor.name">
+                    {{ isDoctorRequested(doctor._id) ? 'Already Requested' : 'Request Consultation' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="predictedDiseases.length === 0 && matchingDoctors.length === 0 && !loading"
+            class="no-results" [@fadeIn]>
+            <div class="empty-state">
+              <div class="empty-state-icon">🔍</div>
+              <h3>No Results Yet</h3>
+              <p>Please describe your symptoms in the chat to get started.</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Results Section -->
-      <div class="results-section" *ngIf="showResults">
-        <!-- Disease Predictions -->
-        <div class="predictions-card" *ngIf="predictedDiseases.length > 0">
-          <h3>Predicted Conditions</h3>
-          
-          <!-- Low confidence disclaimer -->
-          <div *ngIf="hasLowConfidencePredictions()" class="low-confidence-disclaimer">
-            <div class="disclaimer-icon">⚠️</div>
-            <div class="disclaimer-content">
-              <strong>Low Confidence Predictions</strong>
-              <p>Based on the information provided, we have low confidence in these predictions. We recommend consulting with a General Medicine doctor for a comprehensive evaluation.</p>
-            </div>
-          </div>
-
-          <div class="disease-list">
-            <div *ngFor="let disease of predictedDiseases" class="disease-item">
-              <div class="disease-header">
-                <h4>{{ disease.name }}</h4>
-                <div class="confidence-container">
-                  <span class="confidence-badge" [ngClass]="getConfidenceClass(disease.confidence)">
-                    {{ disease.confidence }}% confidence
-                  </span>
-                  <div class="confidence-bar">
-                    <div 
-                      class="confidence-fill" 
-                      [ngClass]="getConfidenceClass(disease.confidence)"
-                      [style.width.%]="disease.confidence"
-                    ></div>
-                  </div>
-                </div>
-              </div>
-              <p class="disease-description" *ngIf="disease.description">{{ disease.description }}</p>
-              <div class="specialization-tags">
-                <span *ngFor="let spec of disease.specialization" class="spec-tag">
-                  {{ spec }}
-                </span>
-              </div>
-            </div>
-          </div>
+      <!-- Right Column: Dashboard Components -->
+      <div class="right-column">
+        <!-- Upcoming Appointments -->
+        <div class="dashboard-card" *ngIf="dashboardData && dashboardData.upcomingAppointments" [@cardEntrance]>
+          <app-appointment-list
+            [config]="dashboardData.upcomingAppointments"
+            (appointmentClick)="onAppointmentClick($event)">
+          </app-appointment-list>
         </div>
 
-        <!-- Matching Doctors -->
-        <div class="doctors-card" *ngIf="matchingDoctors.length > 0">
-          <h3>Recommended Doctors</h3>
-          <div class="doctor-list">
-            <div *ngFor="let doctor of matchingDoctors" class="doctor-item">
-              <div class="doctor-info">
-                <div class="doctor-name-row">
-                  <h4>{{ doctor.name }}</h4>
-                  <span *ngIf="doctor.isGeneralMedicine" class="general-medicine-badge" title="General Medicine doctors can treat any condition">
-                    🩺 General Medicine
-                  </span>
-                </div>
-                <p class="doctor-qualifications">{{ doctor.degree }}</p>
-                <div class="doctor-details">
-                  <span class="detail-item">
-                    <strong>Speciality:</strong> {{ getSpecialization(doctor) }}
-                  </span>
-                  <span class="detail-item">
-                    <strong>Experience:</strong> {{ doctor.experienceYears }} years
-                  </span>
-                  <span class="detail-item">
-                    <strong>Rating:</strong> ⭐ {{ doctor.rating }}/5 ({{ doctor.totalReviews }} reviews)
-                  </span>
-                </div>
-                <p class="contact-info">
-                  <strong>Email:</strong> {{ doctor.email }}
-                </p>
-              </div>
-              <div class="doctor-actions">
-                <button class="btn-primary" (click)="requestConsultation(doctor)"
-                  [disabled]="isDoctorRequested(doctor._id)" [class.btn-disabled]="isDoctorRequested(doctor._id)">
-                  {{ isDoctorRequested(doctor._id) ? 'Already Requested' : 'Request Consultation' }}
-                </button>
-              </div>
-            </div>
-          </div>
+        <!-- Consultation Summary Chart -->
+        <div class="dashboard-card" *ngIf="dashboardData && dashboardData.chart" [@cardEntrance]>
+          <app-summary-chart
+            [config]="dashboardData.chart"
+            [loading]="dashboardLoading">
+          </app-summary-chart>
         </div>
 
-        <!-- Matched Doctors from Chatbot -->
-        <div class="doctors-card" *ngIf="matchedDoctors.length > 0">
-          <h3>AI Matched Doctors</h3>
-          <div class="doctor-list">
-            <div *ngFor="let doctor of matchedDoctors" class="doctor-item">
-              <div class="doctor-info">
-                <h4>{{ doctor.name }}</h4>
-                <p class="doctor-specialty">{{ getSpecialization(doctor) }}</p>
-                <div class="doctor-details">
-                  <span class="detail-item">
-                    <strong>Experience:</strong> {{ doctor.experienceYears }} years
-                  </span>
-                  <span class="detail-item">
-                    <strong>Rating:</strong> ⭐ {{ doctor.rating }}/5 ({{ doctor.totalReviews }} reviews)
-                  </span>
-                </div>
-                <p class="contact-info">
-                  <strong>Email:</strong> {{ doctor.email }}
-                </p>
-              </div>
-              <div class="doctor-actions">
-                <button class="btn-primary" (click)="requestConsultation(doctor)"
-                  [disabled]="isDoctorRequested(doctor._id)" [class.btn-disabled]="isDoctorRequested(doctor._id)">
-                  {{ isDoctorRequested(doctor._id) ? 'Already Requested' : 'Request Consultation' }}
-                </button>
-              </div>
-            </div>
-          </div>
+        <!-- Calendar Widget -->
+        <div class="dashboard-card" *ngIf="dashboardData && dashboardData.calendar" [@cardEntrance]>
+          <app-calendar-widget
+            [config]="dashboardData.calendar"
+            [loading]="dashboardLoading"
+            (dateClick)="onCalendarDateClick($event)"
+            (monthChange)="onCalendarMonthChange($event.month, $event.year)">
+          </app-calendar-widget>
         </div>
 
-        <div *ngIf="predictedDiseases.length === 0 && matchingDoctors.length === 0 && matchedDoctors.length === 0"
-          class="no-results">
-          <p>No results yet. Please describe your symptoms in the chat.</p>
+        <!-- Doctor Details (if available) -->
+        <div class="dashboard-card" *ngIf="dashboardData && dashboardData.doctorDetails" [@cardEntrance]>
+          <app-user-details-panel
+            [config]="dashboardData.doctorDetails"
+            [loading]="dashboardLoading">
+          </app-user-details-panel>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Case Request Modal -->
-  <div class="modal-overlay" *ngIf="showCaseRequestModal" (click)="closeCaseRequestModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
+  <div class="modal-overlay" *ngIf="showCaseRequestModal" (click)="closeCaseRequestModal()" [@backdropAnimation]>
+    <div class="modal-content" (click)="$event.stopPropagation()" [@modalAnimation]>
       <div class="modal-header">
         <h3>Request Consultation</h3>
         <button class="close-btn" (click)="closeCaseRequestModal()">&times;</button>

@@ -1,0 +1,174 @@
+/* Patient Dashboard Stats - Polished Layout */
+
+.dashboard-container {
+  padding: 24px;
+  background: #f5f7fa;
+  min-height: calc(100vh - 80px);
+}
+
+/* Stats Row - Top Cards */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.stats-row app-stat-card {
+  height: 100%;
+}
+
+.stats-row app-stat-card ::ng-deep .stat-card {
+  height: 100%;
+  min-height: 120px;
+}
+
+/* Main Dashboard Grid - 2 Columns, 2 Rows */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, minmax(380px, auto));
+  gap: 20px;
+}
+
+/* Dashboard Cards - Uniform Styling */
+.dashboard-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e8ecf1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 380px;
+}
+
+/* Specific Card Positioning */
+.chart-card {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.appointments-card {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.doctor-card {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.calendar-card {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+/* Loading State */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 2rem;
+}
+
+.stat-card-skeleton {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid #e0e7ef;
+}
+
+.skeleton-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+.skeleton-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+.skeleton-line:first-child {
+  width: 60%;
+}
+
+.skeleton-line:last-child {
+  width: 40%;
+  height: 20px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 1200px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .chart-card,
+  .appointments-card,
+  .doctor-card,
+  .calendar-card {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 16px;
+  }
+
+  .stats-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .dashboard-grid {
+    gap: 16px;
+  }
+
+  .dashboard-card {
+    padding: 20px;
+    min-height: 320px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-container {
+    padding: 12px;
+  }
+
+  .dashboard-card {
+    padding: 16px;
+    border-radius: 8px;
+  }
+}

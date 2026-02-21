@@ -28,6 +28,9 @@
     "test:e2e:admin": "jest backend/tests/e2e/admin-user-management-e2e.test.js --runInBand",
     "test:security:privilege": "jest backend/tests/security/privilege-escalation.test.js --runInBand",
     "test:admin:all": "jest backend/tests/adminUserManagementController.test.js backend/tests/adminSecurityService.test.js backend/tests/adminSecurityController.test.js backend/tests/integration/admin-security-flow.test.js backend/tests/e2e/admin-user-management-e2e.test.js backend/tests/security/privilege-escalation.test.js --runInBand",
+    "test:performance": "node tests/performance/performance-test.js",
+    "test:load": "node tests/performance/load-test.js",
+    "verify:performance": "node scripts/verify-performance-optimizations.js",
     "log-monitor": "node scripts/log-monitor.js",
     "logs": "node scripts/log-monitor.js",
     "migrate:hospital": "node scripts/migrate-hospital-feature.js",
@@ -48,6 +51,7 @@
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.1",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
@@ -63,6 +67,7 @@
     "speakeasy": "^2.0.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "uuid": "^13.0.0",
     "validator": "^13.15.23",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0"

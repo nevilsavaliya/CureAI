@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, HostListener } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, HostListener, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { AdminService } from '../../services/admin.service';
 import { AuthService } from '../../services/auth.service';
 import { trigger, state, style, transition, animate } from '@angular/animations';
@@ -30,6 +30,7 @@ interface PaginationInfo {
   selector: 'app-admin-user-management',
   templateUrl: './admin-user-management.component.html',
   styleUrls: ['./admin-user-management.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   animations: [
     trigger('slideIn', [
       transition(':enter', [
@@ -108,7 +109,8 @@ export class AdminUserManagementComponent implements OnInit {
 
   constructor(
     private adminService: AdminService,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
@@ -366,6 +368,7 @@ export class AdminUserManagementComponent implements OnInit {
     this.loading = true;
     this.error = '';
     this.setLoadingState(true, `Loading ${this.activeTab}...`);
+    this.cdr.markForCheck();
 
     const params = this.buildQueryParams();
     const userType = this.getUserTypeFromTab(this.activeTab);
@@ -389,12 +392,14 @@ export class AdminUserManagementComponent implements OnInit {
         }
         this.loading = false;
         this.setLoadingState(false);
+        this.cdr.markForCheck();
       },
       error: (error) => {
         this.error = error.error?.message || 'Failed to load users';
         this.showActionFeedback(this.error, 'error');
         this.loading = false;
         this.setLoadingState(false);
+        this.cdr.markForCheck();
         console.error('Error loading users:', error);
       }
     });

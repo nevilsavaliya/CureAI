@@ -6,22 +6,22 @@
         <app-logo [size]="'small'" [variant]="'default'" [clickable]="true"></app-logo>
         <div class="header-text">
           <h1 class="dashboard-title">Hospital Dashboard</h1>
-          <p class="dashboard-subtitle">Welcome back, {{ hospitalName }}</p>
+          <p class="dashboard-subtitle">{{ hospitalName }}</p>
         </div>
       </div>
       <div class="header-right">
-        <button class="btn-icon" (click)="refreshData()" title="Refresh" [disabled]="actionLoading.refreshingAll">
+        <button class="header-btn" (click)="refreshData()" title="Refresh" [disabled]="actionLoading.refreshingAll">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" [class.spinning]="actionLoading.refreshingAll">
             <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
           </svg>
         </button>
-        <button class="btn-icon" (click)="goToProfile()" title="Profile">
+        <button class="header-btn" (click)="goToProfile()" title="Profile">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
             <circle cx="12" cy="7" r="4"></circle>
           </svg>
         </button>
-        <button class="btn-secondary" (click)="showLogoutConfirmation()" [disabled]="actionLoading.loggingOut">
+        <button class="btn btn-outline btn-sm" (click)="showLogoutConfirmation()" [disabled]="actionLoading.loggingOut">
           <span *ngIf="actionLoading.loggingOut" class="spinner-sm"></span>
           {{ actionLoading.loggingOut ? 'Logging out...' : 'Logout' }}
         </button>
@@ -47,368 +47,409 @@
     <h3>Failed to Load Dashboard</h3>
     <p>{{ profileError }}</p>
     <div class="error-actions">
-      <button class="btn-primary" (click)="retryProfileLoad()">
+      <button class="btn btn-primary btn-md" (click)="retryProfileLoad()">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
         </svg>
         Try Again
       </button>
-      <button class="btn-secondary" (click)="router.navigate(['/hospital/login'])">Back to Login</button>
+      <button class="btn btn-outline btn-md" (click)="router.navigate(['/hospital/login'])">Back to Login</button>
     </div>
   </div>
 
   <!-- Main Content -->
   <div *ngIf="!isLoading && !hasProfileError" class="dashboard-content">
     
-    <!-- Welcome Message -->
-    <div class="welcome-card">
-      <div class="welcome-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-        </svg>
-      </div>
-      <div class="welcome-content">
-        <h2>Welcome to Your Hospital Dashboard</h2>
-        <p>Access patient medical records securely using your API credentials. Monitor your API usage and manage your hospital profile.</p>
+    <!-- Tab Navigation -->
+    <div class="tabs-container">
+      <div class="tabs">
+        <button 
+          class="tab" 
+          [class.active]="activeTab === 'overview'"
+          (click)="activeTab = 'overview'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          Overview
+        </button>
+        <button 
+          class="tab" 
+          [class.active]="activeTab === 'credentials'"
+          (click)="activeTab = 'credentials'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          API Credentials
+        </button>
+        <button 
+          class="tab" 
+          [class.active]="activeTab === 'activity'"
+          (click)="activeTab = 'activity'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          Activity
+        </button>
       </div>
     </div>
 
-    <!-- API Credentials Section -->
-    <div class="section">
-      <div class="section-header">
-        <h2 class="section-title">API Credentials</h2>
-        <p class="section-subtitle">Use these credentials to access patient data via API</p>
+    <!-- Overview Tab -->
+    <div *ngIf="activeTab === 'overview'" class="tab-content">
+      <!-- Welcome Card -->
+      <div class="card card-elevated welcome-card">
+        <div class="welcome-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+          </svg>
+        </div>
+        <div class="welcome-content">
+          <h2>Welcome to Your Hospital Dashboard</h2>
+          <p>Access patient medical records securely using your API credentials. Monitor your API usage and manage your hospital profile.</p>
+        </div>
       </div>
-      
-      <div class="credentials-grid">
-        <!-- API Key Card -->
-        <div class="credential-card">
-          <div class="credential-header">
-            <span class="credential-label">API Key</span>
-            <span class="credential-badge">Public</span>
+
+      <!-- API Usage Statistics -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title-group">
+            <h2 class="section-title">API Usage Statistics</h2>
+            <p class="section-subtitle">Monitor your API consumption and performance</p>
+            <p *ngIf="lastUpdated.stats" class="last-updated">Last updated: {{ getLastUpdatedTime('stats') }}</p>
           </div>
-          <div class="credential-value">
-            <code>{{ apiKey || 'Loading...' }}</code>
-          </div>
-          <button 
-            class="btn-copy" 
-            (click)="copyApiKey()"
-            [class.copied]="apiKeyCopied"
-            [disabled]="actionLoading.copyingApiKey">
-            <span *ngIf="actionLoading.copyingApiKey" class="spinner-sm"></span>
-            <svg *ngIf="!apiKeyCopied && !actionLoading.copyingApiKey" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          <button class="btn btn-ghost btn-icon-only" (click)="refreshStats()" title="Refresh Statistics" [disabled]="loadingStates.stats">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" [class.spinning]="loadingStates.stats">
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
             </svg>
-            <svg *ngIf="apiKeyCopied && !actionLoading.copyingApiKey" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            {{ actionLoading.copyingApiKey ? 'Copying...' : (apiKeyCopied ? 'Copied!' : 'Copy') }}
           </button>
         </div>
+        
+        <!-- Stats Loading State -->
+        <div *ngIf="loadingStates.stats" class="skeleton-grid">
+          <div class="skeleton-card" *ngFor="let i of [1,2,3,4,5,6]"></div>
+        </div>
 
-        <!-- API Secret Card -->
-        <div class="credential-card">
-          <div class="credential-header">
-            <span class="credential-label">API Secret</span>
-            <span class="credential-badge secret">Private</span>
+        <!-- Stats Error State -->
+        <div *ngIf="hasStatsError && !loadingStates.stats" class="section-error">
+          <div class="error-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
           </div>
-          <div class="credential-value">
-            <code>{{ showApiSecret ? '••••••••••••••••••••••••••••••••' : '••••••••••••••••••••••••••••••••' }}</code>
+          <p>{{ statsError }}</p>
+          <div class="error-actions">
+            <button class="btn btn-outline btn-sm" (click)="retryStatsLoad()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+              </svg>
+              Retry
+            </button>
           </div>
-          <div class="credential-actions">
-            <button class="btn-copy" (click)="copyApiSecret()" [disabled]="actionLoading.copyingApiSecret">
-              <span *ngIf="actionLoading.copyingApiSecret" class="spinner-sm"></span>
-              <svg *ngIf="!actionLoading.copyingApiSecret" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        </div>
+        
+        <div *ngIf="!loadingStates.stats && !hasStatsError" class="stats-grid">
+          <!-- Rate Limit Card -->
+          <div class="card card-stat card-interactive">
+            <div class="stat-icon" [style.background]="getUsageColor() + '20'">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" [attr.stroke]="getUsageColor()" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Rate Limit</div>
+              <div class="stat-value">{{ apiStats?.remainingRequests || 0 }}/{{ apiStats?.rateLimit || 100 }}</div>
+              <div class="stat-progress">
+                <div class="stat-progress-bar" [style.width.%]="getUsagePercentage()" [style.background]="getUsageColor()"></div>
+              </div>
+              <div class="stat-note">Requests remaining this hour</div>
+            </div>
+          </div>
+
+          <!-- Total Requests -->
+          <div class="card card-stat card-interactive">
+            <div class="stat-icon stat-icon-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Total Requests</div>
+              <div class="stat-value">{{ apiStats?.totalRequests || 0 }}</div>
+              <div class="stat-note">All time</div>
+            </div>
+          </div>
+
+          <!-- Today's Requests -->
+          <div class="card card-stat card-interactive">
+            <div class="stat-icon stat-icon-info">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Today</div>
+              <div class="stat-value">{{ apiStats?.requestsToday || 0 }}</div>
+              <div class="stat-note">Requests today</div>
+            </div>
+          </div>
+
+          <!-- Success Rate -->
+          <div class="card card-stat card-interactive">
+            <div class="stat-icon stat-icon-success">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Success Rate</div>
+              <div class="stat-value">{{ apiStats?.successRate || 0 }}%</div>
+              <div class="stat-note">API reliability</div>
+            </div>
+          </div>
+
+          <!-- Average Response Time -->
+          <div class="card card-stat card-interactive">
+            <div class="stat-icon stat-icon-warning">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Avg Response</div>
+              <div class="stat-value">{{ apiStats?.averageResponseTime || 0 }}ms</div>
+              <div class="stat-note">Response time</div>
+            </div>
+          </div>
+
+          <!-- This Month -->
+          <div class="card card-stat card-interactive">
+            <div class="stat-icon stat-icon-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">This Month</div>
+              <div class="stat-value">{{ apiStats?.requestsThisMonth || 0 }}</div>
+              <div class="stat-note">Monthly requests</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Access Section -->
+      <div class="section">
+        <div class="section-header">
+          <h2 class="section-title">Quick Access</h2>
+          <p class="section-subtitle">Helpful resources and actions</p>
+        </div>
+        
+        <div class="quick-access-grid">
+          <button class="card card-interactive quick-access-card" (click)="goToApiDocs()">
+            <div class="quick-access-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
+            </div>
+            <div class="quick-access-content">
+              <h3>API Documentation</h3>
+              <p>Learn how to integrate our API</p>
+            </div>
+            <svg class="quick-access-arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+
+          <button class="card card-interactive quick-access-card" (click)="goToProfile()">
+            <div class="quick-access-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </div>
+            <div class="quick-access-content">
+              <h3>Profile Settings</h3>
+              <p>Manage your hospital profile</p>
+            </div>
+            <svg class="quick-access-arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- API Credentials Tab -->
+    <div *ngIf="activeTab === 'credentials'" class="tab-content">
+      <div class="section">
+        <div class="section-header">
+          <h2 class="section-title">API Credentials</h2>
+          <p class="section-subtitle">Use these credentials to access patient data via API</p>
+        </div>
+        
+        <div class="credentials-grid">
+          <!-- API Key Card -->
+          <div class="card card-elevated credential-card">
+            <div class="credential-header">
+              <span class="credential-label">API Key</span>
+              <span class="table-badge table-badge-success">Public</span>
+            </div>
+            <div class="credential-value">
+              <code>{{ apiKey || 'Loading...' }}</code>
+            </div>
+            <button 
+              class="btn btn-primary btn-full"
+              (click)="copyApiKey()"
+              [class.btn-loading]="actionLoading.copyingApiKey"
+              [disabled]="actionLoading.copyingApiKey">
+              <svg *ngIf="!apiKeyCopied && !actionLoading.copyingApiKey" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
               </svg>
-              {{ actionLoading.copyingApiSecret ? 'Copying...' : 'Copy' }}
+              <svg *ngIf="apiKeyCopied && !actionLoading.copyingApiKey" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              {{ apiKeyCopied ? 'Copied!' : 'Copy API Key' }}
             </button>
           </div>
-          <p class="credential-note">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="16" x2="12" y2="12"></line>
-              <line x1="12" y1="8" x2="12.01" y2="8"></line>
-            </svg>
-            Your API Secret was sent to your email. Keep it secure and never share it publicly.
-          </p>
-        </div>
-      </div>
-    </div>
 
-    <!-- API Usage Statistics -->
-    <div class="section">
-      <div class="section-header">
-        <div class="section-title-group">
-          <h2 class="section-title">API Usage Statistics</h2>
-          <p class="section-subtitle">Monitor your API consumption and performance</p>
-          <p *ngIf="lastUpdated.stats" class="last-updated">Last updated: {{ getLastUpdatedTime('stats') }}</p>
-        </div>
-        <button class="btn-icon" (click)="refreshStats()" title="Refresh Statistics" [disabled]="loadingStates.stats">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" [class.spinning]="loadingStates.stats">
-            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-          </svg>
-        </button>
-      </div>
-      
-      <!-- Stats Loading State -->
-      <div *ngIf="loadingStates.stats" class="section-loading">
-        <div class="spinner"></div>
-        <p>Loading statistics...</p>
-      </div>
-
-      <!-- Stats Error State -->
-      <div *ngIf="hasStatsError && !loadingStates.stats" class="section-error">
-        <div class="error-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-        </div>
-        <p>{{ statsError }}</p>
-        <div class="error-actions">
-          <button class="btn-secondary btn-sm" (click)="retryStatsLoad()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-            </svg>
-            Retry
-          </button>
-          <button class="btn-tertiary btn-sm" (click)="refreshData()">Refresh All</button>
-        </div>
-      </div>
-      
-      <div *ngIf="!loadingStates.stats && !hasStatsError" class="stats-grid">
-        <!-- Rate Limit Card -->
-        <div class="stat-card highlight">
-          <div class="stat-icon" [style.background]="getUsageColor() + '20'">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" [attr.stroke]="getUsageColor()" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">Rate Limit</div>
-            <div class="stat-value">{{ apiStats?.remainingRequests || 0 }}/{{ apiStats?.rateLimit || 100 }}</div>
-            <div class="stat-progress">
-              <div class="stat-progress-bar" [style.width.%]="getUsagePercentage()" [style.background]="getUsageColor()"></div>
+          <!-- API Secret Card -->
+          <div class="card card-elevated credential-card">
+            <div class="credential-header">
+              <span class="credential-label">API Secret</span>
+              <span class="table-badge table-badge-error">Private</span>
             </div>
-            <div class="stat-note">Requests remaining this hour</div>
-          </div>
-        </div>
-
-        <!-- Total Requests -->
-        <div class="stat-card">
-          <div class="stat-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="1" x2="12" y2="23"></line>
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">Total Requests</div>
-            <div class="stat-value">{{ apiStats?.totalRequests || 0 }}</div>
-            <div class="stat-note">All time</div>
-          </div>
-        </div>
-
-        <!-- Today's Requests -->
-        <div class="stat-card">
-          <div class="stat-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">Today</div>
-            <div class="stat-value">{{ apiStats?.requestsToday || 0 }}</div>
-            <div class="stat-note">Requests today</div>
-          </div>
-        </div>
-
-        <!-- Success Rate -->
-        <div class="stat-card">
-          <div class="stat-icon success">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">Success Rate</div>
-            <div class="stat-value">{{ apiStats?.successRate || 0 }}%</div>
-            <div class="stat-note">API reliability</div>
-          </div>
-        </div>
-
-        <!-- Average Response Time -->
-        <div class="stat-card">
-          <div class="stat-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">Avg Response</div>
-            <div class="stat-value">{{ apiStats?.averageResponseTime || 0 }}ms</div>
-            <div class="stat-note">Response time</div>
-          </div>
-        </div>
-
-        <!-- This Month -->
-        <div class="stat-card">
-          <div class="stat-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">This Month</div>
-            <div class="stat-value">{{ apiStats?.requestsThisMonth || 0 }}</div>
-            <div class="stat-note">Monthly requests</div>
+            <div class="credential-value">
+              <code>{{ showApiSecret ? '••••••••••••••••••••••••••••••••' : '••••••••••••••••••••••••••••••••' }}</code>
+            </div>
+            <button 
+              class="btn btn-primary btn-full"
+              (click)="copyApiSecret()" 
+              [class.btn-loading]="actionLoading.copyingApiSecret"
+              [disabled]="actionLoading.copyingApiSecret">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              Copy API Secret
+            </button>
+            <p class="credential-note">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              Your API Secret was sent to your email. Keep it secure and never share it publicly.
+            </p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Recent API Requests -->
-    <div class="section">
-      <div class="section-header">
-        <div class="section-title-group">
-          <h2 class="section-title">Recent API Requests</h2>
-          <p class="section-subtitle">Latest patient data access logs</p>
-          <p *ngIf="lastUpdated.requests" class="last-updated">Last updated: {{ getLastUpdatedTime('requests') }}</p>
-        </div>
-        <button class="btn-icon" (click)="refreshRequests()" title="Refresh Requests" [disabled]="loadingStates.requests">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" [class.spinning]="loadingStates.requests">
-            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-          </svg>
-        </button>
-      </div>
-      
-      <!-- Requests Loading State -->
-      <div *ngIf="loadingStates.requests" class="section-loading">
-        <div class="spinner"></div>
-        <p>Loading recent requests...</p>
-      </div>
-
-      <!-- Requests Error State -->
-      <div *ngIf="hasRequestsError && !loadingStates.requests" class="section-error">
-        <div class="error-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-        </div>
-        <p>{{ requestsError }}</p>
-        <div class="error-actions">
-          <button class="btn-secondary btn-sm" (click)="retryRequestsLoad()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Activity Tab -->
+    <div *ngIf="activeTab === 'activity'" class="tab-content">
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title-group">
+            <h2 class="section-title">Recent API Requests</h2>
+            <p class="section-subtitle">Latest patient data access logs</p>
+            <p *ngIf="lastUpdated.requests" class="last-updated">Last updated: {{ getLastUpdatedTime('requests') }}</p>
+          </div>
+          <button class="btn btn-ghost btn-icon-only" (click)="refreshRequests()" title="Refresh Requests" [disabled]="loadingStates.requests">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" [class.spinning]="loadingStates.requests">
               <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
             </svg>
-            Retry
           </button>
-          <button class="btn-tertiary btn-sm" (click)="refreshData()">Refresh All</button>
         </div>
-      </div>
-      
-      <div *ngIf="!loadingStates.requests && !hasRequestsError" class="requests-table-container">
-        <table class="requests-table" *ngIf="recentRequests.length > 0">
-          <thead>
-            <tr>
-              <th>Patient Email</th>
-              <th>Timestamp</th>
-              <th>Status</th>
-              <th>Response Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let request of recentRequests">
-              <td>
-                <div class="patient-email">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                  {{ request.patientEmail }}
-                </div>
-              </td>
-              <td>
-                <span class="timestamp">{{ formatTimestamp(request.timestamp) }}</span>
-              </td>
-              <td>
-                <span class="status-badge" [class.success]="request.status === 'success'" [class.error]="request.status === 'error'">
-                  {{ request.status }}
-                </span>
-              </td>
-              <td>
-                <span class="response-time">{{ request.responseTime }}ms</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
         
-        <div class="empty-state" *ngIf="recentRequests.length === 0">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="12" y1="18" x2="12" y2="12"></line>
-            <line x1="9" y1="15" x2="15" y2="15"></line>
-          </svg>
-          <h3>No API Requests Yet</h3>
-          <p>Start using your API credentials to access patient data</p>
+        <!-- Requests Loading State -->
+        <div *ngIf="loadingStates.requests" class="section-loading">
+          <div class="spinner"></div>
+          <p>Loading recent requests...</p>
         </div>
-      </div>
-    </div>
 
-    <!-- Quick Access Section -->
-    <div class="section">
-      <div class="section-header">
-        <h2 class="section-title">Quick Access</h2>
-        <p class="section-subtitle">Helpful resources and actions</p>
-      </div>
-      
-      <div class="quick-access-grid">
-        <button class="quick-access-card" (click)="goToApiDocs()">
-          <div class="quick-access-icon">
+        <!-- Requests Error State -->
+        <div *ngIf="hasRequestsError && !loadingStates.requests" class="section-error">
+          <div class="error-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
           </div>
-          <div class="quick-access-content">
-            <h3>API Documentation</h3>
-            <p>Learn how to integrate our API</p>
+          <p>{{ requestsError }}</p>
+          <div class="error-actions">
+            <button class="btn btn-outline btn-sm" (click)="retryRequestsLoad()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+              </svg>
+              Retry
+            </button>
           </div>
-          <svg class="quick-access-arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-          </svg>
-        </button>
-
-        <button class="quick-access-card" (click)="goToProfile()">
-          <div class="quick-access-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
+        </div>
+        
+        <div *ngIf="!loadingStates.requests && !hasRequestsError" class="table-container">
+          <table class="table table-hover" *ngIf="recentRequests.length > 0">
+            <thead>
+              <tr>
+                <th>Patient Email</th>
+                <th>Timestamp</th>
+                <th>Status</th>
+                <th>Response Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let request of recentRequests">
+                <td>
+                  <div class="table-avatar-group">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>{{ request.patientEmail }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="timestamp">{{ formatTimestamp(request.timestamp) }}</span>
+                </td>
+                <td>
+                  <span class="table-badge" [class.table-badge-success]="request.status === 'success'" [class.table-badge-error]="request.status === 'error'">
+                    {{ request.status }}
+                  </span>
+                </td>
+                <td>
+                  <span class="response-time">{{ request.responseTime }}ms</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div class="table-empty" *ngIf="recentRequests.length === 0">
+            <svg class="table-empty-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="12" y1="18" x2="12" y2="12"></line>
+              <line x1="9" y1="15" x2="15" y2="15"></line>
             </svg>
+            <h3 class="table-empty-title">No API Requests Yet</h3>
+            <p class="table-empty-description">Start using your API credentials to access patient data</p>
           </div>
-          <div class="quick-access-content">
-            <h3>Profile Settings</h3>
-            <p>Manage your hospital profile</p>
-          </div>
-          <svg class="quick-access-arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-          </svg>
-        </button>
+        </div>
       </div>
     </div>
 
@@ -430,8 +471,8 @@
         <p>Are you sure you want to log out? You will need to log in again to access your dashboard.</p>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" (click)="cancelLogout()">Cancel</button>
-        <button class="btn-danger" (click)="confirmLogout()">Logout</button>
+        <button class="btn btn-outline btn-md" (click)="cancelLogout()">Cancel</button>
+        <button class="btn btn-danger btn-md" (click)="confirmLogout()">Logout</button>
       </div>
     </div>
   </div>

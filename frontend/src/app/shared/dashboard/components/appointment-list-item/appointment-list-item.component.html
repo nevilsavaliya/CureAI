@@ -1,0 +1,32 @@
+<div class="appointment-item" [class.clickable]="appointment.onClick" (click)="handleClick()"
+  (keydown.enter)="handleClick()" (keydown.space)="handleClick($event)" [tabindex]="appointment.onClick ? 0 : -1"
+  [attr.role]="appointment.onClick ? 'button' : null" [attr.aria-label]="getAriaLabel()">
+
+  <!-- Avatar -->
+  <div class="appointment-avatar">
+    <img *ngIf="appointment.avatar" [src]="appointment.avatar" [alt]="appointment.name + ' avatar'" class="avatar-image"
+      (error)="onImageError($event)">
+    <div *ngIf="!appointment.avatar || imageError" class="avatar-initials"
+      [attr.aria-label]="appointment.name + ' initials'">
+      {{ getInitials(appointment.name) }}
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="appointment-content">
+    <h4 class="appointment-name">{{ appointment.name }}</h4>
+    <p class="appointment-subtitle">{{ appointment.subtitle }}</p>
+  </div>
+
+  <!-- Time/Status -->
+  <div class="appointment-time">
+    <span *ngIf="appointment.status" class="status-badge" [class.status-ongoing]="appointment.status === 'ongoing'"
+      [class.status-upcoming]="appointment.status === 'upcoming'"
+      [class.status-completed]="appointment.status === 'completed'" [attr.aria-label]="'Status: ' + appointment.status">
+      {{ getStatusLabel(appointment.status) }}
+    </span>
+    <span *ngIf="!appointment.status" class="time-text" [attr.aria-label]="'Time: ' + appointment.time">
+      {{ appointment.time }}
+    </span>
+  </div>
+</div>

@@ -1,0 +1,8 @@
+/* Header styles are inherited from parent component */
+/* This component uses the parent's CSS classes */
+
+@media (max-width: 768px) {
+  .btn-text {
+    display: none;
+  }
+}

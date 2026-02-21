@@ -3,14 +3,20 @@ import {
   HttpRequest,
   HttpHandler,
   HttpEvent,
-  HttpInterceptor
+  HttpInterceptor,
+  HttpErrorResponse
 } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-  constructor(private authService: AuthService) { }
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) { }
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     let token: string | null = null;
@@ -44,6 +50,56 @@ export class AuthInterceptor implements HttpInterceptor {
       });
     }
 
-    return next.handle(request);
+    return next.handle(request).pipe(
+      catchError((error: HttpErrorResponse) => {
+        // Handle 401 Unauthorized errors
+        if (error.status === 401) {
+          // Don't redirect if this is a login attempt (login, register, or forgot-password endpoints)
+          const isLoginAttempt = request.url.includes('/login') || 
+                                 request.url.includes('/register') || 
+                                 request.url.includes('/forgot-password');
+          
+          if (isLoginAttempt) {
+            console.log('🔒 401 on login attempt - not redirecting, letting component handle it');
+            // Let the component handle the error
+            return throwError(() => error);
+          }
+          
+          console.log('🔒 401 Unauthorized - Logging out and redirecting to login');
+          
+          // Determine which login page to redirect to based on the request URL
+          let loginRoute = '/login';
+          if (request.url.includes('/api/hospitals/')) {
+            loginRoute = '/hospital/login';
+          }
+          
+          // Logout user and clear all auth data
+          this.authService.logout();
+          
+          // Redirect to appropriate login page with message
+          this.router.navigate([loginRoute], {
+            queryParams: { 
+              message: 'Your session has expired. Please log in again.',
+              returnUrl: this.router.url
+            }
+          });
+        }
+
+        // Handle 403 Forbidden errors
+        if (error.status === 403) {
+          console.log('🚫 403 Forbidden - Access denied');
+          
+          // Don't redirect if this is a login attempt
+          const isLoginAttempt = request.url.includes('/login') || 
+                                 request.url.includes('/register');
+          
+          if (!isLoginAttempt) {
+            this.router.navigate(['/unauthorized']);
+          }
+        }
+
+        return throwError(() => error);
+      })
+    );
   }
 }

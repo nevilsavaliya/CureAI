@@ -2,6 +2,26 @@ const winston = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
 const path = require('path');
 
+// Use crypto for UUID generation to avoid ESM issues with uuid package
+const crypto = require('crypto');
+const generateUUID = () => {
+  return crypto.randomUUID ? crypto.randomUUID() : 
+    'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+};
+
+// Import ConfigService for dynamic configuration
+let ConfigService;
+try {
+  ConfigService = require('../core/config/ConfigService');
+} catch (error) {
+  // ConfigService not available yet, use defaults
+  ConfigService = null;
+}
+
 // Create logs directory if it doesn't exist
 const fs = require('fs');
 const logsDir = path.join(__dirname, '../logs');
@@ -29,28 +49,42 @@ const logColors = {
 
 winston.addColors(logColors);
 
-// Define log format
+// Define log format with structured logging
 const logFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
+  winston.format.errors({ stack: true }),
   winston.format.colorize({ all: true }),
-  winston.format.printf(
-    (info) => `${info.timestamp} ${info.level}: ${info.message}`
-  )
+  winston.format.printf((info) => {
+    const { timestamp, level, message, ...meta } = info;
+    let metaStr = '';
+    if (Object.keys(meta).length > 0) {
+      metaStr = ` ${JSON.stringify(meta)}`;
+    }
+    return `${timestamp} ${level}: ${message}${metaStr}`;
+  })
 );
 
-// Define file format (without colors)
+// Define file format (without colors, structured JSON)
 const fileFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
   winston.format.errors({ stack: true }),
   winston.format.json()
 );
 
+// Get log level from ConfigService or environment
+const getLogLevel = () => {
+  if (ConfigService) {
+    return ConfigService.isProduction() ? 'info' : 'debug';
+  }
+  return process.env.NODE_ENV === 'production' ? 'info' : 'debug';
+};
+
 // Create transports
 const transports = [
   // Console transport
   new winston.transports.Console({
     format: logFormat,
-    level: process.env.NODE_ENV === 'production' ? 'info' : 'debug'
+    level: getLogLevel()
   }),
 
   // General application logs
@@ -111,12 +145,71 @@ const transports = [
 
 // Create logger instance
 const logger = winston.createLogger({
-  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  level: getLogLevel(),
   levels: logLevels,
   format: fileFormat,
   transports,
   exitOnError: false
 });
+
+// Add context to log messages
+logger.withContext = function(context) {
+  return {
+    info: (message, meta = {}) => logger.info(message, { ...context, ...meta }),
+    warn: (message, meta = {}) => logger.warn(message, { ...context, ...meta }),
+    error: (message, meta = {}) => logger.error(message, { ...context, ...meta }),
+    debug: (message, meta = {}) => logger.debug(message, { ...context, ...meta }),
+    http: (message, meta = {}) => logger.http(message, { ...context, ...meta })
+  };
+};
+
+// Generate request ID for tracking
+logger.generateRequestId = () => {
+  return generateUUID();
+};
+
+// Create request logger middleware
+logger.requestLogger = (req, res, next) => {
+  req.id = logger.generateRequestId();
+  req.startTime = Date.now();
+  
+  // Log request
+  logger.http('Incoming request', {
+    requestId: req.id,
+    method: req.method,
+    url: req.originalUrl || req.url,
+    ip: logger.getClientIP(req),
+    userAgent: logger.getUserAgent(req),
+    userId: req.user?.id || req.user?._id,
+    userRole: req.user?.role
+  });
+
+  // Log response
+  res.on('finish', () => {
+    const duration = Date.now() - req.startTime;
+    logger.http('Request completed', {
+      requestId: req.id,
+      method: req.method,
+      url: req.originalUrl || req.url,
+      statusCode: res.statusCode,
+      duration: `${duration}ms`,
+      userId: req.user?.id || req.user?._id
+    });
+
+    // Log slow requests
+    if (duration > 1000) {
+      logger.performance.slowApi({
+        endpoint: req.originalUrl || req.url,
+        method: req.method,
+        responseTime: duration,
+        hospitalId: req.hospital?.id,
+        userId: req.user?.id || req.user?._id
+      });
+    }
+  });
+
+  next();
+};
 
 // Hospital-specific logging methods
 logger.hospital = {

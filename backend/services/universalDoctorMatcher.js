@@ -80,7 +80,8 @@ async function ensureMinimumDoctors(doctors, options = {}) {
     const fallbackDoctors = await Doctor.find({
       specializations: { $in: ['General Medicine'] },
       subscriptionStatus: 'active',
-      isActive: true
+      isActive: true,
+      isShadowBanned: { $ne: true } // Exclude shadow-banned doctors
     })
     .select('name email degree specializations rating experienceYears contactNumber clinicAddress')
     .sort({ rating: -1, experienceYears: -1 })
@@ -128,6 +129,7 @@ async function getDoctorsForConditions(predictedConditions, options = {}) {
       const specializedQuery = {
         subscriptionStatus: 'active',
         isActive: true,
+        isShadowBanned: { $ne: true }, // Exclude shadow-banned doctors
         specializations: { $in: specializationArray }
       };
       
@@ -144,6 +146,7 @@ async function getDoctorsForConditions(predictedConditions, options = {}) {
     const generalMedicineQuery = {
       subscriptionStatus: 'active',
       isActive: true,
+      isShadowBanned: { $ne: true }, // Exclude shadow-banned doctors
       specializations: { $in: ['General Medicine'] }
     };
     
@@ -256,6 +259,7 @@ async function getRecommendedDoctors(specializations = [], options = {}) {
     const query = {
       subscriptionStatus: 'active',
       isActive: true,
+      isShadowBanned: { $ne: true }, // Exclude shadow-banned doctors
       specializations: { $in: specializationsWithGeneral }
     };
     

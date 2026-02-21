@@ -4,45 +4,14 @@
  */
 
 const logger = require('../services/logger');
+const configService = require('../core/config/ConfigService');
 
 /**
  * Get allowed origins from environment configuration
  * @returns {Array<string>} Array of allowed origin URLs
  */
 const getAllowedOrigins = () => {
-  const origins = [];
-  
-  // Add frontend URL from environment
-  if (process.env.FRONTEND_URL) {
-    origins.push(process.env.FRONTEND_URL);
-  }
-  
-  // Add CORS origins
-  if (process.env.CORS_ORIGINS) {
-    const corsOrigins = process.env.CORS_ORIGINS.split(',').map(origin => origin.trim());
-    corsOrigins.forEach(origin => {
-      if (origin && !origins.includes(origin)) {
-        origins.push(origin);
-      }
-    });
-  }
-  
-  // Add API URL if different from frontend
-  if (process.env.API_URL && !origins.includes(process.env.API_URL)) {
-    origins.push(process.env.API_URL);
-  }
-  
-  // Add Socket URL if different
-  if (process.env.SOCKET_URL && !origins.includes(process.env.SOCKET_URL)) {
-    origins.push(process.env.SOCKET_URL);
-  }
-  
-  // Fallback to localhost for development
-  if (origins.length === 0) {
-    origins.push('http://localhost:4200', 'https://localhost');
-  }
-  
-  return origins;
+  return configService.getCorsOrigins();
 };
 
 /**
@@ -66,7 +35,7 @@ const generateCSP = () => {
   ];
   
   // Add upgrade-insecure-requests only in production
-  if (process.env.NODE_ENV === 'production') {
+  if (configService.isProduction()) {
     directives.push('upgrade-insecure-requests');
   }
   
@@ -82,14 +51,12 @@ const generateCSP = () => {
 const securityHeaders = (req, res, next) => {
   try {
     // Strict Transport Security (HSTS)
-    if (process.env.SSL_ENABLED === 'true') {
-      const hstsMaxAge = process.env.HSTS_MAX_AGE || '31536000';
-      const hstsIncludeSubDomains = process.env.HSTS_INCLUDE_SUBDOMAINS !== 'false';
-      const hstsPreload = process.env.HSTS_PRELOAD !== 'false';
+    if (configService.isSslEnabled()) {
+      const hstsConfig = configService.getHstsConfig();
       
-      let hstsHeader = `max-age=${hstsMaxAge}`;
-      if (hstsIncludeSubDomains) hstsHeader += '; includeSubDomains';
-      if (hstsPreload) hstsHeader += '; preload';
+      let hstsHeader = `max-age=${hstsConfig.maxAge}`;
+      if (hstsConfig.includeSubdomains) hstsHeader += '; includeSubDomains';
+      if (hstsConfig.preload) hstsHeader += '; preload';
       
       res.setHeader('Strict-Transport-Security', hstsHeader);
     }
@@ -123,7 +90,7 @@ const securityHeaders = (req, res, next) => {
     res.setHeader('Permissions-Policy', permissionsPolicy);
     
     // Cross-Origin Embedder Policy
-    if (process.env.NODE_ENV === 'production') {
+    if (configService.isProduction()) {
       res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
       res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
     }
@@ -153,12 +120,13 @@ const securityHeaders = (req, res, next) => {
  */
 const httpsRedirect = (req, res, next) => {
   try {
-    const sslEnabled = process.env.SSL_ENABLED === 'true';
+    const sslEnabled = configService.isSslEnabled();
     
     if (sslEnabled && !req.secure && req.get('x-forwarded-proto') !== 'https') {
-      // Get the host from environment or request
-      const host = process.env.SSL_DOMAIN || process.env.SERVER_NAME || req.get('host');
-      const httpsPort = process.env.SSL_PORT || 443;
+      // Get the host from ConfigService
+      const sslConfig = configService.getSslConfig();
+      const host = sslConfig.domain || req.get('host');
+      const httpsPort = sslConfig.port;
       
       // Construct HTTPS URL
       let httpsUrl;
@@ -242,13 +210,13 @@ const dynamicCors = (req, res, next) => {
  */
 const getSecurityConfig = () => {
   return {
-    sslEnabled: process.env.SSL_ENABLED === 'true',
+    sslEnabled: configService.isSslEnabled(),
     allowedOrigins: getAllowedOrigins(),
-    hstsMaxAge: process.env.HSTS_MAX_AGE || '31536000',
-    hstsIncludeSubDomains: process.env.HSTS_INCLUDE_SUBDOMAINS !== 'false',
-    hstsPreload: process.env.HSTS_PRELOAD !== 'false',
+    hstsMaxAge: configService.getHstsConfig().maxAge,
+    hstsIncludeSubDomains: configService.getHstsConfig().includeSubdomains,
+    hstsPreload: configService.getHstsConfig().preload,
     csp: generateCSP(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: configService.getNodeEnv()
   };
 };
 

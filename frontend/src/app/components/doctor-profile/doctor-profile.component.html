@@ -1,0 +1,84 @@
+<div class="profile-container">
+  <div class="profile-header">
+    <h1>My Profile</h1>
+    <p class="subtitle">Manage your professional information</p>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading profile...</p>
+  </div>
+
+  <form *ngIf="!loading" class="profile-form" (ngSubmit)="saveProfile()">
+    <div class="form-section">
+      <h2>Basic Information</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="name">Full Name *</label>
+          <input type="text" id="name" [(ngModel)]="profile.name" name="name" required>
+        </div>
+        <div class="form-group">
+          <label for="email">Email *</label>
+          <input type="email" id="email" [(ngModel)]="profile.email" name="email" required>
+        </div>
+        <div class="form-group">
+          <label for="phone">Phone Number *</label>
+          <input type="tel" id="phone" [(ngModel)]="profile.phone" name="phone" required>
+        </div>
+        <div class="form-group">
+          <label for="degree">Degree *</label>
+          <input type="text" id="degree" [(ngModel)]="profile.degree" name="degree" placeholder="e.g., MBBS, MD" required>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h2>Professional Details</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="experience">Years of Experience *</label>
+          <input type="number" id="experience" [(ngModel)]="profile.experienceYears" name="experience" min="0" required>
+        </div>
+        <div class="form-group">
+          <label for="registration">Registration Number *</label>
+          <input type="text" id="registration" [(ngModel)]="profile.registrationNumber" name="registration" required>
+        </div>
+        <div class="form-group">
+          <label for="fee">Consultation Fee (₹) *</label>
+          <input type="number" id="fee" [(ngModel)]="profile.consultationFee" name="fee" min="0" required>
+        </div>
+      </div>
+
+      <div class="form-group full-width">
+        <label>Specializations *</label>
+        <div class="specialization-grid">
+          <button 
+            type="button"
+            *ngFor="let spec of availableSpecializations"
+            class="spec-btn"
+            [class.selected]="isSpecializationSelected(spec)"
+            (click)="toggleSpecialization(spec)">
+            {{ spec }}
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group full-width">
+        <label for="address">Clinic Address *</label>
+        <textarea id="address" [(ngModel)]="profile.clinicAddress" name="address" rows="3" required></textarea>
+      </div>
+
+      <div class="form-group full-width">
+        <label for="about">About</label>
+        <textarea id="about" [(ngModel)]="profile.about" name="about" rows="4" placeholder="Tell patients about yourself..."></textarea>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn-save" [disabled]="saving">
+        <span *ngIf="!saving">Save Changes</span>
+        <span *ngIf="saving">Saving...</span>
+      </button>
+    </div>
+  </form>
+</div>

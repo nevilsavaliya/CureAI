@@ -1,0 +1,160 @@
+<div class="dashboard-container" [@pageTransition]>
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.mobile-open]="mobileNavOpen">
+    <!-- Patient Profile -->
+    <div class="patient-profile">
+      <div class="patient-avatar">
+        <img src="assets/images/patient-avatar.png" alt="{{ userName }}"
+          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+        <div class="avatar-fallback">
+          <span>{{ getInitials(userName) }}</span>
+        </div>
+      </div>
+      <h3 class="patient-name">{{ userName }}</h3>
+      <p class="patient-role">Patient</p>
+    </div>
+
+    <!-- Navigation Menu -->
+    <nav class="sidebar-nav">
+      <a routerLink="/patient/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
+        class="nav-item">
+        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        <span>Dashboard</span>
+      </a>
+      <a routerLink="/patient/chatbot" routerLinkActive="active" class="nav-item">
+        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span>Chatbot</span>
+      </a>
+      <a routerLink="/patient/cases" routerLinkActive="active" class="nav-item">
+        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        <span>Appointment</span>
+      </a>
+      <a routerLink="/patient/profile" routerLinkActive="active" class="nav-item">
+        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+        <span>Profile</span>
+      </a>
+      <a (click)="logout()" class="nav-item logout-item">
+        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        <span>Logout</span>
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="main-wrapper">
+    <!-- Top Header -->
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-menu-btn" (click)="toggleMobileNav()">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <h1>Patient Dashboard</h1>
+      </div>
+      <div class="header-right">
+        <button class="icon-btn notification-btn" (click)="toggleNotifications()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span class="badge" *ngIf="unreadCount > 0">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+        </button>
+        
+        <!-- Notification Dropdown -->
+        <div class="notification-dropdown" *ngIf="showNotifications">
+          <div class="dropdown-header">
+            <h3>Notifications</h3>
+            <button 
+              class="mark-all-read-btn" 
+              *ngIf="unreadCount > 0"
+              (click)="markAllAsRead()"
+              title="Mark all as read">
+              ✓ Mark all read
+            </button>
+            <button class="close-btn" (click)="closeNotifications()">×</button>
+          </div>
+          
+          <!-- Loading State -->
+          <div class="loading-state" *ngIf="loading">
+            <div class="spinner"></div>
+            <p>Loading notifications...</p>
+          </div>
+          
+          <div class="notifications-list" *ngIf="!loading">
+            <!-- Empty State -->
+            <div class="empty-state" *ngIf="notifications.length === 0">
+              <span class="empty-icon">📭</span>
+              <p>No notifications yet</p>
+            </div>
+            
+            <!-- Notification Items -->
+            <div 
+              class="notification-item"
+              *ngFor="let notification of notifications"
+              [class.unread]="!notification.isRead"
+              (click)="onNotificationClick(notification)">
+              
+              <div class="notification-icon">
+                {{ getNotificationIcon(notification.type) }}
+              </div>
+              
+              <div class="notification-content">
+                <div class="notification-title">{{ notification.title }}</div>
+                <div class="notification-message">{{ notification.message }}</div>
+                <div class="notification-time">{{ getTimeAgo(notification.createdAt) }}</div>
+              </div>
+              
+              <div class="unread-indicator" *ngIf="!notification.isRead"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Backdrop -->
+        <div class="notification-backdrop" *ngIf="showNotifications" (click)="closeNotifications()"></div>
+        
+        <button class="icon-btn search-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+          <span>Search</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Dynamic Content Area -->
+    <div class="dashboard-content">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+
+  <!-- Mobile Overlay -->
+  <div class="sidebar-overlay" *ngIf="mobileNavOpen" (click)="closeMobileNav()"></div>
+</div>

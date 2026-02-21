@@ -1,0 +1,9 @@
+<div [class]="getContainerClass()" role="status" aria-live="polite">
+  <div class="loading-content">
+    <div [class]="'spinner ' + getSizeClass()" aria-hidden="true">
+      <div class="spinner-circle"></div>
+    </div>
+    <p *ngIf="message" class="loading-message">{{ message }}</p>
+    <span *ngIf="!message" class="sr-only">Loading, please wait</span>
+  </div>
+</div>

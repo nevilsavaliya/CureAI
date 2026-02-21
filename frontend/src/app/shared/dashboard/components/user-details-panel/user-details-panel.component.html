@@ -1,0 +1,179 @@
+<div class="user-details-panel" [class.loading]="loading" role="region" [attr.aria-label]="config.title || 'User details'">
+  
+  <!-- Loading Skeleton -->
+  <div *ngIf="loading" class="skeleton-user-panel" aria-live="polite" aria-busy="true" aria-label="Loading user details">
+    <div class="skeleton-user-header">
+      <div class="skeleton-avatar" aria-hidden="true"></div>
+      <div class="skeleton-content">
+        <div class="skeleton-line skeleton-line-title" aria-hidden="true"></div>
+        <div class="skeleton-line skeleton-line-subtitle" aria-hidden="true"></div>
+      </div>
+    </div>
+    <div class="skeleton-demographics">
+      <div class="skeleton-line" aria-hidden="true"></div>
+      <div class="skeleton-line" aria-hidden="true"></div>
+      <div class="skeleton-line" aria-hidden="true"></div>
+      <div class="skeleton-line" aria-hidden="true"></div>
+    </div>
+    <div class="skeleton-tags">
+      <div class="skeleton-tag" aria-hidden="true"></div>
+      <div class="skeleton-tag" aria-hidden="true"></div>
+      <div class="skeleton-tag" aria-hidden="true"></div>
+    </div>
+    <div class="skeleton-actions">
+      <div class="skeleton-button" aria-hidden="true"></div>
+      <div class="skeleton-button" aria-hidden="true"></div>
+      <div class="skeleton-button" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!loading && error" class="error-state error-state-small" role="alert" aria-live="assertive">
+    <div class="error-icon error-icon-small">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+    </div>
+    <p class="error-message-title">Failed to load user details</p>
+    <p class="error-message-subtitle">{{ error }}</p>
+    <div class="error-actions">
+      <button class="error-action-button" (click)="onRetry()" aria-label="Retry loading user details">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="retry-icon" aria-hidden="true">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+        Retry
+      </button>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !error && !hasData()" class="empty-state empty-state-small" role="status" aria-live="polite">
+    <div class="empty-icon empty-icon-small">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+    </div>
+    <p class="empty-message">{{ emptyMessage }}</p>
+  </div>
+
+  <!-- Content -->
+  <div *ngIf="!loading && !error && hasData()" class="panel-content">
+    
+    <!-- Title -->
+    <h3 class="panel-title" *ngIf="config.title">{{ config.title }}</h3>
+
+    <!-- User Header -->
+    <div class="user-header" role="group" aria-label="User information">
+      <!-- Avatar -->
+      <div class="user-avatar" role="img" [attr.aria-label]="config.user.name + ' profile picture'">
+        <img 
+          *ngIf="config.user.avatar && !imageError"
+          [src]="config.user.avatar"
+          [alt]="config.user.name + ' avatar'"
+          class="avatar-image"
+          (error)="onImageError($event)">
+        <div 
+          *ngIf="!config.user.avatar || imageError"
+          class="avatar-initials"
+          [attr.aria-label]="config.user.name + ' initials'">
+          {{ getInitials(config.user.name) }}
+        </div>
+      </div>
+
+      <!-- User Info -->
+      <div class="user-info">
+        <h4 class="user-name" id="user-name-{{getUserId()}}">{{ config.user.name }}</h4>
+        <p class="user-subtitle" id="user-subtitle-{{getUserId()}}">{{ config.user.subtitle }}</p>
+      </div>
+    </div>
+
+    <!-- Demographics Grid -->
+    <div 
+      *ngIf="config.user.demographics && config.user.demographics.length > 0"
+      class="demographics-grid"
+      role="list"
+      aria-label="User demographic information">
+      <div 
+        *ngFor="let demo of config.user.demographics"
+        class="demographic-item"
+        role="listitem">
+        <span class="demographic-label">{{ demo.label }}</span>
+        <span class="demographic-value">{{ demo.value }}</span>
+      </div>
+    </div>
+
+    <!-- Tags -->
+    <div 
+      *ngIf="config.user.tags && config.user.tags.length > 0"
+      class="tags-container"
+      role="list"
+      aria-label="User tags">
+      <span 
+        *ngFor="let tag of config.user.tags"
+        class="tag"
+        [ngClass]="getTagColorClass(tag.color)"
+        role="listitem">
+        {{ tag.text }}
+      </span>
+    </div>
+
+    <!-- Action Buttons -->
+    <div 
+      *ngIf="config.actions && config.actions.length > 0"
+      class="action-buttons"
+      role="group"
+      aria-label="User actions">
+      <button
+        *ngFor="let action of config.actions"
+        type="button"
+        class="action-button"
+        (click)="handleActionClick(action)"
+        (keydown.enter)="handleActionClick(action, $event)"
+        (keydown.space)="handleActionClick(action, $event)"
+        [attr.aria-label]="getActionAriaLabel(action)">
+        <span class="action-icon" [attr.aria-hidden]="true">{{ action.icon }}</span>
+        <span class="action-label">{{ action.label }}</span>
+      </button>
+    </div>
+
+    <!-- Detail Sections -->
+    <div 
+      *ngIf="config.sections && config.sections.length > 0"
+      class="detail-sections">
+      <div 
+        *ngFor="let section of config.sections"
+        class="detail-section">
+        <button
+          type="button"
+          class="section-header"
+          (click)="toggleSection(section.title)"
+          [attr.aria-expanded]="isSectionExpanded(section.title)"
+          [attr.aria-controls]="'section-' + section.title">
+          <span class="section-title">{{ section.title }}</span>
+          <span 
+            class="section-toggle"
+            [class.expanded]="isSectionExpanded(section.title)"
+            aria-hidden="true">
+            ▼
+          </span>
+        </button>
+        <div 
+          *ngIf="isSectionExpanded(section.title)"
+          class="section-content"
+          [id]="'section-' + section.title"
+          role="region"
+          [attr.aria-label]="section.title + ' content'">
+          <p *ngFor="let item of getSectionContentArray(section.content)" class="section-text">
+            {{ item }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>

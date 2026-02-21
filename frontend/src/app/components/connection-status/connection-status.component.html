@@ -1,9 +1,0 @@
-<div class="connection-status-container" *ngIf="showStatus">
-  <div class="connection-status" [ngClass]="getStatusClass()">
-    <span class="status-icon">{{ getStatusIcon() }}</span>
-    <span class="status-text">{{ getStatusText() }}</span>
-    <button class="dismiss-btn" (click)="dismissStatus()" *ngIf="connectionStatus === 'connected'">
-      ×
-    </button>
-  </div>
-</div>

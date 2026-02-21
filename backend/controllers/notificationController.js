@@ -1,10 +1,18 @@
 const Notification = require('../models/Notification');
+const { parsePaginationParams, buildPaginationMeta } = require('../core/controllers/paginationUtils');
 
 // Get all notifications for user
 exports.getNotifications = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { type, isRead, limit = 50, skip = 0 } = req.query;
+    const { type, isRead } = req.query;
+
+    // Parse pagination parameters
+    const { page, limit, skip } = parsePaginationParams(req.query, {
+      page: 1,
+      limit: 20,
+      maxLimit: 50
+    });
 
     // Build query
     const query = { userId };
@@ -18,20 +26,23 @@ exports.getNotifications = async (req, res) => {
     }
 
     // Fetch notifications with pagination
-    const notifications = await Notification.find(query)
-      .populate('caseId', 'status symptoms createdAt')
-      .sort({ createdAt: -1 })
-      .limit(parseInt(limit))
-      .skip(parseInt(skip));
+    const [notifications, totalCount] = await Promise.all([
+      Notification.find(query)
+        .populate('caseId', 'status symptoms createdAt')
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .skip(skip)
+        .lean(),
+      Notification.countDocuments(query)
+    ]);
 
-    // Get total count for pagination
-    const totalCount = await Notification.countDocuments(query);
+    // Build pagination metadata
+    const pagination = buildPaginationMeta(page, limit, totalCount);
 
     res.status(200).json({
       success: true,
-      count: notifications.length,
-      totalCount,
-      notifications
+      data: notifications,
+      pagination
     });
   } catch (error) {
     console.error('Error fetching notifications:', error);

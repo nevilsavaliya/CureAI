@@ -1,15 +1,17 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { CaseService, Case, Message } from '../../services/case.service';
 import { SocketService } from '../../services/socket.service';
+import { ToastService } from '../../services/toast.service';
 import { interval, Subscription, Subject } from 'rxjs';
 import { switchMap, distinctUntilChanged, debounceTime, filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-patient-cases',
   templateUrl: './patient-cases.component.html',
-  styleUrls: ['./patient-cases.component.css']
+  styleUrls: ['./patient-cases.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PatientCasesComponent implements OnInit, OnDestroy {
   userName: string = '';
@@ -17,7 +19,10 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
   filteredCases: Case[] = [];
   selectedCase: Case | null = null;
   messages: Message[] = [];
-  
+
+  // Expose Math for template
+  Math = Math;
+
   // Filter and search
   selectedFilter: string = 'all';
   searchQuery: string = '';
@@ -25,39 +30,45 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
   searchEndDate: string = '';
   sortBy: string = 'date'; // 'date', 'status', 'unread'
   sortOrder: string = 'desc'; // 'asc', 'desc'
-  
+
+  // Pagination
+  currentPage: number = 1;
+  itemsPerPage: number = 10;
+  totalPages: number = 1;
+  totalItems: number = 0;
+
   // Message input
   messageText: string = '';
   sendingMessage: boolean = false;
-  
+
   // Feedback
   showFeedbackForm: boolean = false;
   feedbackRating: number = 0;
   feedbackComment: string = '';
   submittingFeedback: boolean = false;
-  
+
   // Loading states
   loadingCases: boolean = true;
   loadingMessages: boolean = false;
-  
+
   // Typing indicator
   isOtherUserTyping: boolean = false;
   private typingTimeout: any;
   private isTyping: boolean = false;
-  
+
   // Polling subscription
   private pollingSubscription?: Subscription;
-  
+
   // WebSocket subscriptions
   private socketSubscriptions: Subscription[] = [];
   private useWebSocket: boolean = true;
-  
+
   // Connection status
   connectionStatus: 'connected' | 'polling' | 'disconnected' = 'disconnected';
-  
+
   // Active tab
   activeTab: 'overview' | 'messages' | 'timeline' | 'feedback' = 'overview';
-  
+
   // Debounced reload subject
   private reloadCasesSubject = new Subject<void>();
 
@@ -65,8 +76,10 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private caseService: CaseService,
     private socketService: SocketService,
-    private router: Router
-  ) {}
+    private toastService: ToastService,
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) { }
 
 
   ngOnInit(): void {
@@ -74,7 +87,7 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
     if (user) {
       this.userName = user.name;
     }
-    
+
     // Set up debounced reload
     const reloadSub = this.reloadCasesSubject
       .pipe(debounceTime(1000))
@@ -82,10 +95,10 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
         this.loadCases();
       });
     this.socketSubscriptions.push(reloadSub);
-    
+
     // Connect to WebSocket
     this.connectWebSocket();
-    
+
     this.loadCases();
   }
 
@@ -94,28 +107,28 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
     if (this.pollingSubscription) {
       this.pollingSubscription.unsubscribe();
     }
-    
+
     // Clean up WebSocket subscriptions
     this.socketSubscriptions.forEach(sub => sub.unsubscribe());
-    
+
     // Leave current case room
     if (this.selectedCase) {
       this.socketService.leaveCase(this.selectedCase._id);
     }
   }
-  
+
   /**
    * Connect to WebSocket and set up event listeners
    */
   connectWebSocket(): void {
     // Connect to socket
     this.socketService.connect();
-    
+
     // Subscribe to connection status
     const connectionSub = this.socketService.getConnectionStatus().subscribe(connected => {
       console.log('WebSocket connection status:', connected);
       this.useWebSocket = connected;
-      
+
       // If disconnected and have selected case, fall back to polling
       if (!connected && this.selectedCase) {
         this.startMessagePolling();
@@ -126,7 +139,7 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
       }
     });
     this.socketSubscriptions.push(connectionSub);
-    
+
     // Subscribe to detailed connection status
     const statusSub = this.socketService.getConnectionStatusObservable()
       .pipe(distinctUntilChanged())
@@ -135,54 +148,56 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
         this.connectionStatus = status;
       });
     this.socketSubscriptions.push(statusSub);
-    
+
     // Subscribe to new messages
     const messageSub = this.socketService.newMessage$
       .pipe(filter(data => data !== null))
       .subscribe(data => {
         if (data && this.selectedCase && data.caseId === this.selectedCase._id) {
           console.log('Received new message via WebSocket:', data.message);
-          
+
           // Add message to list if not already present
           const exists = this.messages.find(m => m._id === data.message._id);
           if (!exists) {
             this.messages.push(data.message);
-            this.messages.sort((a, b) => 
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          );
-          
-          // Mark as read if from doctor
-          if (data.message.senderType === 'doctor') {
-            this.caseService.markMessageAsRead(data.message._id).subscribe();
+            this.messages.sort((a, b) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            );
+
+            // Mark as read if from doctor
+            if (data.message.senderType === 'doctor') {
+              this.caseService.markMessageAsRead(data.message._id).subscribe();
+            }
+
+            this.cdr.markForCheck();
           }
         }
-      }
-    });
+      });
     this.socketSubscriptions.push(messageSub);
-    
+
     // Subscribe to case updates
     const caseUpdateSub = this.socketService.caseUpdated$
       .pipe(filter(data => data !== null))
       .subscribe(data => {
         if (data && this.selectedCase && data.caseId === this.selectedCase._id) {
           console.log('Case updated via WebSocket:', data);
-          
+
           // Update selected case status
           if (data.status) {
             this.selectedCase.status = data.status as 'pending' | 'ongoing' | 'treated' | 'rejected';
           }
-          
+
           // Trigger debounced reload to update sidebar
           this.reloadCasesSubject.next();
         }
       });
     this.socketSubscriptions.push(caseUpdateSub);
-    
+
     // Subscribe to message read events
     const messageReadSub = this.socketService.messageRead$.subscribe(data => {
       if (data && this.selectedCase && data.caseId === this.selectedCase._id) {
         console.log('Message read via WebSocket:', data);
-        
+
         // Update message read status
         const message = this.messages.find(m => m._id === data.messageId);
         if (message) {
@@ -192,18 +207,18 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
       }
     });
     this.socketSubscriptions.push(messageReadSub);
-    
+
     // Subscribe to typing indicators
     const typingSub = this.socketService.typing$.subscribe(data => {
       if (data && this.selectedCase && data.caseId === this.selectedCase._id) {
         console.log('User typing:', data);
         this.isOtherUserTyping = true;
-        
+
         // Clear existing timeout
         if (this.typingTimeout) {
           clearTimeout(this.typingTimeout);
         }
-        
+
         // Auto-clear typing indicator after 3 seconds
         this.typingTimeout = setTimeout(() => {
           this.isOtherUserTyping = false;
@@ -211,13 +226,13 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
       }
     });
     this.socketSubscriptions.push(typingSub);
-    
+
     // Subscribe to stop typing indicators
     const stopTypingSub = this.socketService.stopTyping$.subscribe(data => {
       if (data && this.selectedCase && data.caseId === this.selectedCase._id) {
         console.log('User stopped typing:', data);
         this.isOtherUserTyping = false;
-        
+
         if (this.typingTimeout) {
           clearTimeout(this.typingTimeout);
         }
@@ -225,7 +240,7 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
     });
     this.socketSubscriptions.push(stopTypingSub);
   }
-  
+
   /**
    * Stop message polling
    */
@@ -238,17 +253,29 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
 
   loadCases(): void {
     this.loadingCases = true;
-    this.caseService.getCases().subscribe({
+    this.cdr.markForCheck();
+    this.caseService.getCases(this.currentPage, this.itemsPerPage).subscribe({
       next: (response) => {
         if (response.success) {
           this.cases = response.cases;
+
+          // Extract pagination if present
+          if (response.pagination) {
+            this.currentPage = response.pagination.page;
+            this.totalPages = response.pagination.pages;
+            this.totalItems = response.pagination.total;
+            this.itemsPerPage = response.pagination.limit;
+          }
+
           this.applyFilters();
         }
         this.loadingCases = false;
+        this.cdr.markForCheck();
       },
       error: (error) => {
         console.error('Error loading cases:', error);
         this.loadingCases = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -258,12 +285,12 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
     if (this.selectedCase) {
       this.socketService.leaveCase(this.selectedCase._id);
     }
-    
+
     this.selectedCase = caseItem;
     this.showFeedbackForm = false;
     this.activeTab = 'overview'; // Reset to overview tab
     this.loadMessages();
-    
+
     // Join case room via WebSocket
     if (this.useWebSocket && this.socketService.isConnected()) {
       this.socketService.joinCase(caseItem._id);
@@ -275,8 +302,9 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
 
   loadMessages(): void {
     if (!this.selectedCase) return;
-    
+
     this.loadingMessages = true;
+    this.cdr.markForCheck();
     this.caseService.getCaseMessages(this.selectedCase._id).subscribe({
       next: (response) => {
         if (response.success) {
@@ -284,10 +312,12 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
           this.markMessagesAsRead();
         }
         this.loadingMessages = false;
+        this.cdr.markForCheck();
       },
       error: (error) => {
         console.error('Error loading messages:', error);
         this.loadingMessages = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -297,7 +327,7 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
     if (this.pollingSubscription) {
       this.pollingSubscription.unsubscribe();
     }
-    
+
     // Poll every 5 seconds
     this.pollingSubscription = interval(5000)
       .pipe(
@@ -314,8 +344,8 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
             // Only update if there are actually new messages
             const hasNewMessages = response.messages.length > this.messages.length ||
               (response.messages.length > 0 && this.messages.length > 0 &&
-               response.messages[response.messages.length - 1]._id !== this.messages[this.messages.length - 1]._id);
-            
+                response.messages[response.messages.length - 1]._id !== this.messages[this.messages.length - 1]._id);
+
             if (hasNewMessages) {
               this.messages = response.messages;
               this.markMessagesAsRead();
@@ -342,24 +372,24 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
     if (!this.selectedCase || !this.useWebSocket || !this.socketService.isConnected()) {
       return;
     }
-    
+
     // Emit typing indicator if not already typing
     if (!this.isTyping) {
       this.isTyping = true;
       this.socketService.emitTyping(this.selectedCase._id);
     }
-    
+
     // Clear existing timeout
     if (this.typingTimeout) {
       clearTimeout(this.typingTimeout);
     }
-    
+
     // Stop typing after 2 seconds of inactivity
     this.typingTimeout = setTimeout(() => {
       this.stopTyping();
     }, 2000);
   }
-  
+
   /**
    * Stop typing indicator
    */
@@ -374,84 +404,88 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
     if (!this.messageText.trim() || !this.selectedCase || this.sendingMessage) {
       return;
     }
-    
+
     // Stop typing indicator
     this.stopTyping();
-    
+
     this.sendingMessage = true;
+    this.cdr.markForCheck();
     const messageContent = this.messageText;
-    
+
     // Send via REST API (which will also broadcast via WebSocket)
     this.caseService.sendMessage(this.selectedCase._id, messageContent).subscribe({
       next: (response) => {
         if (response.success) {
           this.messageText = '';
-          
+          this.toastService.success('Message sent successfully');
+
           // Message will be received via WebSocket, but add immediately for better UX
           if (!this.useWebSocket || !this.socketService.isConnected()) {
             this.messages.push(response.message);
-            this.messages.sort((a, b) => 
+            this.messages.sort((a, b) =>
               new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
             );
           }
         }
         this.sendingMessage = false;
+        this.cdr.markForCheck();
       },
       error: (error) => {
         console.error('Error sending message:', error);
-        alert('Failed to send message. Please try again.');
+        this.toastService.error('Failed to send message. Please try again.');
         this.sendingMessage = false;
+        this.cdr.markForCheck();
       }
     });
   }
 
   applyFilters(): void {
     let filtered = [...this.cases];
-    
+
     // Apply status filter
     if (this.selectedFilter !== 'all') {
       filtered = filtered.filter(c => c.status === this.selectedFilter);
     }
-    
+
     // Apply text search
     if (this.searchQuery.trim()) {
       const query = this.searchQuery.toLowerCase();
-      filtered = filtered.filter(c => 
+      filtered = filtered.filter(c =>
         c.doctorId.name.toLowerCase().includes(query) ||
         c.doctorId.speciality.toLowerCase().includes(query)
       );
     }
-    
+
     // Apply date range filter
     if (this.searchStartDate) {
       const startDate = new Date(this.searchStartDate);
       startDate.setHours(0, 0, 0, 0);
       filtered = filtered.filter(c => new Date(c.createdAt) >= startDate);
     }
-    
+
     if (this.searchEndDate) {
       const endDate = new Date(this.searchEndDate);
       endDate.setHours(23, 59, 59, 999);
       filtered = filtered.filter(c => new Date(c.createdAt) <= endDate);
     }
-    
+
     // Apply sorting
     this.applySorting(filtered);
-    
+
     this.filteredCases = filtered;
   }
 
   applySorting(cases: Case[]): void {
     const sortMultiplier = this.sortOrder === 'asc' ? 1 : -1;
-    
+
     cases.sort((a, b) => {
       let comparison = 0;
-      
+
       switch (this.sortBy) {
         case 'date':
           comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
           break;
-        
+
         case 'status':
           const statusOrder: { [key: string]: number } = {
             'pending': 1,
@@ -461,17 +495,17 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
           };
           comparison = (statusOrder[a.status as string] || 5) - (statusOrder[b.status as string] || 5);
           break;
-        
+
         case 'unread':
           const aUnread = a.unreadCount || 0;
           const bUnread = b.unreadCount || 0;
           comparison = aUnread - bUnread;
           break;
-        
+
         default:
           comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       }
-      
+
       return comparison * sortMultiplier;
     });
   }
@@ -537,7 +571,7 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
     if (!this.selectedCase || this.feedbackRating === 0 || this.submittingFeedback) {
       return;
     }
-    
+
     this.submittingFeedback = true;
     this.caseService.submitFeedback(
       this.selectedCase._id,
@@ -546,7 +580,7 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: (response) => {
         if (response.success) {
-          alert('Thank you for your feedback!');
+          this.toastService.success('Thank you for your feedback!');
           this.showFeedbackForm = false;
           this.loadCases();
           if (this.selectedCase) {
@@ -561,7 +595,7 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error submitting feedback:', error);
-        alert('Failed to submit feedback. Please try again.');
+        this.toastService.error('Failed to submit feedback. Please try again.');
         this.submittingFeedback = false;
       }
     });
@@ -575,14 +609,14 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
     if (!this.selectedCase) {
       return;
     }
-    
+
     // Create a printable HTML document
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       alert('Please allow popups to print the timeline');
       return;
     }
-    
+
     let html = `
       <!DOCTYPE html>
       <html>
@@ -663,7 +697,7 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
           <div class="timeline-content">You requested a consultation with Dr. ${this.selectedCase.doctorId.name}</div>
         </div>
     `;
-    
+
     if (this.selectedCase.acceptedAt) {
       html += `
         <div class="timeline-event">
@@ -673,7 +707,7 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
         </div>
       `;
     }
-    
+
     if (this.selectedCase.rejectedAt) {
       html += `
         <div class="timeline-event">
@@ -683,7 +717,7 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
         </div>
       `;
     }
-    
+
     // Add messages
     this.messages.forEach(message => {
       const sender = message.senderType === 'patient' ? 'You' : `Dr. ${this.selectedCase!.doctorId.name}`;
@@ -695,7 +729,7 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
         </div>
       `;
     });
-    
+
     if (this.selectedCase.treatedAt) {
       html += `
         <div class="timeline-event">
@@ -705,7 +739,7 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
         </div>
       `;
     }
-    
+
     if (this.selectedCase.feedback) {
       html += `
         <div class="timeline-event">
@@ -715,16 +749,16 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
         </div>
       `;
     }
-    
+
     html += `
       </body>
       </html>
     `;
-    
+
     printWindow.document.write(html);
     printWindow.document.close();
     printWindow.focus();
-    
+
     // Wait for content to load then print
     setTimeout(() => {
       printWindow.print();
@@ -735,26 +769,26 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
     if (!this.selectedCase) {
       return;
     }
-    
+
     // Create a formatted text document with case history
     let content = '='.repeat(60) + '\n';
     content += 'MEDICAL CASE HISTORY\n';
     content += '='.repeat(60) + '\n\n';
-    
+
     content += `Case ID: ${this.selectedCase._id}\n`;
     content += `Patient: ${this.userName}\n`;
     content += `Doctor: Dr. ${this.selectedCase.doctorId.name}\n`;
     content += `Specialization: ${this.selectedCase.doctorId.speciality}\n`;
     content += `Status: ${this.getStatusLabel(this.selectedCase.status)}\n`;
     content += `Created: ${new Date(this.selectedCase.createdAt).toLocaleString()}\n`;
-    
+
     if (this.selectedCase.acceptedAt) {
       content += `Accepted: ${new Date(this.selectedCase.acceptedAt).toLocaleString()}\n`;
     }
     if (this.selectedCase.treatedAt) {
       content += `Treated: ${new Date(this.selectedCase.treatedAt).toLocaleString()}\n`;
     }
-    
+
     content += '\n' + '-'.repeat(60) + '\n';
     content += 'SYMPTOMS\n';
     content += '-'.repeat(60) + '\n';
@@ -765,7 +799,7 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
     } else {
       content += 'No symptoms recorded\n';
     }
-    
+
     if (this.selectedCase.predictedConditions && this.selectedCase.predictedConditions.length > 0) {
       content += '\n' + '-'.repeat(60) + '\n';
       content += 'PREDICTED CONDITIONS\n';
@@ -774,7 +808,7 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
         content += `${index + 1}. ${condition}\n`;
       });
     }
-    
+
     if (this.selectedCase.chatbotHistory && this.selectedCase.chatbotHistory.length > 0) {
       content += '\n' + '-'.repeat(60) + '\n';
       content += 'CHATBOT DIAGNOSTIC CONVERSATION\n';
@@ -788,7 +822,7 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
         }
       });
     }
-    
+
     content += '\n' + '-'.repeat(60) + '\n';
     content += 'CONSULTATION MESSAGES\n';
     content += '-'.repeat(60) + '\n';
@@ -801,7 +835,7 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
     } else {
       content += 'No messages exchanged\n';
     }
-    
+
     if (this.selectedCase.feedback) {
       content += '\n' + '-'.repeat(60) + '\n';
       content += 'FEEDBACK\n';
@@ -812,11 +846,11 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
       }
       content += `Submitted: ${new Date(this.selectedCase.feedback.submittedAt).toLocaleString()}\n`;
     }
-    
+
     content += '\n' + '='.repeat(60) + '\n';
     content += 'END OF CASE HISTORY\n';
     content += '='.repeat(60) + '\n';
-    
+
     // Create and download the file
     const blob = new Blob([content], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
@@ -825,8 +859,8 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
     link.download = `case-history-${this.selectedCase._id}-${new Date().toISOString().split('T')[0]}.txt`;
     link.click();
     window.URL.revokeObjectURL(url);
-    
-    alert('Case history exported successfully!');
+
+    this.toastService.success('Case history exported successfully!');
   }
 
   logout(): void {
@@ -838,5 +872,56 @@ export class PatientCasesComponent implements OnInit, OnDestroy {
     if (confidence >= 70) return 'confidence-high';
     if (confidence >= 50) return 'confidence-medium';
     return 'confidence-low';
+  }
+
+  // Pagination methods
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.loadCases();
+    }
+  }
+
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.loadCases();
+    }
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.loadCases();
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+
+    if (this.totalPages <= maxPagesToShow) {
+      // Show all pages if total is less than max
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Show current page with 2 pages on each side
+      let startPage = Math.max(1, this.currentPage - 2);
+      let endPage = Math.min(this.totalPages, this.currentPage + 2);
+
+      // Adjust if we're near the start or end
+      if (this.currentPage <= 3) {
+        endPage = maxPagesToShow;
+      } else if (this.currentPage >= this.totalPages - 2) {
+        startPage = this.totalPages - maxPagesToShow + 1;
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+
+    return pages;
   }
 }

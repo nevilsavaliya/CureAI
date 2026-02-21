@@ -48,6 +48,7 @@ export class HospitalDashboardComponent implements OnInit, OnDestroy {
   apiKeyCopied: boolean = false;
   apiSecretCopied: boolean = false;
   showLogoutConfirm: boolean = false;
+  activeTab: 'overview' | 'credentials' | 'activity' = 'overview';
   
   // Action loading states
   actionLoading = {
@@ -210,7 +211,25 @@ export class HospitalDashboardComponent implements OnInit, OnDestroy {
       next: (response) => {
         this.loadingStates.requests = false;
         
+        console.log('📊 Recent API requests response:', {
+          success: response.success,
+          requestsCount: response.requests?.length,
+          fullResponse: response,
+          sampleRequest: response.requests?.[0]
+        });
+        
         if (response.success && response.requests) {
+          // Log the timestamp format for debugging
+          if (response.requests.length > 0) {
+            const firstRequest = response.requests[0];
+            console.log('🕐 Timestamp analysis:', {
+              rawTimestamp: firstRequest.timestamp,
+              timestampType: typeof firstRequest.timestamp,
+              parsedDate: new Date(firstRequest.timestamp),
+              isValidDate: !isNaN(new Date(firstRequest.timestamp).getTime())
+            });
+          }
+          
           this.state.recentRequests = response.requests;
           this.lastUpdated.requests = new Date();
         } else {
@@ -221,6 +240,7 @@ export class HospitalDashboardComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         this.loadingStates.requests = false;
+        console.error('❌ Error loading recent requests:', error);
         this.handleRequestsError(error);
         this.checkLoadingComplete();
       }
@@ -314,7 +334,7 @@ export class HospitalDashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Handle stats loading errors with fallback displays
+   * Handle stats loading errors - don't provide fallback data
    */
   private handleStatsError(error: any): void {
     const errorType = this.categorizeError(error);
@@ -326,25 +346,27 @@ export class HospitalDashboardComponent implements OnInit, OnDestroy {
       
       case 'network':
         this.state.errors.stats = 'Unable to load statistics due to network issues.';
-        // Provide fallback data for stats
-        this.provideFallbackStats();
+        this.toastService.warning('Unable to load API statistics. Please check your connection.');
         break;
       
       case 'server':
         this.state.errors.stats = 'Statistics service temporarily unavailable.';
-        this.provideFallbackStats();
+        this.toastService.warning('Statistics service is temporarily unavailable.');
         break;
       
       default:
         this.state.errors.stats = 'Unable to load API usage statistics.';
-        this.provideFallbackStats();
+        this.toastService.error('Failed to load API statistics.');
     }
+    
+    // Don't provide fallback stats - show error instead
+    this.state.apiStats = null;
     
     this.checkLoadingComplete();
   }
 
   /**
-   * Handle requests loading errors with fallback displays
+   * Handle requests loading errors - don't provide fallback data
    */
   private handleRequestsError(error: any): void {
     const errorType = this.categorizeError(error);
@@ -356,15 +378,21 @@ export class HospitalDashboardComponent implements OnInit, OnDestroy {
       
       case 'network':
         this.state.errors.requests = 'Unable to load recent requests due to network issues.';
+        this.toastService.warning('Unable to load recent requests. Please check your connection.');
         break;
       
       case 'server':
         this.state.errors.requests = 'Request logs service temporarily unavailable.';
+        this.toastService.warning('Request logs service is temporarily unavailable.');
         break;
       
       default:
         this.state.errors.requests = 'Unable to load recent API requests.';
+        this.toastService.error('Failed to load recent requests.');
     }
+    
+    // Don't provide fallback data - show error instead
+    this.state.recentRequests = [];
     
     this.checkLoadingComplete();
   }
@@ -573,17 +601,41 @@ export class HospitalDashboardComponent implements OnInit, OnDestroy {
     return '#ef4444'; // Red
   }
 
-  formatTimestamp(timestamp: Date): string {
-    const now = new Date();
-    const diff = now.getTime() - new Date(timestamp).getTime();
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
+  formatTimestamp(timestamp: Date | string | number): string {
+    if (!timestamp) return 'Unknown';
     
-    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
-    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-    return 'Just now';
+    try {
+      const now = new Date();
+      const date = new Date(timestamp);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
+      
+      const diff = now.getTime() - date.getTime();
+      
+      // If diff is negative, the date is in the future
+      if (diff < 0) {
+        return 'Just now';
+      }
+      
+      const seconds = Math.floor(diff / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+      
+      if (seconds < 60) return 'Just now';
+      if (minutes < 60) return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+      if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+      if (days < 30) return `${days} day${days !== 1 ? 's' : ''} ago`;
+      
+      // For dates older than 30 days, show the actual date
+      return date.toLocaleDateString();
+    } catch (error) {
+      console.error('Error formatting timestamp:', error, timestamp);
+      return 'Invalid date';
+    }
   }
 
   goToApiDocs(): void {

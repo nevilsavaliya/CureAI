@@ -1,0 +1,122 @@
+<div 
+  class="request-item"
+  [attr.aria-label]="getAriaLabel()">
+  
+  <!-- Avatar -->
+  <div class="request-avatar">
+    <img 
+      *ngIf="request.avatar && !imageError"
+      [src]="request.avatar"
+      [alt]="request.name + ' avatar'"
+      class="avatar-image"
+      (error)="onImageError($event)">
+    <div 
+      *ngIf="!request.avatar || imageError"
+      class="avatar-initials"
+      [attr.aria-label]="request.name + ' initials'">
+      {{ getInitials(request.name) }}
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="request-content">
+    <h4 class="request-name">{{ request.name }}</h4>
+    <p class="request-subtitle">{{ request.subtitle }}</p>
+  </div>
+
+  <!-- Actions -->
+  <div class="request-actions" role="group" [attr.aria-label]="'Actions for ' + request.name">
+    <button
+      *ngFor="let action of request.actions"
+      class="action-button"
+      [class.action-approve]="action.type === 'approve'"
+      [class.action-reject]="action.type === 'reject'"
+      [class.action-info]="action.type === 'info'"
+      [class.loading]="loadingAction === action.type"
+      [disabled]="loadingAction !== null"
+      (click)="handleActionClick(action, $event)"
+      [attr.aria-label]="getActionLabel(action.type)"
+      type="button">
+      
+      <!-- Loading Spinner -->
+      <span *ngIf="loadingAction === action.type" class="spinner" aria-hidden="true"></span>
+      
+      <!-- Action Icon -->
+      <svg 
+        *ngIf="loadingAction !== action.type"
+        class="action-icon"
+        width="16" 
+        height="16" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true">
+        
+        <!-- Approve Icon (Checkmark) -->
+        <path *ngIf="action.type === 'approve'" d="M20 6L9 17l-5-5"></path>
+        
+        <!-- Reject Icon (X) -->
+        <g *ngIf="action.type === 'reject'">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </g>
+        
+        <!-- Info Icon (i) -->
+        <g *ngIf="action.type === 'info'">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </g>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- Confirmation Dialog -->
+<div 
+  *ngIf="showConfirmDialog"
+  class="confirm-overlay"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-labelledby]="'confirm-title-' + request.id"
+  (click)="cancelAction()">
+  
+  <div class="confirm-dialog" (click)="$event.stopPropagation()">
+    <div class="confirm-header">
+      <h3 [id]="'confirm-title-' + request.id" class="confirm-title">Confirm Action</h3>
+      <button 
+        class="confirm-close"
+        (click)="cancelAction()"
+        aria-label="Close dialog"
+        type="button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="confirm-body">
+      <p class="confirm-message">{{ getConfirmMessage() }}</p>
+    </div>
+    
+    <div class="confirm-footer">
+      <button 
+        class="confirm-button confirm-cancel"
+        (click)="cancelAction()"
+        type="button">
+        Cancel
+      </button>
+      <button 
+        class="confirm-button confirm-confirm"
+        [class.confirm-danger]="pendingAction?.type === 'reject'"
+        (click)="confirmAction()"
+        type="button">
+        {{ pendingAction?.type === 'approve' ? 'Approve' : 'Reject' }}
+      </button>
+    </div>
+  </div>
+</div>

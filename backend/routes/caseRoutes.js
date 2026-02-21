@@ -12,8 +12,11 @@ const {
   validateTreatmentData,
   validatePagination,
   validateStatusFilter,
+  validateObjectId,
+  sanitizeBody
+} = require('../core/middleware');
+const {
   rateLimitMessages,
-  sanitizeInput,
   validateCaseAuthorization
 } = require('../middleware/validation');
 
@@ -21,7 +24,7 @@ const {
 router.use(authenticate);
 
 // Apply input sanitization to all routes
-router.use(sanitizeInput);
+router.use(sanitizeBody());
 
 // Case management routes
 router.post('/cases', 
@@ -74,14 +77,14 @@ router.post('/cases/:id/feedback',
 
 // Case messaging routes
 router.post('/cases/:caseId/messages', 
-  validateCaseId,
+  validateObjectId('caseId'),
   validateMessageContent,
   rateLimitMessages,
   messageController.sendCaseMessage
 );
 
 router.get('/cases/:caseId/messages', 
-  validateCaseId,
+  validateObjectId('caseId'),
   validatePagination,
   messageController.getCaseMessages
 );

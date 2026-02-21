@@ -1,5 +1,4 @@
 const errorTracker = require('../services/errorTracker');
-const logger = require('../services/logger');
 
 /**
  * Error tracking middleware for hospital feature

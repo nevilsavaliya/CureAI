@@ -14,6 +14,36 @@
             "date": 1771058998135,
             "name": "/home/nevil_savaliya/CureAI/backend/logs/error-2026-02-14.log",
             "hash": "7034d3b050b08f0aad6ccf4244b46b620f27e939cdaf133cd234b7820b690f46"
+        },
+        {
+            "date": 1771307416192,
+            "name": "/home/nevil_savaliya/CureAI/backend/logs/error-2026-02-17.log",
+            "hash": "2ded45f34bb1d8339a77931ebd3c0515c73c591c628915e6a488ee25852b0876"
+        },
+        {
+            "date": 1771386961901,
+            "name": "/home/nevil_savaliya/CureAI/backend/logs/error-2026-02-18.log",
+            "hash": "ee6202ae97928da4cf51d9de1e0e061fd7767e9d5f494fc6645cb9e9cd62291f"
+        },
+        {
+            "date": 1771483861090,
+            "name": "/home/nevil_savaliya/CureAI/backend/logs/error-2026-02-19.log",
+            "hash": "c8eff202d21f20a2f80119e466c6731e96e50282dad95d86b57a6f7389a6e65b"
+        },
+        {
+            "date": 1771526161405,
+            "name": "/home/nevil_savaliya/CureAI/backend/logs/error-2026-02-20.log",
+            "hash": "3279b49ab1e3cbf2a20b7b5d73e92806c916384d6f34c0cddd613109a08c1dbb"
+        },
+        {
+            "date": 1771614514339,
+            "name": "/home/nevil_savaliya/CureAI/backend/logs/error-2026-02-21.log",
+            "hash": "7781277af7d4e92c9f42d8325eefb0bae25971368ce5305a0d59625dba149a0a"
+        },
+        {
+            "date": 1771698604188,
+            "name": "/home/nevil_savaliya/CureAI/backend/logs/error-2026-02-22.log",
+            "hash": "29aeb560ee1e176931a8eb9e7371b8f4fbf458563c4755d8597f0b3cff6897ff"
         }
     ],
     "hashType": "sha256"

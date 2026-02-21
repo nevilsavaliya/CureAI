@@ -181,7 +181,12 @@ export class AdminService {
       url += '?' + queryParams.join('&');
     }
     
-    return this.http.get(url);
+    return this.http.get(url).pipe(
+      tap((response: any) => {
+        // Backend response format: { success: true, users: [...], pagination: {...}, filters: {...} }
+        console.log('getUsers response:', response);
+      })
+    );
   }
 
   // Get user detail
@@ -228,6 +233,7 @@ export class AdminService {
       body: { reason }
     }).pipe(
       tap(response => {
+        // Backend response format: { success: true, message: "...", removedUser: {...}, activeProcesses: {...}, emailDeliveryStatus: "..." }
         if (response.success) {
           console.log(`User ${userId} of type ${userType} removed successfully`);
         }
@@ -328,7 +334,12 @@ export class AdminService {
   }
 
   getAdmins(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/admin/users?userType=admin`);
+    return this.http.get(`${this.apiUrl}/admin/users?userType=admin`).pipe(
+      tap((response: any) => {
+        // Backend response format: { success: true, users: [...], pagination: {...}, filters: {...} }
+        console.log('getAdmins response:', response);
+      })
+    );
   }
 
   getRemovedUsers(filters?: any, options?: any): Observable<any> {
@@ -375,7 +386,12 @@ export class AdminService {
       url += '?' + params.join('&');
     }
     
-    return this.http.get(url);
+    return this.http.get(url).pipe(
+      tap((response: any) => {
+        // Backend response format: { success: true, removedUsers: [...], pagination: {...} }
+        console.log('getRemovedUsers response:', response);
+      })
+    );
   }
 
   // Data integrity and system management
@@ -487,7 +503,12 @@ export class AdminService {
       url += '?' + params.join('&');
     }
     
-    return this.http.get(url);
+    return this.http.get(url).pipe(
+      tap((response: any) => {
+        // Backend response format: { success: true, logs: [...], pagination: {...}, summary: {...} }
+        console.log('getAuditLogs response:', response);
+      })
+    );
   }
 
   exportAuditLogs(filters?: any, format: string = 'csv'): Observable<any> {

@@ -1,0 +1,23 @@
+<div class="empty-state">
+  <div class="empty-state-illustration">
+    <img [src]="illustrationPath" [alt]="title" />
+  </div>
+  <div class="empty-state-content">
+    <h3 class="empty-state-title">{{ title }}</h3>
+    <p class="empty-state-message">{{ message }}</p>
+    <button 
+      *ngIf="showCta && ctaText" 
+      class="empty-state-cta"
+      (click)="onCtaClick()">
+      <svg *ngIf="ctaIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <ng-container [ngSwitch]="ctaIcon">
+          <path *ngSwitchCase="'plus'" d="M12 5v14m-7-7h14"/>
+          <path *ngSwitchCase="'refresh'" d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          <path *ngSwitchCase="'search'" d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.35-4.35"/>
+          <path *ngSwitchDefault d="M5 12h14m-7-7l7 7-7 7"/>
+        </ng-container>
+      </svg>
+      <span>{{ ctaText }}</span>
+    </button>
+  </div>
+</div>

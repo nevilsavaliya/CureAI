@@ -1,0 +1,572 @@
+/* Animation Utility Classes */
+
+/* ============================================
+   Fade Animations
+   ============================================ */
+
+.animate-fade-in {
+  animation: fadeIn var(--duration-base) var(--ease-out) forwards;
+}
+
+.animate-fade-out {
+  animation: fadeOut var(--duration-base) var(--ease-in) forwards;
+}
+
+.animate-fade-in-fast {
+  animation: fadeIn var(--duration-fast) var(--ease-out) forwards;
+}
+
+.animate-fade-in-slow {
+  animation: fadeIn var(--duration-slow) var(--ease-out) forwards;
+}
+
+/* ============================================
+   Slide Animations
+   ============================================ */
+
+.animate-slide-up {
+  animation: slideUp var(--duration-slow) var(--ease-out) forwards;
+}
+
+.animate-slide-down {
+  animation: slideDown var(--duration-slow) var(--ease-out) forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft var(--duration-base) var(--ease-out) forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight var(--duration-base) var(--ease-out) forwards;
+}
+
+/* ============================================
+   Scale Animations
+   ============================================ */
+
+.animate-scale-in {
+  animation: scaleIn var(--duration-base) var(--ease-out) forwards;
+}
+
+.animate-scale-out {
+  animation: scaleOut var(--duration-base) var(--ease-in) forwards;
+}
+
+/* ============================================
+   Skeleton Loader Animation
+   ============================================ */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-gray-200) 0px,
+    var(--color-gray-100) 40px,
+    var(--color-gray-200) 80px
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: var(--radius-md);
+}
+
+.skeleton-text {
+  height: 1em;
+  margin-bottom: var(--spacing-2);
+  background: linear-gradient(
+    90deg,
+    var(--color-gray-200) 0px,
+    var(--color-gray-100) 40px,
+    var(--color-gray-200) 80px
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-text:last-child {
+  margin-bottom: 0;
+  width: 80%;
+}
+
+.skeleton-circle {
+  border-radius: var(--radius-full);
+  background: linear-gradient(
+    90deg,
+    var(--color-gray-200) 0px,
+    var(--color-gray-100) 40px,
+    var(--color-gray-200) 80px
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+.skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(
+    90deg,
+    var(--color-gray-200) 0px,
+    var(--color-gray-100) 40px,
+    var(--color-gray-200) 80px
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+.skeleton-card {
+  padding: var(--spacing-6);
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.skeleton-card .skeleton {
+  margin-bottom: var(--spacing-4);
+}
+
+.skeleton-card .skeleton:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================
+   Loading Animations
+   ============================================ */
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+/* ============================================
+   Utility Animation Classes
+   ============================================ */
+
+/* Animation delays */
+.animate-delay-75 {
+  animation-delay: 75ms;
+}
+
+.animate-delay-100 {
+  animation-delay: 100ms;
+}
+
+.animate-delay-150 {
+  animation-delay: 150ms;
+}
+
+.animate-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animate-delay-300 {
+  animation-delay: 300ms;
+}
+
+.animate-delay-500 {
+  animation-delay: 500ms;
+}
+
+.animate-delay-700 {
+  animation-delay: 700ms;
+}
+
+.animate-delay-1000 {
+  animation-delay: 1000ms;
+}
+
+/* Animation durations */
+.animate-duration-fast {
+  animation-duration: var(--duration-fast);
+}
+
+.animate-duration-base {
+  animation-duration: var(--duration-base);
+}
+
+.animate-duration-slow {
+  animation-duration: var(--duration-slow);
+}
+
+.animate-duration-slower {
+  animation-duration: var(--duration-slower);
+}
+
+/* Animation iteration */
+.animate-once {
+  animation-iteration-count: 1;
+}
+
+.animate-infinite {
+  animation-iteration-count: infinite;
+}
+
+/* Animation fill mode */
+.animate-fill-forwards {
+  animation-fill-mode: forwards;
+}
+
+.animate-fill-backwards {
+  animation-fill-mode: backwards;
+}
+
+.animate-fill-both {
+  animation-fill-mode: both;
+}
+
+/* ============================================
+   Transition Utilities
+   ============================================ */
+
+.transition-none {
+  transition: none;
+}
+
+.transition-all {
+  transition: var(--transition-all);
+}
+
+.transition-colors {
+  transition: var(--transition-colors);
+}
+
+.transition-opacity {
+  transition: var(--transition-opacity);
+}
+
+.transition-shadow {
+  transition: var(--transition-shadow);
+}
+
+.transition-transform {
+  transition: var(--transition-transform);
+}
+
+.transition-fast {
+  transition-duration: var(--duration-fast);
+}
+
+.transition-base {
+  transition-duration: var(--duration-base);
+}
+
+.transition-slow {
+  transition-duration: var(--duration-slow);
+}
+
+/* ============================================
+   Hover Effects
+   ============================================ */
+
+.hover-lift {
+  transition: var(--transition-transform), var(--transition-shadow);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.hover-scale {
+  transition: var(--transition-transform);
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+.hover-scale-sm {
+  transition: var(--transition-transform);
+}
+
+.hover-scale-sm:hover {
+  transform: scale(1.02);
+}
+
+.hover-opacity {
+  transition: var(--transition-opacity);
+}
+
+.hover-opacity:hover {
+  opacity: 0.8;
+}
+
+.hover-brightness {
+  transition: filter var(--transition-base);
+}
+
+.hover-brightness:hover {
+  filter: brightness(1.1);
+}
+
+/* ============================================
+   Focus Effects
+   ============================================ */
+
+.focus-ring {
+  outline: none;
+  transition: box-shadow var(--transition-fast);
+}
+
+.focus-ring:focus {
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.4);
+}
+
+.focus-ring-inset {
+  outline: none;
+  transition: box-shadow var(--transition-fast);
+}
+
+.focus-ring-inset:focus {
+  box-shadow: inset 0 0 0 2px var(--color-primary-500);
+}
+
+/* ============================================
+   Stagger Animation Classes
+   ============================================ */
+
+.stagger-children > * {
+  animation: slideUp var(--duration-slow) var(--ease-out) backwards;
+}
+
+.stagger-children > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.stagger-children > *:nth-child(2) {
+  animation-delay: 50ms;
+}
+
+.stagger-children > *:nth-child(3) {
+  animation-delay: 100ms;
+}
+
+.stagger-children > *:nth-child(4) {
+  animation-delay: 150ms;
+}
+
+.stagger-children > *:nth-child(5) {
+  animation-delay: 200ms;
+}
+
+.stagger-children > *:nth-child(6) {
+  animation-delay: 250ms;
+}
+
+.stagger-children > *:nth-child(7) {
+  animation-delay: 300ms;
+}
+
+.stagger-children > *:nth-child(8) {
+  animation-delay: 350ms;
+}
+
+.stagger-children > *:nth-child(9) {
+  animation-delay: 400ms;
+}
+
+.stagger-children > *:nth-child(10) {
+  animation-delay: 450ms;
+}
+
+/* ============================================
+   Page Transition Classes
+   ============================================ */
+
+.page-enter {
+  animation: slideUp var(--duration-slow) var(--ease-out) forwards;
+}
+
+.page-leave {
+  animation: fadeOut var(--duration-base) var(--ease-in) forwards;
+}
+
+/* ============================================
+   Modal Animation Classes
+   ============================================ */
+
+.modal-enter {
+  animation: scaleIn var(--duration-base) var(--ease-out) forwards;
+}
+
+.modal-leave {
+  animation: scaleOut var(--duration-fast) var(--ease-in) forwards;
+}
+
+.modal-backdrop-enter {
+  animation: fadeIn var(--duration-base) var(--ease-out) forwards;
+}
+
+.modal-backdrop-leave {
+  animation: fadeOut var(--duration-fast) var(--ease-in) forwards;
+}
+
+/* ============================================
+   Toast Animation Classes
+   ============================================ */
+
+.toast-enter {
+  animation: slideInRight var(--duration-base) var(--ease-out) forwards;
+}
+
+.toast-leave {
+  animation: slideInRight var(--duration-fast) var(--ease-in) reverse forwards;
+}
+
+/* ============================================
+   Success/Error Animation Classes
+   ============================================ */
+
+@keyframes successPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes errorShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-10px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(10px);
+  }
+}
+
+.animate-success {
+  animation: successPop var(--duration-slow) var(--ease-out-back) forwards;
+}
+
+.animate-error-shake {
+  animation: errorShake 0.5s var(--ease-in-out);
+}
+
+/* ============================================
+   Loading State Classes
+   ============================================ */
+
+.loading-overlay {
+  position: relative;
+  pointer-events: none;
+}
+
+.loading-overlay::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn var(--duration-base) var(--ease-out) forwards;
+}
+
+/* ============================================
+   Accessibility - Reduced Motion
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Disable all animations and transitions */
+  .animate-fade-in,
+  .animate-fade-out,
+  .animate-fade-in-fast,
+  .animate-fade-in-slow,
+  .animate-slide-up,
+  .animate-slide-down,
+  .animate-slide-in-left,
+  .animate-slide-in-right,
+  .animate-scale-in,
+  .animate-scale-out,
+  .animate-spin,
+  .animate-pulse,
+  .animate-bounce,
+  .animate-success,
+  .animate-error-shake,
+  .page-enter,
+  .page-leave,
+  .modal-enter,
+  .modal-leave,
+  .modal-backdrop-enter,
+  .modal-backdrop-leave,
+  .toast-enter,
+  .toast-leave,
+  .stagger-children > * {
+    animation: none !important;
+    animation-delay: 0ms !important;
+  }
+
+  /* Keep skeleton shimmer but make it subtle */
+  .skeleton,
+  .skeleton-text,
+  .skeleton-circle,
+  .skeleton-avatar {
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  /* Disable hover effects that use transform */
+  .hover-lift:hover,
+  .hover-scale:hover,
+  .hover-scale-sm:hover {
+    transform: none;
+  }
+
+  /* Keep opacity changes as they're less disruptive */
+  .hover-opacity:hover {
+    opacity: 0.8;
+  }
+
+  /* Instant transitions instead of animated */
+  .transition-all,
+  .transition-colors,
+  .transition-opacity,
+  .transition-shadow,
+  .transition-transform,
+  .hover-lift,
+  .hover-scale,
+  .hover-scale-sm,
+  .hover-opacity,
+  .hover-brightness,
+  .focus-ring,
+  .focus-ring-inset {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================
+   Print Styles - Disable Animations
+   ============================================ */
+
+@media print {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .skeleton,
+  .skeleton-text,
+  .skeleton-circle,
+  .skeleton-avatar {
+    display: none !important;
+  }
+}

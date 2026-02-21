@@ -1,3 +1,9 @@
+/**
+ * @deprecated This middleware has been consolidated into responseInterceptor.js
+ * Please use the new consolidated middleware for better performance and maintainability.
+ * See backend/middleware/MIGRATION_GUIDE.md for migration instructions.
+ */
+
 // Performance tracking middleware
 let requestCount = 0;
 let totalResponseTime = 0;

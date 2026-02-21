@@ -1,58 +1,107 @@
 <div class="verify-otp-container">
-  <div class="verify-otp-card">
+  <!-- Background Decorations -->
+  <div class="background-decoration decoration-1"></div>
+  <div class="background-decoration decoration-2"></div>
+  <div class="background-decoration decoration-3"></div>
+
+  <div class="verify-otp-card" [class.success-state]="verified">
     <!-- Logo -->
     <div class="logo-container">
       <app-logo [size]="'medium'" [variant]="'default'" [clickable]="true"></app-logo>
     </div>
     
-    <h2>Verify OTP</h2>
-    <p class="subtitle">Enter the 6-digit code sent to {{ email }}</p>
+    <!-- Success Animation -->
+    <div class="success-animation" *ngIf="verified">
+      <div class="success-checkmark">
+        <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+          <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+          <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+        </svg>
+      </div>
+      <h2 class="success-title">Verified Successfully!</h2>
+      <p class="success-message">Redirecting you to your dashboard...</p>
+    </div>
 
-    <form (ngSubmit)="onSubmit()">
-      <div class="form-group">
-        <label for="otp">OTP Code</label>
-        <input
-          type="text"
-          id="otp"
-          [(ngModel)]="otp"
-          name="otp"
-          (input)="onOtpInput($event)"
-          maxlength="6"
-          placeholder="Enter 6-digit OTP"
-          class="otp-input"
-          [disabled]="loading"
-          required
-        />
+    <!-- OTP Form -->
+    <div class="otp-form" *ngIf="!verified">
+      <h2>Verify Your Account</h2>
+      <p class="subtitle">
+        We've sent a 6-digit code to<br>
+        <strong>{{ email }}</strong>
+      </p>
+
+      <form (ngSubmit)="onSubmit()">
+        <!-- OTP Input Fields -->
+        <div class="otp-inputs">
+          <input
+            *ngFor="let digit of otpDigits; let i = index"
+            #otpInput
+            type="text"
+            inputmode="numeric"
+            maxlength="1"
+            class="otp-digit"
+            [class.filled]="digit !== ''"
+            [class.error]="hasError"
+            [(ngModel)]="otpDigits[i]"
+            [name]="'otp' + i"
+            (input)="onDigitInput($event, i)"
+            (keydown)="onKeyDown($event, i)"
+            (paste)="onPaste($event)"
+            [disabled]="loading"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- Error Message -->
+        <div class="error-message" *ngIf="errorMessage">
+          <svg class="error-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+          </svg>
+          <span>{{ errorMessage }}</span>
+        </div>
+
+        <!-- Submit Button -->
+        <button 
+          type="submit" 
+          class="btn btn-primary btn-lg btn-full"
+          [disabled]="loading || !isOtpComplete()"
+          [class.btn-loading]="loading"
+        >
+          {{ loading ? 'Verifying...' : 'Verify Code' }}
+        </button>
+      </form>
+
+      <!-- Resend Section -->
+      <div class="resend-section">
+        <p class="resend-text">Didn't receive the code?</p>
+        
+        <button 
+          type="button" 
+          class="btn-link"
+          (click)="resendOtp()"
+          [disabled]="resendLoading || resendCountdown > 0"
+          *ngIf="resendCountdown === 0"
+        >
+          {{ resendLoading ? 'Sending...' : 'Resend Code' }}
+        </button>
+
+        <div class="countdown-timer" *ngIf="resendCountdown > 0">
+          <svg class="timer-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+          </svg>
+          <span>Resend available in <strong>{{ resendCountdown }}s</strong></span>
+        </div>
       </div>
 
-      <div *ngIf="errorMessage" class="alert alert-danger">
-        {{ errorMessage }}
+      <!-- Back to Login -->
+      <div class="back-link">
+        <a routerLink="/login" class="link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+          </svg>
+          Back to Login
+        </a>
       </div>
-
-      <div *ngIf="successMessage" class="alert alert-success">
-        {{ successMessage }}
-      </div>
-
-      <button 
-        type="submit" 
-        class="btn btn-primary btn-block"
-        [disabled]="loading || otp.length !== 6"
-      >
-        <span *ngIf="loading" class="spinner"></span>
-        {{ loading ? 'Verifying...' : 'Verify OTP' }}
-      </button>
-    </form>
-
-    <div class="resend-section">
-      <p>Didn't receive the code?</p>
-      <button 
-        type="button" 
-        class="btn btn-link"
-        (click)="resendOtp()"
-        [disabled]="resendLoading"
-      >
-        {{ resendLoading ? 'Sending...' : 'Resend OTP' }}
-      </button>
     </div>
   </div>
 </div>

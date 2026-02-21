@@ -43,7 +43,9 @@ export class NotificationsComponent implements OnInit, OnDestroy {
       next: (response) => {
         this.loading = false;
         if (response.success) {
-          this.notifications = response.notifications;
+          // Service already updates the notifications$ observable
+          // Component will receive updates via subscription
+          this.notifications = response.data || [];
         }
       },
       error: (error) => {
@@ -94,9 +96,15 @@ export class NotificationsComponent implements OnInit, OnDestroy {
    * Subscribe to real-time notification updates via WebSocket
    */
   subscribeToRealTimeNotifications(): void {
+    // Ensure socket is connected
+    this.socketService.connect();
+
+    // Subscribe to new notifications
     const socketSub = this.socketService.notification$.subscribe(
       notification => {
         if (notification) {
+          console.log('Real-time notification received:', notification);
+          
           // Add new notification to the list
           this.notificationService.addNotification(notification);
           

@@ -1,28 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { CaseService, Case } from '../../services/case.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
-
-interface DashboardStats {
-  totalCases: number;
-  pendingCases: number;
-  ongoingCases: number;
-  treatedCases: number;
-  averageRating: number;
-  totalReviews: number;
-}
-
-interface CaseTypeData {
-  condition: string;
-  count: number;
-  percentage: number;
-}
-
-interface MonthlyData {
-  month: string;
-  cases: number;
-}
+import { CaseService } from '../../services/case.service';
+import { ToastService } from '../../services/toast.service';
+import { DashboardDataService } from '../../shared/dashboard/services/dashboard-data.service';
+import { DoctorDashboardData } from '../../shared/dashboard/models/dashboard.models';
 
 @Component({
   selector: 'app-doctor-dashboard',
@@ -30,280 +12,133 @@ interface MonthlyData {
   styleUrls: ['./doctor-dashboard.component.css']
 })
 export class DoctorDashboardComponent implements OnInit, OnDestroy {
-  userName: string = '';
   loading: boolean = true;
   
-  // Analytics Data
-  stats: DashboardStats = {
-    totalCases: 0,
-    pendingCases: 0,
-    ongoingCases: 0,
-    treatedCases: 0,
-    averageRating: 0,
-    totalReviews: 0
-  };
-  
-  topConditions: CaseTypeData[] = [];
-  monthlyTrend: MonthlyData[] = [];
-  recentCases: Case[] = [];
-  
-  // Case review
-  showCaseReviewModal: boolean = false;
-  selectedCaseForReview: Case | null = null;
+  // Dashboard data using shared interface
+  dashboardData: DoctorDashboardData | null = null;
 
   constructor(
     public authService: AuthService,
     private caseService: CaseService,
-    private snackBar: MatSnackBar,
-    private router: Router
+    private toastService: ToastService,
+    private router: Router,
+    private dashboardDataService: DashboardDataService
   ) {}
 
   ngOnInit(): void {
-    const user = this.authService.currentUserValue;
-    if (user) {
-      this.userName = user.name;
-    }
-    
-    this.loadAnalytics();
+    this.loadDashboard();
   }
 
   ngOnDestroy(): void {
     // Cleanup if needed
   }
 
-  loadAnalytics(): void {
+  loadDashboard(): void {
     this.loading = true;
     
-    this.caseService.getCases().subscribe({
-      next: (response) => {
+    this.dashboardDataService.getDoctorDashboardData().subscribe({
+      next: (data) => {
+        this.dashboardData = data;
         this.loading = false;
-        if (response.success) {
-          const cases = response.cases;
-          
-          // Calculate stats
-          this.stats.totalCases = cases.length;
-          this.stats.pendingCases = cases.filter((c: Case) => c.status === 'pending').length;
-          this.stats.ongoingCases = cases.filter((c: Case) => c.status === 'ongoing').length;
-          this.stats.treatedCases = cases.filter((c: Case) => c.status === 'treated').length;
-          
-          // Calculate average rating
-          const casesWithFeedback = cases.filter((c: Case) => c.feedback && c.feedback.rating);
-          if (casesWithFeedback.length > 0) {
-            const totalRating = casesWithFeedback.reduce((sum: number, c: Case) => sum + (c.feedback?.rating || 0), 0);
-            this.stats.averageRating = totalRating / casesWithFeedback.length;
-            this.stats.totalReviews = casesWithFeedback.length;
-          }
-          
-          // Get top conditions
-          this.calculateTopConditions(cases);
-          
-          // Get monthly trend
-          this.calculateMonthlyTrend(cases);
-          
-          // Get recent cases
-          this.recentCases = cases
-            .sort((a: Case, b: Case) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-            .slice(0, 5);
-        }
       },
       error: (error) => {
         this.loading = false;
-        console.error('Error loading analytics:', error);
+        console.error('Error loading dashboard:', error);
+        this.toastService.show('Failed to load dashboard data', 'error');
       }
     });
   }
 
-  calculateTopConditions(cases: Case[]): void {
-    const conditionMap = new Map<string, number>();
-    
-    cases.forEach((c: Case) => {
-      if (c.predictedConditions && c.predictedConditions.length > 0) {
-        c.predictedConditions.forEach(condition => {
-          conditionMap.set(condition, (conditionMap.get(condition) || 0) + 1);
-        });
-      }
-    });
-    
-    const total = Array.from(conditionMap.values()).reduce((sum, count) => sum + count, 0);
-    
-    this.topConditions = Array.from(conditionMap.entries())
-      .map(([condition, count]) => ({
-        condition,
-        count,
-        percentage: total > 0 ? (count / total) * 100 : 0
-      }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
+  // ============================================================================
+  // Event Handlers for Shared Components
+  // ============================================================================
+
+  onAppointmentClick(appointmentId: string): void {
+    this.router.navigate(['/doctor/cases', appointmentId]);
   }
 
-  calculateMonthlyTrend(cases: Case[]): void {
-    const monthMap = new Map<string, number>();
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    // Initialize last 6 months
-    const now = new Date();
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = `${months[date.getMonth()]} ${date.getFullYear()}`;
-      monthMap.set(key, 0);
+  handleRequestAction(event: { requestId: string; actionType: 'approve' | 'reject' | 'info' }): void {
+    switch (event.actionType) {
+      case 'approve':
+        this.onAcceptRequest(event.requestId);
+        break;
+      case 'reject':
+        this.onRejectRequest(event.requestId);
+        break;
+      case 'info':
+        this.onRequestInfo(event.requestId);
+        break;
     }
-    
-    // Count cases per month
-    cases.forEach((c: Case) => {
-      const date = new Date(c.createdAt);
-      const key = `${months[date.getMonth()]} ${date.getFullYear()}`;
-      if (monthMap.has(key)) {
-        monthMap.set(key, (monthMap.get(key) || 0) + 1);
-      }
-    });
-    
-    this.monthlyTrend = Array.from(monthMap.entries()).map(([month, cases]) => ({
-      month,
-      cases
-    }));
   }
 
-  openCaseReview(caseItem: Case): void {
-    this.selectedCaseForReview = caseItem;
-    this.showCaseReviewModal = true;
-  }
-
-  closeCaseReview(): void {
-    this.showCaseReviewModal = false;
-    this.selectedCaseForReview = null;
-  }
-
-  acceptCase(): void {
-    if (!this.selectedCaseForReview) {
+  onAcceptRequest(requestId: string): void {
+    if (!confirm('Are you sure you want to accept this consultation request?')) {
       return;
     }
 
-    const patientName = typeof this.selectedCaseForReview.patientId === 'object' 
-      ? this.selectedCaseForReview.patientId.name 
-      : 'this patient';
-    
-    if (!confirm(`Are you sure you want to accept the consultation request from ${patientName}?`)) {
-      return;
-    }
-
-    const caseId = this.selectedCaseForReview._id;
-    
-    this.caseService.acceptCase(caseId).subscribe({
+    this.caseService.acceptCase(requestId).subscribe({
       next: (response) => {
         if (response.success) {
-          this.snackBar.open(
+          this.toastService.show(
             'Case accepted successfully! You can now communicate with the patient.',
-            'Close',
-            { duration: 5000 }
+            'success'
           );
-          this.closeCaseReview();
-          
-          // Reload analytics
-          this.loadAnalytics();
+          // Reload dashboard
+          this.loadDashboard();
         }
       },
       error: (error) => {
         console.error('Error accepting case:', error);
-        this.snackBar.open(
+        this.toastService.show(
           error.error?.message || 'Failed to accept case. Please try again.',
-          'Close',
-          { duration: 5000 }
+          'error'
         );
       }
     });
   }
 
-  rejectCase(): void {
-    if (!this.selectedCaseForReview) {
+  onRejectRequest(requestId: string): void {
+    if (!confirm('Are you sure you want to reject this consultation request?')) {
       return;
     }
 
-    const patientName = typeof this.selectedCaseForReview.patientId === 'object' 
-      ? this.selectedCaseForReview.patientId.name 
-      : 'this patient';
-    
-    if (!confirm(`Are you sure you want to reject the consultation request from ${patientName}?`)) {
-      return;
-    }
-
-    const caseId = this.selectedCaseForReview._id;
-    
-    this.caseService.rejectCase(caseId).subscribe({
+    this.caseService.rejectCase(requestId).subscribe({
       next: (response) => {
         if (response.success) {
-          this.snackBar.open(
+          this.toastService.show(
             'Case rejected. The patient has been notified.',
-            'Close',
-            { duration: 5000 }
+            'success'
           );
-          this.closeCaseReview();
-          
-          // Reload analytics
-          this.loadAnalytics();
+          // Reload dashboard
+          this.loadDashboard();
         }
       },
       error: (error) => {
         console.error('Error rejecting case:', error);
-        this.snackBar.open(
+        this.toastService.show(
           error.error?.message || 'Failed to reject case. Please try again.',
-          'Close',
-          { duration: 5000 }
+          'error'
         );
       }
     });
   }
 
-  /**
-   * Helper method to get patient name from Case
-   */
-  getPatientName(caseItem: Case): string {
-    if (typeof caseItem.patientId === 'object') {
-      return caseItem.patientId.name;
-    }
-    return 'Unknown Patient';
+  onRequestInfo(requestId: string): void {
+    this.router.navigate(['/doctor/cases', requestId]);
   }
 
-  /**
-   * Helper method to get patient email from Case
-   */
-  getPatientEmail(caseItem: Case): string {
-    if (typeof caseItem.patientId === 'object') {
-      return caseItem.patientId.email;
-    }
-    return 'N/A';
+  onDateClick(date: Date): void {
+    console.log('Date clicked:', date);
+    // Navigate to cases filtered by date
+    this.router.navigate(['/doctor/cases'], { queryParams: { date: date.toISOString() } });
   }
 
-  /**
-   * Helper method to get patient blood group from Case
-   */
-  getPatientBloodGroup(caseItem: Case): string | undefined {
-    if (typeof caseItem.patientId === 'object') {
-      return caseItem.patientId.bloodGroup;
-    }
-    return undefined;
-  }
-
-  /**
-   * Helper method to check if patient has blood group
-   */
-  hasPatientBloodGroup(caseItem: Case): boolean {
-    if (typeof caseItem.patientId === 'object') {
-      return !!caseItem.patientId.bloodGroup;
-    }
-    return false;
-  }
-
-  getMaxCases(): number {
-    if (this.monthlyTrend.length === 0) return 1;
-    return Math.max(...this.monthlyTrend.map(d => d.cases), 1);
+  onMonthChange(month: number, year: number): void {
+    console.log('Month changed:', month, year);
+    // Could reload calendar data for the new month if needed
   }
 
   goToCases(): void {
     this.router.navigate(['/doctor/cases']);
-  }
-
-  logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
   }
 }

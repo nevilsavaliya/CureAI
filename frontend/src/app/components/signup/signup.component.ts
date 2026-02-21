@@ -16,6 +16,11 @@ export class SignupComponent implements OnInit {
   selectedRole = 'patient';
   currentStep = 1;
   totalSteps = 3;
+  
+  // Password strength properties
+  passwordStrength: 'weak' | 'medium' | 'strong' = 'weak';
+  passwordStrengthPercentage = 0;
+  passwordStrengthText = '';
 
   roles = [
     { value: 'patient', label: 'Patient' },
@@ -161,6 +166,50 @@ export class SignupComponent implements OnInit {
     return (this.currentStep / this.totalSteps) * 100;
   }
 
+  onPasswordChange(): void {
+    const password = this.signupForm.get('password')?.value || '';
+    
+    if (!password) {
+      this.passwordStrength = 'weak';
+      this.passwordStrengthPercentage = 0;
+      this.passwordStrengthText = '';
+      return;
+    }
+
+    let strength = 0;
+    
+    // Length check
+    if (password.length >= 6) strength += 1;
+    if (password.length >= 10) strength += 1;
+    
+    // Contains lowercase
+    if (/[a-z]/.test(password)) strength += 1;
+    
+    // Contains uppercase
+    if (/[A-Z]/.test(password)) strength += 1;
+    
+    // Contains number
+    if (/[0-9]/.test(password)) strength += 1;
+    
+    // Contains special character
+    if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+
+    // Determine strength level
+    if (strength <= 2) {
+      this.passwordStrength = 'weak';
+      this.passwordStrengthPercentage = 33;
+      this.passwordStrengthText = 'Weak password';
+    } else if (strength <= 4) {
+      this.passwordStrength = 'medium';
+      this.passwordStrengthPercentage = 66;
+      this.passwordStrengthText = 'Medium password';
+    } else {
+      this.passwordStrength = 'strong';
+      this.passwordStrengthPercentage = 100;
+      this.passwordStrengthText = 'Strong password';
+    }
+  }
+
   nextStep(): void {
     // Validate current step fields before proceeding
     if (this.currentStep === 1) {
@@ -245,11 +294,16 @@ export class SignupComponent implements OnInit {
             setTimeout(() => {
               this.router.navigate(['/patient/dashboard']);
             }, 1000);
+          } else if (!response.success) {
+            // Handle unsuccessful response
+            this.errorMessage = response.message || 'Registration failed. Please try again.';
           }
         },
         error: (error) => {
           this.loading = false;
-          this.errorMessage = error.error?.message || 'Registration failed. Please try again.';
+          // Error is now properly formatted from AuthService
+          this.errorMessage = error.message || 'Registration failed. Please try again.';
+          console.error('Patient signup error:', error);
         }
       });
     } else if (formData.role === 'doctor') {
@@ -280,15 +334,20 @@ export class SignupComponent implements OnInit {
             // Set flag for new doctor signup to trigger subscription check
             sessionStorage.setItem('newDoctorSignup', 'true');
             
-            this.successMessage = 'Registration successful! Redirecting to subscription...';
+            this.successMessage = 'Registration successful! Redirecting to payment...';
             setTimeout(() => {
-              this.router.navigate(['/subscription']);
+              this.router.navigate(['/doctor/payment']);
             }, 1000);
+          } else if (!response.success) {
+            // Handle unsuccessful response
+            this.errorMessage = response.message || 'Registration failed. Please try again.';
           }
         },
         error: (error) => {
           this.loading = false;
-          this.errorMessage = error.error?.message || 'Registration failed. Please try again.';
+          // Error is now properly formatted from AuthService
+          this.errorMessage = error.message || 'Registration failed. Please try again.';
+          console.error('Doctor signup error:', error);
         }
       });
     }

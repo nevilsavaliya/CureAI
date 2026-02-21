@@ -23,7 +23,7 @@ export class HospitalLoginComponent implements OnInit {
     private hospitalService: HospitalService,
     private router: Router,
     private toastService: ToastService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     // Check if already logged in as hospital
@@ -51,19 +51,22 @@ export class HospitalLoginComponent implements OnInit {
   }
 
   onSubmit(): void {
+    // Prevent default form submission
+    event?.preventDefault();
+
     // Prevent multiple submissions with debounce
     const currentTime = Date.now();
     if (this.loading) {
       console.log('⚠️ Login already in progress, ignoring duplicate submission');
       return;
     }
-    
+
     if (currentTime - this.lastSubmitTime < this.SUBMIT_DEBOUNCE_TIME) {
       console.log('⚠️ Submit too soon after last attempt, ignoring');
       this.toastService.warning('Please wait a moment before trying again.');
       return;
     }
-    
+
     this.lastSubmitTime = currentTime;
 
     this.errorMessage = '';
@@ -72,6 +75,7 @@ export class HospitalLoginComponent implements OnInit {
 
     if (this.loginForm.invalid) {
       this.markFormGroupTouched(this.loginForm);
+      this.toastService.warning('Please fill in all required fields correctly.');
       return;
     }
 
@@ -79,7 +83,7 @@ export class HospitalLoginComponent implements OnInit {
     const { email, password, rememberMe } = this.loginForm.value;
 
     console.log('🚀 Starting hospital login request...', { email, passwordLength: password.length, rememberMe });
-    
+
     this.hospitalService.loginHospital(email, password, rememberMe).subscribe({
       next: (response) => {
         console.log('✅ Hospital login response received:', {
@@ -90,9 +94,9 @@ export class HospitalLoginComponent implements OnInit {
           verificationStatus: response.verificationStatus,
           fullResponse: response
         });
-        
+
         this.loading = false;
-        
+
         if (response.success && response.token && response.hospital) {
           console.log('✅ Login successful, storing data and redirecting...');
           console.log('🏥 Hospital data:', {
@@ -102,10 +106,10 @@ export class HospitalLoginComponent implements OnInit {
             verificationStatus: response.hospital.verificationStatus
           });
           console.log('🔍 Full hospital object from backend:', response.hospital);
-          
+
           // Show success message
           this.toastService.success(`Welcome back, ${response.hospital.hospitalName || response.hospital.name}!`);
-          
+
           // Store token and hospital data
           if (rememberMe) {
             console.log('💾 Storing in localStorage (remember me = true)');
@@ -116,7 +120,7 @@ export class HospitalLoginComponent implements OnInit {
             sessionStorage.setItem('hospitalToken', response.token);
             sessionStorage.setItem('hospitalData', JSON.stringify(response.hospital));
           }
-          
+
           console.log('🔄 Navigating to hospital dashboard...');
           // Redirect to hospital dashboard
           this.router.navigate(['/hospital/dashboard']).then(
@@ -137,15 +141,18 @@ export class HospitalLoginComponent implements OnInit {
           console.log('⚠️ Hospital not verified:', response.verificationStatus);
           // Handle verification status messages
           this.verificationStatus = response.verificationStatus;
-          
+
           if (response.verificationStatus === 'pending') {
             this.verificationMessage = 'Your hospital registration is pending verification. Please wait for admin approval.';
+            this.toastService.warning('Your registration is pending verification.');
           } else if (response.verificationStatus === 'rejected') {
             this.verificationMessage = `Your hospital registration has been rejected. Reason: ${response.rejectionReason || 'Not specified'}`;
+            this.toastService.error('Your registration has been rejected.');
           }
         } else {
           console.log('❌ Unexpected response format:', response);
           this.errorMessage = 'Login response was invalid. Please try again.';
+          this.toastService.error('Login failed. Please try again.');
         }
       },
       error: (error) => {
@@ -154,13 +161,39 @@ export class HospitalLoginComponent implements OnInit {
           message: error.message,
           errorData: error.error
         });
-        
+
         this.loading = false;
-        
-        // Provide more specific error messages
+
+        // Provide more specific error messages based on backend response
         if (error.status === 401) {
-          this.errorMessage = 'Invalid email or password. Please check your credentials and try again.';
-          this.toastService.error('Invalid credentials. Please check your email and password.');
+          // Check if it's an email not found or wrong password error
+          const errorMsg = error.error?.message || '';
+
+          if (errorMsg.toLowerCase().includes('not found') || errorMsg.toLowerCase().includes('does not exist')) {
+            this.errorMessage = 'No hospital account found with this email address. Please check your email or register your hospital.';
+            this.toastService.error('Email not found. Please check your email or register.');
+          } else if (errorMsg.toLowerCase().includes('password') || errorMsg.toLowerCase().includes('incorrect') || errorMsg.toLowerCase().includes('invalid')) {
+            this.errorMessage = 'Incorrect password. Please try again or use "Forgot Password" to reset it.';
+            this.toastService.error('Incorrect password. Please try again.');
+          } else {
+            this.errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+            this.toastService.error('Invalid credentials. Please check your email and password.');
+          }
+        } else if (error.status === 403) {
+          // Hospital not verified
+          const errorMsg = error.error?.message || '';
+          if (errorMsg.toLowerCase().includes('pending')) {
+            this.verificationStatus = 'pending';
+            this.verificationMessage = 'Your hospital registration is pending admin verification. Please wait for approval.';
+            this.toastService.warning('Your registration is pending verification.');
+          } else if (errorMsg.toLowerCase().includes('reject')) {
+            this.verificationStatus = 'rejected';
+            this.verificationMessage = error.error?.message || 'Your hospital registration has been rejected.';
+            this.toastService.error('Your registration has been rejected.');
+          } else {
+            this.errorMessage = error.error?.message || 'Access denied. Please contact support.';
+            this.toastService.error('Access denied.');
+          }
         } else if (error.status === 429) {
           this.errorMessage = 'Too many login attempts. Please wait a few minutes before trying again.';
           this.toastService.warning('Too many attempts. Please wait before trying again.');

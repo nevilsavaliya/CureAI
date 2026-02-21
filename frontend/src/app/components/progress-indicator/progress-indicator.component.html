@@ -1,0 +1,25 @@
+<div *ngIf="show" class="progress-indicator" [ngClass]="{
+  'progress-inline': inline,
+  'progress-small': size === 'small',
+  'progress-medium': size === 'medium',
+  'progress-large': size === 'large'
+}">
+  <!-- Spinner Type -->
+  <div *ngIf="type === 'spinner'" class="progress-spinner">
+    <div class="spinner-circle"></div>
+  </div>
+
+  <!-- Dots Type -->
+  <div *ngIf="type === 'dots'" class="progress-dots">
+    <span class="dot"></span>
+    <span class="dot"></span>
+    <span class="dot"></span>
+  </div>
+
+  <!-- Bar Type -->
+  <div *ngIf="type === 'bar'" class="progress-bar">
+    <div class="progress-bar-fill"></div>
+  </div>
+
+  <span *ngIf="message" class="progress-message">{{ message }}</span>
+</div>

@@ -1,0 +1,85 @@
+<div class="request-list-container" role="region" [attr.aria-label]="config.title">
+  <!-- Header -->
+  <div class="request-list-header">
+    <h3 class="request-list-title">{{ config.title }}</h3>
+    <a 
+      *ngIf="config.showSeeAll && !config.loading && !error && config.requests.length > 0"
+      class="see-all-link"
+      (click)="onSeeAllClick()"
+      (keydown.enter)="onSeeAllClick()"
+      tabindex="0"
+      role="button"
+      aria-label="See all requests">
+      See All
+    </a>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="config.loading" class="request-list-loading" aria-live="polite" aria-busy="true">
+    <div class="skeleton-item" *ngFor="let item of [1, 2, 3]">
+      <div class="skeleton-avatar"></div>
+      <div class="skeleton-content">
+        <div class="skeleton-line skeleton-line-title"></div>
+        <div class="skeleton-line skeleton-line-subtitle"></div>
+      </div>
+      <div class="skeleton-actions">
+        <div class="skeleton-button-small"></div>
+        <div class="skeleton-button-small"></div>
+        <div class="skeleton-button-small"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!config.loading && error" class="error-state error-state-small" role="alert" aria-live="assertive">
+    <div class="error-icon error-icon-small">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+    </div>
+    <p class="error-message-title">Failed to load requests</p>
+    <p class="error-message-subtitle">{{ error }}</p>
+    <div class="error-actions">
+      <button class="error-action-button" (click)="onRetry()" aria-label="Retry loading requests">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="retry-icon" aria-hidden="true">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+        Retry
+      </button>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div 
+    *ngIf="!config.loading && !error && config.requests.length === 0" 
+    class="request-list-empty"
+    role="status"
+    aria-live="polite">
+    <div class="empty-icon">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 11l3 3L22 4"></path>
+        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+      </svg>
+    </div>
+    <p class="empty-message">{{ config.emptyMessage }}</p>
+  </div>
+
+  <!-- Request List -->
+  <ul 
+    *ngIf="!config.loading && !error && config.requests.length > 0" 
+    class="request-list"
+    role="list"
+    aria-label="Request items">
+    <li 
+      *ngFor="let request of config.requests; trackBy: trackByRequestId"
+      role="listitem">
+      <app-request-list-item
+        [request]="request"
+        (actionClick)="onActionClick($event)">
+      </app-request-list-item>
+    </li>
+  </ul>
+</div>

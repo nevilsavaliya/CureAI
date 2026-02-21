@@ -1,0 +1,273 @@
+/* Design Tokens - Animations & Transitions */
+
+:root {
+  /* Transition Duration - Optimized for perceived performance */
+  --duration-instant: 0ms;
+  --duration-fast: 150ms;      /* Quick interactions (hover, focus) */
+  --duration-base: 200ms;      /* Standard transitions */
+  --duration-slow: 300ms;      /* Page transitions, modals */
+  --duration-slower: 500ms;    /* Complex animations */
+  --duration-slowest: 700ms;   /* Emphasis animations */
+
+  /* Transition Timing Functions - Natural motion curves */
+  --ease-linear: linear;
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);                    /* Accelerating */
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);                   /* Decelerating */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);             /* Smooth both ends */
+  --ease-in-back: cubic-bezier(0.6, -0.28, 0.735, 0.045);  /* Anticipation */
+  --ease-out-back: cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Overshoot */
+  --ease-in-out-back: cubic-bezier(0.68, -0.55, 0.265, 1.55); /* Bounce */
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);   /* Playful bounce */
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);             /* Material Design standard */
+  --ease-snappy: cubic-bezier(0.4, 0, 0.6, 1);             /* Quick and responsive */
+
+  /* Combined Transitions - Ready to use */
+  --transition-fast: var(--duration-fast) var(--ease-out);
+  --transition-base: var(--duration-base) var(--ease-in-out);
+  --transition-slow: var(--duration-slow) var(--ease-out);
+  --transition-slower: var(--duration-slower) var(--ease-in-out);
+
+  /* Common Transition Properties */
+  --transition-all: all var(--transition-base);
+  --transition-colors: background-color var(--transition-base), border-color var(--transition-base), color var(--transition-base);
+  --transition-opacity: opacity var(--transition-base);
+  --transition-shadow: box-shadow var(--transition-base);
+  --transition-transform: transform var(--transition-base);
+
+  /* Z-Index Scale */
+  --z-index-dropdown: 1000;
+  --z-index-sticky: 1020;
+  --z-index-fixed: 1030;
+  --z-index-modal-backdrop: 1040;
+  --z-index-modal: 1050;
+  --z-index-popover: 1060;
+  --z-index-tooltip: 1070;
+  --z-index-notification: 1080;
+}
+
+/* Keyframe Animations - Optimized for 60fps */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes scaleOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+/* Optimized shimmer - uses transform for better performance */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Smooth bounce with natural physics */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Gentle shake for errors */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-4px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(4px);
+  }
+}
+
+/* Smooth heartbeat */
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  10%, 30% {
+    transform: scale(1.1);
+  }
+  20%, 40% {
+    transform: scale(1);
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+    --duration-slower: 0ms;
+    --duration-slowest: 0ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Keep essential animations but make them instant */
+  .skeleton,
+  .spinner,
+  .loading {
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* Performance optimizations */
+@media (prefers-reduced-motion: no-preference) {
+  /* Enable hardware acceleration for smooth animations */
+  .animate-transform,
+  .animate-opacity,
+  .card-interactive,
+  .btn,
+  .modal,
+  [class*="animate-"],
+  [class*="transition-"] {
+    will-change: transform, opacity;
+  }
+
+  /* Remove will-change after animation completes to save memory */
+  .animate-complete {
+    will-change: auto;
+  }
+}
+
+/* Smooth scrolling with reduced motion support */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Force GPU acceleration for better performance */
+.gpu-accelerate {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}

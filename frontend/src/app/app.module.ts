@@ -3,61 +3,20 @@ import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { LoginComponent } from './components/login/login.component';
-import { SignupComponent } from './components/signup/signup.component';
-import { PatientDashboardComponent } from './components/patient-dashboard/patient-dashboard.component';
-import { DoctorDashboardComponent } from './components/doctor-dashboard/doctor-dashboard.component';
-import { AdminDashboardComponent } from './components/admin-dashboard/admin-dashboard.component';
-import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
-import { SubscriptionComponent } from './components/subscription/subscription.component';
-import { PatientCasesComponent } from './components/patient-cases/patient-cases.component';
-import { DoctorCasesComponent } from './components/doctor-cases/doctor-cases.component';
-import { NotificationsComponent } from './components/notifications/notifications.component';
-import { ClickOutsideDirective } from './directives/click-outside.directive';
-import { PendingCasesComponent } from './components/pending-cases/pending-cases.component';
-import { VerifyOtpComponent } from './components/verify-otp/verify-otp.component';
-import { AdminHospitalsComponent } from './components/admin-hospitals/admin-hospitals.component';
-import { HospitalRegisterComponent } from './components/hospital-register/hospital-register.component';
-import { HospitalLoginComponent } from './components/hospital-login/hospital-login.component';
-import { HospitalDashboardComponent } from './components/hospital-dashboard/hospital-dashboard.component';
-import { LogoComponent } from './components/logo/logo.component';
-import { AdminUserManagementComponent } from './components/admin-user-management/admin-user-management.component';
-import { UserRemovalModalComponent } from './components/user-removal-modal/user-removal-modal.component';
-import { AddAdminModalComponent } from './components/add-admin-modal/add-admin-modal.component';
-import { RemovedUsersComponent } from './components/removed-users/removed-users.component';
-import { AuditLogsComponent } from './components/audit-logs/audit-logs.component';
+import { CacheInterceptor } from './interceptors/cache.interceptor';
+import { BaseComponent } from './components/base/base.component';
+import { NotFoundComponent } from './components/not-found/not-found.component';
+import { SharedModule } from './shared/shared.module';
 
 @NgModule({
   declarations: [
     AppComponent,
-    LoginComponent,
-    SignupComponent,
-    PatientDashboardComponent,
-    DoctorDashboardComponent,
-    AdminDashboardComponent,
-    ForgotPasswordComponent,
-    SubscriptionComponent,
-    PatientCasesComponent,
-    DoctorCasesComponent,
-    NotificationsComponent,
-    ClickOutsideDirective,
-    PendingCasesComponent,
-    VerifyOtpComponent,
-    AdminHospitalsComponent,
-    HospitalRegisterComponent,
-    HospitalLoginComponent,
-    HospitalDashboardComponent,
-    LogoComponent,
-    AdminUserManagementComponent,
-    UserRemovalModalComponent,
-    AddAdminModalComponent,
-    RemovedUsersComponent,
-    AuditLogsComponent
+    BaseComponent,
+    NotFoundComponent
   ],
   imports: [
     BrowserModule,
@@ -66,9 +25,14 @@ import { AuditLogsComponent } from './components/audit-logs/audit-logs.component
     HttpClientModule,
     ReactiveFormsModule,
     FormsModule,
-    MatSnackBarModule
+    SharedModule
   ],
   providers: [
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: CacheInterceptor,
+      multi: true
+    },
     {
       provide: HTTP_INTERCEPTORS,
       useClass: AuthInterceptor,

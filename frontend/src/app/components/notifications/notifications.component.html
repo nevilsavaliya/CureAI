@@ -1,9 +1,12 @@
 <div class="notification-container">
   <!-- Notification Bell Icon -->
-  <div class="notification-bell" (click)="toggleDropdown()">
-    <span class="bell-icon">🔔</span>
+  <button class="notification-bell icon-btn" (click)="toggleDropdown()" aria-label="View notifications">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+    </svg>
     <span class="badge" *ngIf="unreadCount > 0">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
-  </div>
+  </button>
 
   <!-- Backdrop -->
   <div class="notification-backdrop" *ngIf="showDropdown" (click)="closeDropdown()"></div>
@@ -13,11 +16,7 @@
     <!-- Header -->
     <div class="dropdown-header">
       <h3>Notifications</h3>
-      <button 
-        class="mark-all-read-btn" 
-        *ngIf="unreadCount > 0"
-        (click)="markAllAsRead()"
-        title="Mark all as read">
+      <button class="mark-all-read-btn" *ngIf="unreadCount > 0" (click)="markAllAsRead()" title="Mark all as read">
         ✓ Mark all read
       </button>
     </div>
@@ -37,23 +36,19 @@
       </div>
 
       <!-- Notification Items -->
-      <div 
-        class="notification-item"
-        *ngFor="let notification of notifications"
-        [class.unread]="!notification.isRead"
-        [ngClass]="getNotificationClass(notification.type)"
-        (click)="onNotificationClick(notification)">
-        
+      <div class="notification-item" *ngFor="let notification of notifications" [class.unread]="!notification.isRead"
+        [ngClass]="getNotificationClass(notification.type)" (click)="onNotificationClick(notification)">
+
         <div class="notification-icon">
           {{ getNotificationIcon(notification.type) }}
         </div>
-        
+
         <div class="notification-content">
           <div class="notification-title">{{ notification.title }}</div>
           <div class="notification-message">{{ notification.message }}</div>
           <div class="notification-time">{{ getTimeAgo(notification.createdAt) }}</div>
         </div>
-        
+
         <div class="unread-indicator" *ngIf="!notification.isRead"></div>
       </div>
     </div>

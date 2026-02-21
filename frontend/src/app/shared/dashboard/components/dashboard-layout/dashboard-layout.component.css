@@ -1,0 +1,303 @@
+/**
+ * Dashboard Layout Component Styles
+ * 
+ * Provides a flexible CSS Grid-based layout system with:
+ * - Configurable columns (1, 2, 3, 4)
+ * - Configurable gap sizes (small, medium, large)
+ * - Responsive breakpoints for mobile, tablet, desktop
+ * - Support for column spanning
+ */
+
+/* ============================================================================
+   Base Layout
+   ============================================================================ */
+
+.dashboard-layout {
+  display: grid;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ============================================================================
+   Column Configurations
+   ============================================================================ */
+
+.dashboard-layout.columns-1 {
+  grid-template-columns: 1fr;
+}
+
+.dashboard-layout.columns-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.dashboard-layout.columns-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.dashboard-layout.columns-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* ============================================================================
+   Gap Sizes
+   ============================================================================ */
+
+.dashboard-layout.gap-small {
+  gap: 0.75rem; /* 12px */
+}
+
+.dashboard-layout.gap-medium {
+  gap: 1.5rem; /* 24px */
+}
+
+.dashboard-layout.gap-large {
+  gap: 2rem; /* 32px */
+}
+
+/* ============================================================================
+   Column Spanning Utilities
+   ============================================================================ */
+
+/* Span 2 columns */
+.dashboard-layout :deep(.span-2),
+.dashboard-layout ::ng-deep .span-2 {
+  grid-column: span 2;
+}
+
+/* Span 3 columns */
+.dashboard-layout :deep(.span-3),
+.dashboard-layout ::ng-deep .span-3 {
+  grid-column: span 3;
+}
+
+/* Span 4 columns */
+.dashboard-layout :deep(.span-4),
+.dashboard-layout ::ng-deep .span-4 {
+  grid-column: span 4;
+}
+
+/* Full width (span all columns) */
+.dashboard-layout :deep(.span-full),
+.dashboard-layout ::ng-deep .span-full {
+  grid-column: 1 / -1;
+}
+
+/* ============================================================================
+   Responsive Breakpoints
+   ============================================================================ */
+
+/* Mobile First Approach */
+
+/* Mobile devices (< 640px) - Single column by default */
+@media (max-width: 639px) {
+  .dashboard-layout.responsive.columns-2,
+  .dashboard-layout.responsive.columns-3,
+  .dashboard-layout.responsive.columns-4 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Reset column spans on mobile */
+  .dashboard-layout.responsive :deep(.span-2),
+  .dashboard-layout.responsive :deep(.span-3),
+  .dashboard-layout.responsive :deep(.span-4),
+  .dashboard-layout.responsive ::ng-deep .span-2,
+  .dashboard-layout.responsive ::ng-deep .span-3,
+  .dashboard-layout.responsive ::ng-deep .span-4 {
+    grid-column: span 1;
+  }
+
+  /* Full width still works on mobile */
+  .dashboard-layout.responsive :deep(.span-full),
+  .dashboard-layout.responsive ::ng-deep .span-full {
+    grid-column: 1 / -1;
+  }
+
+  /* Adjust gap for mobile */
+  .dashboard-layout.responsive.gap-large {
+    gap: 1rem; /* Reduce large gap on mobile */
+  }
+
+  .dashboard-layout.responsive.gap-medium {
+    gap: 0.75rem; /* Reduce medium gap on mobile */
+  }
+
+  .dashboard-layout.responsive.gap-small {
+    gap: 0.5rem;
+  }
+}
+
+/* Small tablets (640px - 767px) - 2 columns max */
+@media (min-width: 640px) and (max-width: 767px) {
+  .dashboard-layout.responsive.columns-3,
+  .dashboard-layout.responsive.columns-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Adjust spans for small tablets */
+  .dashboard-layout.responsive.columns-3 :deep(.span-3),
+  .dashboard-layout.responsive.columns-4 :deep(.span-3),
+  .dashboard-layout.responsive.columns-4 :deep(.span-4),
+  .dashboard-layout.responsive.columns-3 ::ng-deep .span-3,
+  .dashboard-layout.responsive.columns-4 ::ng-deep .span-3,
+  .dashboard-layout.responsive.columns-4 ::ng-deep .span-4 {
+    grid-column: span 2;
+  }
+
+  /* Adjust gap for small tablets */
+  .dashboard-layout.responsive.gap-large {
+    gap: 1.25rem;
+  }
+
+  .dashboard-layout.responsive.gap-medium {
+    gap: 1rem;
+  }
+}
+
+/* Tablets (768px - 1023px) - 2-3 columns */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .dashboard-layout.responsive.columns-4 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Adjust spans for tablets */
+  .dashboard-layout.responsive.columns-4 :deep(.span-4),
+  .dashboard-layout.responsive.columns-4 ::ng-deep .span-4 {
+    grid-column: span 3;
+  }
+
+  /* Optimal gap for tablets */
+  .dashboard-layout.responsive.gap-large {
+    gap: 1.5rem;
+  }
+
+  .dashboard-layout.responsive.gap-medium {
+    gap: 1.25rem;
+  }
+}
+
+/* Desktop (1024px - 1279px) - Full columns */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  /* All column configurations work as specified */
+  .dashboard-layout.responsive.gap-large {
+    gap: 2rem;
+  }
+
+  .dashboard-layout.responsive.gap-medium {
+    gap: 1.5rem;
+  }
+}
+
+/* Large Desktop (>= 1280px) - Full columns with optimal spacing */
+@media (min-width: 1280px) {
+  /* All column configurations work as specified */
+  
+  /* Optionally increase gap on large screens */
+  .dashboard-layout.responsive.gap-large {
+    gap: 2.5rem; /* 40px */
+  }
+
+  .dashboard-layout.responsive.gap-medium {
+    gap: 2rem;
+  }
+}
+
+/* Extra Large Desktop (>= 1536px) - Maximum spacing */
+@media (min-width: 1536px) {
+  .dashboard-layout.responsive.gap-large {
+    gap: 3rem; /* 48px */
+  }
+
+  .dashboard-layout.responsive.gap-medium {
+    gap: 2.25rem;
+  }
+}
+
+/* ============================================================================
+   Accessibility
+   ============================================================================ */
+
+/* Ensure proper focus visibility for child elements */
+.dashboard-layout :deep(*:focus),
+.dashboard-layout ::ng-deep *:focus {
+  outline: 2px solid var(--color-primary, #4F46E5);
+  outline-offset: 2px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-layout,
+  .dashboard-layout :deep(*),
+  .dashboard-layout ::ng-deep * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================================
+   Print Styles
+   ============================================================================ */
+
+@media print {
+  .dashboard-layout {
+    display: block;
+  }
+
+  .dashboard-layout > * {
+    page-break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+}
+
+/* ============================================================================
+   Additional Utility Classes
+   ============================================================================ */
+
+/* Auto-fit columns (responsive without breakpoints) */
+.dashboard-layout.auto-fit {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+/* Auto-fill columns (responsive without breakpoints) */
+.dashboard-layout.auto-fill {
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+/* Dense packing (fills gaps) */
+.dashboard-layout.dense {
+  grid-auto-flow: dense;
+}
+
+/* Align items */
+.dashboard-layout.align-start {
+  align-items: start;
+}
+
+.dashboard-layout.align-center {
+  align-items: center;
+}
+
+.dashboard-layout.align-end {
+  align-items: end;
+}
+
+.dashboard-layout.align-stretch {
+  align-items: stretch;
+}
+
+/* Justify items */
+.dashboard-layout.justify-start {
+  justify-items: start;
+}
+
+.dashboard-layout.justify-center {
+  justify-items: center;
+}
+
+.dashboard-layout.justify-end {
+  justify-items: end;
+}
+
+.dashboard-layout.justify-stretch {
+  justify-items: stretch;
+}

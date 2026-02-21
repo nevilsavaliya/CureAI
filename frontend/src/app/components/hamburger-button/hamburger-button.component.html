@@ -1,0 +1,11 @@
+<button 
+  class="hamburger-button" 
+  (click)="onToggle()"
+  [class.open]="isOpen"
+  [@hamburgerAnimation]="isOpen ? 'open' : 'closed'"
+  aria-label="Toggle navigation menu"
+  [attr.aria-expanded]="isOpen">
+  <span class="hamburger-line"></span>
+  <span class="hamburger-line"></span>
+  <span class="hamburger-line"></span>
+</button>

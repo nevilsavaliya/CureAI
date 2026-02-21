@@ -1,0 +1,123 @@
+<div class="calendar-widget" role="application" aria-label="Calendar">
+  
+  <!-- Loading State -->
+  <div *ngIf="loading" class="skeleton-calendar" aria-live="polite" aria-busy="true" aria-label="Loading calendar">
+    <div class="skeleton-calendar-header">
+      <div class="skeleton-button-small"></div>
+      <div class="skeleton-line skeleton-line-medium"></div>
+      <div class="skeleton-button-small"></div>
+    </div>
+    <div class="skeleton-calendar-grid">
+      <div class="skeleton-calendar-day" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35]"></div>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!loading && error" class="error-state error-state-small" role="alert" aria-live="assertive">
+    <div class="error-icon error-icon-small">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+    </div>
+    <p class="error-message-title">Failed to load calendar</p>
+    <p class="error-message-subtitle">{{ error }}</p>
+    <div class="error-actions">
+      <button class="error-action-button" (click)="onRetry()" aria-label="Retry loading calendar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="retry-icon" aria-hidden="true">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+        Retry
+      </button>
+    </div>
+  </div>
+
+  <!-- Calendar Content -->
+  <div *ngIf="!loading && !error" class="calendar-content">
+    <!-- Calendar Header -->
+    <div class="calendar-header">
+    <button 
+      class="nav-button"
+      (click)="onPreviousMonth()"
+      aria-label="Previous month"
+      type="button">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    
+    <h3 class="month-year" aria-live="polite">{{ monthYearDisplay }}</h3>
+    
+    <button 
+      class="nav-button"
+      (click)="onNextMonth()"
+      aria-label="Next month"
+      type="button">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Day Names Header -->
+  <div class="calendar-days-header" role="row">
+    <div 
+      *ngFor="let dayName of dayNames"
+      class="day-name"
+      role="columnheader"
+      [attr.aria-label]="dayName">
+      {{ dayName }}
+    </div>
+  </div>
+
+  <!-- Calendar Grid -->
+  <div class="calendar-grid" role="grid" aria-label="Calendar dates">
+    <button
+      *ngFor="let calendarDay of calendarDays; let i = index; trackBy: trackByDate"
+      class="calendar-day"
+      [class.current-month]="calendarDay.isCurrentMonth"
+      [class.other-month]="!calendarDay.isCurrentMonth"
+      [class.today]="calendarDay.isToday"
+      [class.highlighted]="calendarDay.isHighlighted"
+      [class.has-event]="calendarDay.hasEvent"
+      [class.focused]="isFocused(i)"
+      [attr.aria-label]="calendarDay.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"
+      [attr.aria-current]="calendarDay.isToday ? 'date' : null"
+      [attr.aria-selected]="calendarDay.isHighlighted"
+      [attr.tabindex]="isFocused(i) ? 0 : -1"
+      (click)="onDateClick(calendarDay)"
+      type="button"
+      role="gridcell">
+      <span class="day-number">{{ calendarDay.day }}</span>
+      
+      <!-- Event Marker -->
+      <span 
+        *ngIf="calendarDay.hasEvent" 
+        class="event-marker"
+        [attr.aria-label]="calendarDay.events.length + ' event(s)'">
+        <span 
+          *ngFor="let event of calendarDay.events.slice(0, 3)"
+          class="event-dot"
+          [style.background-color]="event.color || '#4F46E5'"
+          [attr.title]="event.title">
+        </span>
+      </span>
+    </button>
+  </div>
+
+  <!-- Calendar Legend (if there are events) -->
+  <div *ngIf="config.events && config.events.length > 0" class="calendar-legend">
+    <div class="legend-item">
+      <span class="legend-dot today-dot"></span>
+      <span class="legend-label">Today</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-dot event-dot-sample"></span>
+      <span class="legend-label">Has Event</span>
+    </div>
+  </div>
+  </div>
+
+</div>

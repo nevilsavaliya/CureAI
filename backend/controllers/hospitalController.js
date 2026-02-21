@@ -2,6 +2,7 @@ const Hospital = require('../models/Hospital');
 const Patient = require('../models/Patient');
 const Case = require('../models/Case');
 const Message = require('../models/Message');
+const ApiRequest = require('../models/ApiRequest');
 const emailService = require('../services/emailService');
 const logger = require('../services/logger');
 const errorTracker = require('../services/errorTracker');
@@ -403,6 +404,19 @@ exports.getPatientData = async (req, res) => {
         } else if (patientEmail) {
             patient = await Patient.findOne({ email: patientEmail.toLowerCase() });
         } else {
+            // Log failed request to database
+            await ApiRequest.create({
+                hospitalId: req.hospital._id,
+                patientEmail: patientEmail || 'unknown',
+                endpoint: '/api/hospitals/api/patient-data',
+                method: 'POST',
+                status: 'error',
+                responseTime: Date.now() - startTime,
+                errorMessage: 'Patient email or ID is required',
+                ipAddress: logger.getClientIP(req),
+                userAgent: logger.getUserAgent(req)
+            });
+
             return res.status(400).json({
                 success: false,
                 message: 'Patient email or ID is required'
@@ -410,7 +424,20 @@ exports.getPatientData = async (req, res) => {
         }
 
         if (!patient) {
-            // Log patient not found
+            // Log patient not found to database
+            await ApiRequest.create({
+                hospitalId: req.hospital._id,
+                patientEmail: patientEmail || 'unknown',
+                endpoint: '/api/hospitals/api/patient-data',
+                method: 'POST',
+                status: 'error',
+                responseTime: Date.now() - startTime,
+                errorMessage: 'Patient not found in our system',
+                ipAddress: logger.getClientIP(req),
+                userAgent: logger.getUserAgent(req)
+            });
+
+            // Log to file logger as well
             logger.hospital.apiAccess({
                 hospitalId: req.hospital._id,
                 hospitalName: req.hospital.hospitalName,
@@ -446,8 +473,21 @@ exports.getPatientData = async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(50);
 
-        // Log successful API access
+        // Log successful API access to database
         const responseTime = Date.now() - startTime;
+        await ApiRequest.create({
+            hospitalId: req.hospital._id,
+            patientEmail: patient.email,
+            patientId: patient._id,
+            endpoint: '/api/hospitals/api/patient-data',
+            method: 'POST',
+            status: 'success',
+            responseTime: responseTime,
+            ipAddress: logger.getClientIP(req),
+            userAgent: logger.getUserAgent(req)
+        });
+
+        // Log to file logger as well
         logger.hospital.apiAccess({
             hospitalId: req.hospital._id,
             hospitalName: req.hospital.hospitalName,
@@ -527,6 +567,23 @@ exports.getPatientData = async (req, res) => {
         });
 
     } catch (error) {
+        // Log error to database
+        try {
+            await ApiRequest.create({
+                hospitalId: req.hospital?._id,
+                patientEmail: req.body.patientEmail || 'unknown',
+                endpoint: '/api/hospitals/api/patient-data',
+                method: 'POST',
+                status: 'error',
+                responseTime: Date.now() - startTime,
+                errorMessage: error.message,
+                ipAddress: logger.getClientIP(req),
+                userAgent: logger.getUserAgent(req)
+            });
+        } catch (dbError) {
+            console.error('Failed to log error to database:', dbError);
+        }
+
         // Track the error
         const errorId = errorTracker.trackHospitalApiError(error, {
             hospitalId: req.hospital?._id,
@@ -537,7 +594,7 @@ exports.getPatientData = async (req, res) => {
             patientEmail: req.body.patientEmail
         }, req);
 
-        // Log API error
+        // Log API error to file
         logger.hospital.apiError({
             hospitalId: req.hospital?._id,
             hospitalName: req.hospital?.hospitalName,
@@ -765,115 +822,8 @@ exports.getApiUsageStats = async (req, res) => {
             });
         }
 
-        // Get current date for calculations
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const thisWeekStart = new Date(today);
-        thisWeekStart.setDate(today.getDate() - today.getDay());
-        const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
-        // Calculate API usage statistics from logs
-        const fs = require('fs');
-        const path = require('path');
-        const logsDir = path.join(__dirname, '../logs');
-        
-        let stats = {
-            totalRequests: hospital.apiAccessCount || 0,
-            requestsToday: 0,
-            requestsThisWeek: 0,
-            requestsThisMonth: 0,
-            averageResponseTime: 0,
-            successRate: 100,
-            remainingRequests: 1000, // Default rate limit
-            rateLimit: 1000,
-            lastUpdated: new Date()
-        };
-
-        try {
-            // Read recent API access logs to calculate real-time metrics
-            const logFiles = fs.readdirSync(logsDir).filter(file => 
-                file.startsWith('api-access-') && file.endsWith('.log')
-            );
-
-            let todayCount = 0;
-            let weekCount = 0;
-            let monthCount = 0;
-            let totalResponseTime = 0;
-            let responseTimeCount = 0;
-            let successCount = 0;
-            let totalCount = 0;
-
-            // Process recent log files (last 30 days)
-            const recentLogFiles = logFiles.slice(-30);
-            
-            for (const logFile of recentLogFiles) {
-                try {
-                    const logPath = path.join(logsDir, logFile);
-                    const logContent = fs.readFileSync(logPath, 'utf8');
-                    const logLines = logContent.split('\n').filter(line => line.trim());
-
-                    for (const line of logLines) {
-                        try {
-                            const logEntry = JSON.parse(line);
-                            
-                            // Check if this log entry is for our hospital
-                            if (logEntry.hospitalId === hospital._id.toString()) {
-                                const logDate = new Date(logEntry.timestamp);
-                                totalCount++;
-
-                                // Count requests by time period
-                                if (logDate >= today) {
-                                    todayCount++;
-                                }
-                                if (logDate >= thisWeekStart) {
-                                    weekCount++;
-                                }
-                                if (logDate >= thisMonthStart) {
-                                    monthCount++;
-                                }
-
-                                // Calculate response time and success rate
-                                if (logEntry.responseTime) {
-                                    totalResponseTime += logEntry.responseTime;
-                                    responseTimeCount++;
-                                }
-                                if (logEntry.success !== false) {
-                                    successCount++;
-                                }
-                            }
-                        } catch (parseError) {
-                            // Skip invalid log entries
-                            continue;
-                        }
-                    }
-                } catch (fileError) {
-                    // Skip files that can't be read
-                    continue;
-                }
-            }
-
-            // Update statistics with calculated values
-            stats.requestsToday = todayCount;
-            stats.requestsThisWeek = weekCount;
-            stats.requestsThisMonth = monthCount;
-            stats.averageResponseTime = responseTimeCount > 0 ? 
-                Math.round(totalResponseTime / responseTimeCount) : 0;
-            stats.successRate = totalCount > 0 ? 
-                Math.round((successCount / totalCount) * 100) : 100;
-
-            // Calculate remaining requests (assuming daily rate limit reset)
-            const usedToday = todayCount;
-            stats.remainingRequests = Math.max(0, stats.rateLimit - usedToday);
-
-        } catch (logError) {
-            logger.error('Error reading API logs for usage stats', {
-                type: 'API_USAGE_STATS_ERROR',
-                hospitalId: hospital._id,
-                error: logError.message,
-                timestamp: new Date().toISOString()
-            });
-            // Continue with default stats if log reading fails
-        }
+        // Get usage statistics from database using the ApiRequest model
+        const stats = await ApiRequest.getUsageStats(hospital._id);
 
         res.status(200).json({
             success: true,
@@ -919,109 +869,48 @@ exports.getRecentApiRequests = async (req, res) => {
         const limit = parseInt(req.query.limit) || 10;
         const maxLimit = 50; // Maximum requests per page
         const actualLimit = Math.min(limit, maxLimit);
+        const skip = (page - 1) * actualLimit;
 
-        let recentRequests = [];
+        // Get sorting parameters
+        const sortBy = req.query.sortBy || 'timestamp';
+        const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
 
-        try {
-            // Read recent API access logs
-            const fs = require('fs');
-            const path = require('path');
-            const logsDir = path.join(__dirname, '../logs');
-            
-            const logFiles = fs.readdirSync(logsDir).filter(file => 
-                file.startsWith('api-access-') && file.endsWith('.log')
-            );
+        // Query recent API requests from database
+        const [requests, totalCount] = await Promise.all([
+            ApiRequest.find({ hospitalId: hospital._id })
+                .sort({ [sortBy]: sortOrder })
+                .skip(skip)
+                .limit(actualLimit)
+                .select('patientEmail timestamp status responseTime endpoint method errorMessage')
+                .lean(),
+            ApiRequest.countDocuments({ hospitalId: hospital._id })
+        ]);
 
-            // Process recent log files (last 7 days)
-            const recentLogFiles = logFiles.slice(-7).reverse(); // Most recent first
-            
-            for (const logFile of recentLogFiles) {
-                try {
-                    const logPath = path.join(logsDir, logFile);
-                    const logContent = fs.readFileSync(logPath, 'utf8');
-                    const logLines = logContent.split('\n').filter(line => line.trim()).reverse(); // Most recent first
+        // Format the requests for frontend
+        const formattedRequests = requests.map(req => ({
+            id: req._id.toString(),
+            patientEmail: req.patientEmail || 'N/A',
+            timestamp: req.timestamp,
+            status: req.status,
+            responseTime: req.responseTime || null,
+            endpoint: req.endpoint || '/api/hospitals/api/patient-data',
+            method: req.method || 'POST',
+            errorMessage: req.errorMessage || null
+        }));
 
-                    for (const line of logLines) {
-                        try {
-                            const logEntry = JSON.parse(line);
-                            
-                            // Check if this log entry is for our hospital and is a patient data request
-                            if (logEntry.hospitalId === hospital._id.toString() && 
-                                logEntry.type === 'HOSPITAL_API_ACCESS') {
-                                
-                                recentRequests.push({
-                                    id: `${logEntry.timestamp}_${Math.random().toString(36).substr(2, 9)}`,
-                                    patientEmail: logEntry.patientEmail || 'N/A',
-                                    timestamp: new Date(logEntry.timestamp),
-                                    status: logEntry.success !== false ? 'success' : 'error',
-                                    responseTime: logEntry.responseTime || null,
-                                    endpoint: logEntry.endpoint || '/api/hospitals/api/patient-data',
-                                    method: logEntry.method || 'POST'
-                                });
-
-                                // Stop if we have enough requests for pagination
-                                if (recentRequests.length >= page * actualLimit) {
-                                    break;
-                                }
-                            }
-                        } catch (parseError) {
-                            // Skip invalid log entries
-                            continue;
-                        }
-                    }
-
-                    // Stop if we have enough requests
-                    if (recentRequests.length >= page * actualLimit) {
-                        break;
-                    }
-                } catch (fileError) {
-                    // Skip files that can't be read
-                    continue;
-                }
+        res.status(200).json({
+            success: true,
+            message: 'Recent API requests retrieved successfully',
+            requests: formattedRequests,
+            pagination: {
+                currentPage: page,
+                totalRequests: totalCount,
+                requestsPerPage: actualLimit,
+                totalPages: Math.ceil(totalCount / actualLimit),
+                hasNextPage: skip + actualLimit < totalCount,
+                hasPreviousPage: page > 1
             }
-
-            // Apply pagination
-            const startIndex = (page - 1) * actualLimit;
-            const endIndex = startIndex + actualLimit;
-            const paginatedRequests = recentRequests.slice(startIndex, endIndex);
-
-            res.status(200).json({
-                success: true,
-                message: 'Recent API requests retrieved successfully',
-                requests: paginatedRequests,
-                pagination: {
-                    currentPage: page,
-                    totalRequests: recentRequests.length,
-                    requestsPerPage: actualLimit,
-                    totalPages: Math.ceil(recentRequests.length / actualLimit),
-                    hasNextPage: endIndex < recentRequests.length,
-                    hasPreviousPage: page > 1
-                }
-            });
-
-        } catch (logError) {
-            logger.error('Error reading API logs for recent requests', {
-                type: 'RECENT_API_REQUESTS_ERROR',
-                hospitalId: hospital._id,
-                error: logError.message,
-                timestamp: new Date().toISOString()
-            });
-
-            // Return empty results if log reading fails
-            res.status(200).json({
-                success: true,
-                message: 'Recent API requests retrieved successfully',
-                requests: [],
-                pagination: {
-                    currentPage: page,
-                    totalRequests: 0,
-                    requestsPerPage: actualLimit,
-                    totalPages: 0,
-                    hasNextPage: false,
-                    hasPreviousPage: false
-                }
-            });
-        }
+        });
 
     } catch (error) {
         logger.error('Get recent API requests error', {
